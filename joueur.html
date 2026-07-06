@@ -35,6 +35,8 @@
  --t4:rgba(178,225,216,0.38);
  --hair:rgba(255,255,255,0.08);
  --hair-soft:rgba(255,255,255,0.05);
+ --color-border:rgba(255,255,255,0.08);
+ --card-radius:16px;
 }
 *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
 body{
@@ -52,14 +54,14 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
 :focus-visible{outline:2px solid rgba(234,255,250,0.65); outline-offset:2px; border-radius:6px;}
 
 /* ============ LIQUID GLASS (v4) ============ */
-.glass,.glass-strong{
+.card,.card-elevated{
  position:relative; overflow:hidden;
  background:linear-gradient(165deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.012) 45%, rgba(64,232,213,0.025) 100%);
  backdrop-filter:blur(24px) saturate(1.4);
  -webkit-backdrop-filter:blur(24px) saturate(1.4);
  box-shadow:inset 0 1px 1px rgba(255,255,255,0.16), inset 0 -14px 34px rgba(90,235,215,0.045);
 }
-.glass::before,.glass-strong::before{
+.card::before,.card-elevated::before{
  content:""; position:absolute; inset:0; border-radius:inherit; padding:1.4px;
  background:linear-gradient(180deg,
  rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 20%,
@@ -71,19 +73,19 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
  mask-composite:exclude;
  pointer-events:none;
 }
-.glass-strong{
+.card-elevated{
  background:linear-gradient(165deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.015) 55%, rgba(64,232,213,0.035) 100%);
  backdrop-filter:blur(64px) saturate(1.5);
  -webkit-backdrop-filter:blur(64px) saturate(1.5);
  box-shadow:4px 4px 4px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.2), inset 0 -16px 44px rgba(90,235,215,0.055);
 }
-.glass-strong::before{
+.card-elevated::before{
  background:linear-gradient(180deg,
  rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.24) 20%,
  rgba(150,245,232,0.06) 40%, rgba(150,245,232,0.06) 60%,
  rgba(255,255,255,0.24) 80%, rgba(255,255,255,0.62) 100%);
 }
-.glass-strong::after{
+.card-elevated::after{
  content:""; position:absolute; left:0; right:0; top:0; height:46%;
  border-radius:inherit;
  background:linear-gradient(180deg, rgba(255,255,255,0.035) 0%, transparent 100%);
@@ -92,6 +94,13 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
 .hoverable{transition:transform .18s ease, background .18s ease;}
 .hoverable:hover{transform:scale(1.03);}
 .hoverable:active{transform:scale(0.97);}
+
+/* ============ PR3.2/3.3 — Card box-model (surface = .card/.card-elevated above; single unified system) ============ */
+.card-ghost{
+  position:relative; overflow:hidden;
+  background:rgba(255,255,255,0.02);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,0.06);
+}
 
 /* ============ FOND TERRAIN + EAU (v4) ============ */
 .bg{position:fixed; inset:0; z-index:0; pointer-events:none; background:radial-gradient(ellipse 130% 90% at 50% -10%, #071714 0%, var(--void) 58%);}
@@ -372,6 +381,32 @@ h2.view-title .serif{color:#4FE3CF;}
 .gc-chip{font-size:10.5px; color:var(--t3); font-weight:600;}
 .gc-chip b{color:#EAFFFB; font-weight:700; font-size:12px;}
 .gc-cta{margin-left:auto; align-self:center;}
+
+/* ============ PR3.1 — Unified Button System ============ */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  border:none; cursor:pointer; font-family:inherit; white-space:nowrap;
+  font-size:14px; font-weight:600; line-height:1;
+  padding:10px 16px; border-radius:12px;
+  transition:transform .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.btn:hover{transform:translateY(-1px);}
+.btn:active{transform:scale(0.98);}
+.btn-primary{
+  color:#D9FFF9;
+  background:linear-gradient(135deg, rgba(64,232,213,0.30), rgba(23,191,174,0.18));
+  box-shadow:0 10px 30px rgba(64,232,213,0.14), inset 0 1px 1px rgba(255,255,255,0.35);
+}
+.btn-primary:hover{box-shadow:0 12px 36px rgba(64,232,213,0.22), inset 0 1px 1px rgba(255,255,255,0.4);}
+.btn-secondary{
+  color:#40E8D5; background:rgba(64,232,213,0.14);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,0.10);
+}
+.btn-secondary:hover{color:#EAFFFB; background:rgba(64,232,213,0.30);}
+.btn-ghost{color:var(--t3); background:transparent;}
+.btn-ghost:hover{color:#EAFFFB; background:var(--hair);}
+.btn-danger{color:#9FB6C6; background:rgba(159,182,198,0.13);}
+.btn-danger:hover{color:#EAFFFB; background:#9FB6C6;}
 
 .btn-recap{
  display:inline-flex; align-items:center; gap:8px; flex-shrink:0;
@@ -724,13 +759,13 @@ h2.view-title .serif{color:#4FE3CF;}
 
 <!-- ============ HEADER ============ -->
 <header class="topnav">
- <div class="nav-inner glass-strong">
+ <div class="nav-inner card-elevated">
  <div class="brand">
  <svg width="27" height="27" aria-hidden="true"><use href="#logo-hb"/></svg>
  <span class="brand-name">HoopBoard</span>
  <span class="space-pill">Espace Joueur</span>
 </div>
- <div class="account glass hoverable">
+ <div class="account card hoverable">
  <div class="account-avatar mono">NS</div>
  <span class="account-name">Nathan Soliman · Ailier</span>
 </div>
@@ -741,19 +776,19 @@ h2.view-title .serif{color:#4FE3CF;}
 
  <!-- ============ ONGLETS ============ -->
  <nav class="ptabs" aria-label="Espace joueur">
- <button class="ptab glass active" data-view="training">
+ <button class="ptab card active" data-view="training">
  <span class="ptab-ico">
  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6.5 6.5l11 11M4 10l2.5-2.5M10 4L7.5 6.5M20 14l-2.5 2.5M14 20l2.5-2.5"/><circle cx="12" cy="12" r="9.5"/></svg>
 </span>
  <span class="ptab-label"><span>Training Hub</span><span class="ptab-sub">Entraînement</span></span>
 </button>
- <button class="ptab glass" data-view="games">
+ <button class="ptab card" data-view="games">
  <span class="ptab-ico">
  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>
 </span>
  <span class="ptab-label"><span>Game Center</span><span class="ptab-sub">Matchs</span></span>
 </button>
- <button class="ptab glass" data-view="feed">
+ <button class="ptab card" data-view="feed">
  <span class="ptab-ico">
  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1.1" fill="currentColor" stroke="none"/></svg>
 </span>
@@ -771,7 +806,7 @@ h2.view-title .serif{color:#4FE3CF;}
 </div>
 
  <div class="training-grid stagger">
- <div class="iso-panel glass-strong">
+ <div class="iso-panel card-elevated">
  <div class="panel-title"><span class="dot"></span>Mon terrain</div>
  <div class="panel-sub">Touchez une zone pour afficher vos exercices — les points lumineux sont vos zones à travailler</div>
  <div class="iso-stage">
@@ -795,7 +830,7 @@ h2.view-title .serif{color:#4FE3CF;}
  <div class="iso-caption">Intensité des points chauds = priorité de travail détectée sur vos 5 derniers matchs</div>
 </div>
 
- <div class="drills-panel glass-strong">
+ <div class="drills-panel card-elevated">
  <div class="panel-title"><span class="dot"></span>Exercices de la zone</div>
  <div class="zone-name" id="zoneName">Raquette</div>
  <div class="zone-focus" id="zoneFocus">
@@ -806,7 +841,7 @@ h2.view-title .serif{color:#4FE3CF;}
 </div>
 </div>
 
- <div class="goals-panel glass-strong">
+ <div class="goals-panel card-elevated">
  <div class="panel-title"><span class="dot"></span>Objectifs de la semaine</div>
  <div class="goals-grid">
  <div class="goal">
@@ -842,7 +877,7 @@ h2.view-title .serif{color:#4FE3CF;}
  <div class="view-sub">Ton prochain rendez-vous et ton historique — ANGT · U18 Pôle France</div>
 </div>
 
- <div class="pro-compact glass-strong">
+ <div class="pro-compact card-elevated">
  <div class="avatar"><span class="init">NS</span></div>
  <div>
  <div class="pc-name">Nathan Soliman</div>
@@ -862,7 +897,7 @@ h2.view-title .serif{color:#4FE3CF;}
  <div class="stagger">
  <div class="next-wrap">
  <div class="next-halo"></div>
- <div class="next-hero glass-strong">
+ <div class="next-hero card-elevated">
  <div class="beam"></div>
  <div class="nh-eyebrow">Prochain match · ANGT Finals · J-2</div>
  <div class="nh-row">
@@ -906,7 +941,7 @@ h2.view-title .serif{color:#4FE3CF;}
  <div class="feed-col stagger">
 
  <!-- PROFIL -->
- <div class="profile-card glass-strong">
+ <div class="profile-card card-elevated">
  <div class="profile-row">
  <div class="story-ring"><div class="story-ring-inner"><div class="pf-avatar">
  <span class="init">NS</span>
@@ -943,7 +978,7 @@ h2.view-title .serif{color:#4FE3CF;}
 </div>
  <div class="pf-actions">
  <button class="btn-follow" id="btnFollow">Suivre</button>
- <button class="btn-msg glass">Message</button>
+ <button class="btn-msg card">Message</button>
 </div>
 </div>
 
@@ -957,7 +992,7 @@ h2.view-title .serif{color:#4FE3CF;}
 </div>
 
  <!-- POST 1 -->
- <article class="post glass-strong">
+ <article class="post card-elevated">
  <div class="post-head">
  <div class="post-avatar"><div class="post-avatar-inner">
  <span class="init">NS</span>
@@ -983,7 +1018,7 @@ h2.view-title .serif{color:#4FE3CF;}
  <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg>
 </div></div>
 </div>
- <div class="stats-carousel glass">
+ <div class="stats-carousel card">
  <div class="stat-chip"><span class="sc-val mono">14 PTS</span><span class="sc-label">Points</span></div>
  <div class="stat-chip"><span class="sc-val mono">5 AST</span><span class="sc-label">Passes déc.</span></div>
  <div class="stat-chip"><span class="sc-val plain mono">8 REB</span><span class="sc-label">Rebonds</span></div>
@@ -1007,14 +1042,14 @@ h2.view-title .serif{color:#4FE3CF;}
  <div class="comment"><b>staff.insep</b> MVP mérité. Le travail paie, Nathan</div>
  <div class="comment"><b>a.elouma4</b> Champions frérot !!</div>
 </div>
- <div class="comment-box glass">
+ <div class="comment-box card">
  <input type="text" placeholder="Ajouter un commentaire…" data-input>
  <button class="btn-send" data-send>Publier</button>
 </div>
 </article>
 
  <!-- POST 2 -->
- <article class="post glass-strong">
+ <article class="post card-elevated">
  <div class="post-head">
  <div class="post-avatar"><div class="post-avatar-inner">
  <span class="init">NS</span>
@@ -1039,7 +1074,7 @@ h2.view-title .serif{color:#4FE3CF;}
  <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg>
 </div></div>
 </div>
- <div class="stats-carousel glass">
+ <div class="stats-carousel card">
  <div class="stat-chip"><span class="sc-val mono">18 PTS</span><span class="sc-label">Points</span></div>
  <div class="stat-chip"><span class="sc-val mono">6 AST</span><span class="sc-label">Passes déc.</span></div>
  <div class="stat-chip"><span class="sc-val plain mono">8 REB</span><span class="sc-label">Rebonds</span></div>
@@ -1062,14 +1097,14 @@ h2.view-title .serif{color:#4FE3CF;}
  <div class="post-comments" data-comments>
  <div class="comment"><b>m.yangala12</b> Le dunk du 3e quart</div>
 </div>
- <div class="comment-box glass">
+ <div class="comment-box card">
  <input type="text" placeholder="Ajouter un commentaire…" data-input>
  <button class="btn-send" data-send>Publier</button>
 </div>
 </article>
 
  <!-- POST 3 -->
- <article class="post glass-strong">
+ <article class="post card-elevated">
  <div class="post-head">
  <div class="post-avatar"><div class="post-avatar-inner">
  <span class="init">NS</span>
@@ -1094,7 +1129,7 @@ h2.view-title .serif{color:#4FE3CF;}
  <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg>
 </div></div>
 </div>
- <div class="stats-carousel glass">
+ <div class="stats-carousel card">
  <div class="stat-chip"><span class="sc-val mono">6 PTS</span><span class="sc-label">Points</span></div>
  <div class="stat-chip"><span class="sc-val plain mono">2 AST</span><span class="sc-label">Passes déc.</span></div>
  <div class="stat-chip"><span class="sc-val plain mono">5 REB</span><span class="sc-label">Rebonds</span></div>
@@ -1117,7 +1152,7 @@ h2.view-title .serif{color:#4FE3CF;}
  <div class="post-comments" data-comments>
  <div class="comment"><b>staff.insep</b> 4/4 aux tirs, 2/2 aux lancers. La ligne parfaite</div>
 </div>
- <div class="comment-box glass">
+ <div class="comment-box card">
  <input type="text" placeholder="Ajouter un commentaire…" data-input>
  <button class="btn-send" data-send>Publier</button>
 </div>
@@ -1130,7 +1165,7 @@ h2.view-title .serif{color:#4FE3CF;}
 
 <!-- ============ MODAL RÉCAP INTERACTIF ============ -->
 <div class="recap-overlay" id="recapOverlay">
- <div class="recap-box glass-strong">
+ <div class="recap-box card-elevated">
  <div class="recap-head">
  <div>
  <div class="recap-title">Récap interactif — <span id="recapMatch" style="color:var(--tq);">vs Hapoel Tel Aviv</span></div>
@@ -1304,7 +1339,7 @@ const EVA_MAX = 32;
 const grid = document.getElementById('matchGrid');
 matches.forEach((m, i) => {
  const card = document.createElement('article');
- card.className = 'gcard glass-strong';
+ card.className = 'gcard card-elevated';
  card.innerHTML = `
  <div class="gc-top">
  <span class="gc-date">${m.day}</span>

@@ -31,6 +31,8 @@
  --t4:rgba(178,225,216,0.38);
  --hair:rgba(255,255,255,0.08);
  --hair-soft:rgba(255,255,255,0.05);
+ --color-border:rgba(255,255,255,0.08);
+ --card-radius:16px;
 }
 *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
 html{scroll-behavior:smooth;}
@@ -50,14 +52,14 @@ a{color:inherit; text-decoration:none;}
 :focus-visible{outline:2px solid rgba(234,255,250,0.65); outline-offset:2px; border-radius:6px;}
 
 /* ============ LIQUID GLASS ============ */
-.glass,.glass-strong{
+.card,.card-elevated{
  position:relative; overflow:hidden;
  background:linear-gradient(165deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.012) 45%, rgba(64,232,213,0.025) 100%);
  backdrop-filter:blur(24px) saturate(1.4);
  -webkit-backdrop-filter:blur(24px) saturate(1.4);
  box-shadow:inset 0 1px 1px rgba(255,255,255,0.16), inset 0 -14px 34px rgba(90,235,215,0.045);
 }
-.glass::before,.glass-strong::before{
+.card::before,.card-elevated::before{
  content:""; position:absolute; inset:0; border-radius:inherit; padding:1.4px;
  background:linear-gradient(180deg,
  rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 20%,
@@ -69,19 +71,19 @@ a{color:inherit; text-decoration:none;}
  mask-composite:exclude;
  pointer-events:none;
 }
-.glass-strong{
+.card-elevated{
  background:linear-gradient(165deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.015) 55%, rgba(64,232,213,0.035) 100%);
  backdrop-filter:blur(64px) saturate(1.5);
  -webkit-backdrop-filter:blur(64px) saturate(1.5);
  box-shadow:4px 4px 4px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.2), inset 0 -16px 44px rgba(90,235,215,0.055);
 }
-.glass-strong::before{
+.card-elevated::before{
  background:linear-gradient(180deg,
  rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.24) 20%,
  rgba(150,245,232,0.06) 40%, rgba(150,245,232,0.06) 60%,
  rgba(255,255,255,0.24) 80%, rgba(255,255,255,0.62) 100%);
 }
-.glass-strong::after{
+.card-elevated::after{
  content:""; position:absolute; left:0; right:0; top:0; height:46%;
  border-radius:inherit;
  background:linear-gradient(180deg, rgba(255,255,255,0.035) 0%, transparent 100%);
@@ -90,6 +92,19 @@ a{color:inherit; text-decoration:none;}
 .hoverable{transition:transform .18s ease;}
 .hoverable:hover{transform:scale(1.03);}
 .hoverable:active{transform:scale(0.97);}
+
+/* ============ PR3.2/3.3 — Card box-model (surface = .card/.card-elevated above; single unified system) ============ */
+.card-ghost{
+  position:relative; overflow:hidden;
+  background:rgba(255,255,255,0.02);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,0.06);
+}
+.feature-card{
+  padding:16px; border-radius:var(--card-radius);
+  border:1px solid var(--color-border);
+  transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.feature-card:hover{transform:translateY(-1px);}
 
 /* ============ FOND ============ */
 .bg{position:fixed; inset:0; z-index:0; pointer-events:none; background:radial-gradient(ellipse 130% 90% at 50% -10%, #071714 0%, var(--void) 58%);}
@@ -134,19 +149,31 @@ a{color:inherit; text-decoration:none;}
 }
 .nav-link:hover{color:var(--t1);}
 .nav-right{display:flex; align-items:center; gap:8px;}
-.btn-ghost{
- border-radius:999px; padding:9px 16px; font-size:12.5px; font-weight:500; color:var(--t2); transition:.18s;
+/* ============ PR3.1 — Unified Button System ============ */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  border:none; cursor:pointer; font-family:inherit; white-space:nowrap;
+  font-size:14px; font-weight:600; line-height:1;
+  padding:10px 16px; border-radius:12px;
+  transition:transform .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
 }
-.btn-ghost:hover{color:#EAFFFB; transform:scale(1.04);}
+.btn:hover{transform:translateY(-1px);}
+.btn:active{transform:scale(0.98);}
 .btn-primary{
- display:inline-flex; align-items:center; gap:9px; border-radius:999px;
- padding:11px 20px; font-size:13px; font-weight:700; color:#D9FFF9;
- background:linear-gradient(135deg, rgba(64,232,213,0.30), rgba(23,191,174,0.18));
- box-shadow:0 10px 30px rgba(64,232,213,0.14), inset 0 1px 1px rgba(255,255,255,0.35);
- transition:.18s;
+  color:#D9FFF9;
+  background:linear-gradient(135deg, rgba(64,232,213,0.30), rgba(23,191,174,0.18));
+  box-shadow:0 10px 30px rgba(64,232,213,0.14), inset 0 1px 1px rgba(255,255,255,0.35);
 }
-.btn-primary:hover{transform:scale(1.05); box-shadow:0 12px 36px rgba(64,232,213,0.2), inset 0 1px 1px rgba(255,255,255,0.4);}
-.btn-primary:active{transform:scale(0.96);}
+.btn-primary:hover{box-shadow:0 12px 36px rgba(64,232,213,0.22), inset 0 1px 1px rgba(255,255,255,0.4);}
+.btn-secondary{
+  color:#40E8D5; background:rgba(64,232,213,0.14);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,0.10);
+}
+.btn-secondary:hover{color:#EAFFFB; background:rgba(64,232,213,0.30);}
+.btn-ghost{color:var(--t3); background:transparent;}
+.btn-ghost:hover{color:#EAFFFB; background:var(--hair);}
+.btn-danger{color:#9FB6C6; background:rgba(159,182,198,0.13);}
+.btn-danger:hover{color:#EAFFFB; background:#9FB6C6;}
 
 main{position:relative; z-index:10; max-width:1180px; margin:0 auto; padding:30px clamp(16px,4vw,40px) 80px;}
 
@@ -170,12 +197,7 @@ h1.hero-title .serif{color:#4FE3CF;}
  margin:20px auto 0;
 }
 .hero-ctas{display:flex; gap:12px; justify-content:center; margin-top:28px; flex-wrap:wrap;}
-.btn-primary.big{padding:14px 28px; font-size:14px;}
-.btn-glass{
- display:inline-flex; align-items:center; gap:9px; border-radius:999px;
- padding:14px 24px; font-size:13.5px; font-weight:600; color:var(--t2); transition:.18s;
-}
-.btn-glass:hover{color:#EAFFFB; transform:scale(1.04);}
+.btn.big{padding:14px 24px; font-size:14px;}
 .hero-note{font-size:11px; color:var(--t4); margin-top:14px;}
 
 /* ============ TERRAIN HERO ============ */
@@ -249,8 +271,6 @@ h2.section-title .serif{color:#4FE3CF;}
 
 /* fonctionnalités */
 .features-grid{display:grid; grid-template-columns:repeat(2,1fr); gap:16px; margin-top:38px;}
-.feature-card{border-radius:24px; padding:26px 28px; transition:transform .2s ease;}
-.feature-card:hover{transform:translateY(-4px);}
 .fc-icon{
  width:44px; height:44px; border-radius:14px; display:flex; align-items:center; justify-content:center;
  background:var(--tq-soft); color:var(--tq); font-size:19px; margin-bottom:16px;
@@ -378,7 +398,7 @@ footer{
 
 <!-- ============ NAV ============ -->
 <header class="topnav">
- <div class="nav-inner glass-strong">
+ <div class="nav-inner card-elevated">
  <a class="brand" href="#top">
  <svg width="27" height="27" aria-hidden="true"><use href="#logo-hb"/></svg>
  <span class="brand-name">HoopBoard</span>
@@ -390,8 +410,8 @@ footer{
  <a class="nav-link" href="#beta">Bêta</a>
 </nav>
  <div class="nav-right">
- <button class="btn-ghost glass">Connexion</button>
- <a class="btn-primary" href="#beta">Rejoindre la bêta</a>
+ <button class="btn btn-ghost card">Connexion</button>
+ <a class="btn btn-primary" href="#beta">Rejoindre la bêta</a>
 </div>
 </div>
 </header>
@@ -408,17 +428,17 @@ footer{
  Du banc de touche au bureau du club.
 </p>
  <div class="hero-ctas rise d3">
- <a class="btn-primary big" href="#beta">
+ <a class="btn btn-primary big" href="#beta">
  Rejoindre la bêta
  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
 </button>
- <a class="btn-glass glass" href="#beta">Rejoindre la bêta</a>
+ <a class="btn btn-ghost card" href="#beta">Rejoindre la bêta</a>
 </div>
  <div class="hero-note rise d3">Gratuit pendant la bêta · sans carte bancaire · données exportables</div>
 </section>
 
  <!-- ============ TERRAIN INTERACTIF ============ -->
- <section class="court-hero glass-strong" id="terrain">
+ <section class="court-hero card-elevated" id="terrain">
  <div class="ch-head">
  <div class="panel-title"><span class="dot"></span>Essayez le cœur de HoopBoard — <span style="color:var(--tq);">le terrain interactif</span></div>
  <button class="zp-switch" id="neonSwitch" aria-pressed="false">
@@ -547,7 +567,7 @@ footer{
 </section>
 
  <!-- ============ PREUVES ============ -->
- <div class="proof-strip glass">
+ <div class="proof-strip card">
  <div class="proof-item"><div class="proof-val mono"><b>2 min</b></div><div class="proof-lab">pour saisir un match</div></div>
  <div class="proof-item"><div class="proof-val mono"><b>100%</b></div><div class="proof-lab">des stats FIBA couvertes</div></div>
  <div class="proof-item"><div class="proof-val mono">Récap <b>3D</b></div><div class="proof-lab">généré automatiquement</div></div>
@@ -561,22 +581,22 @@ footer{
  <p class="section-sub">Tout ce que votre staff saisit pendant le match devient instantanément de la donnée exploitable — pour vous, et pour vos joueurs.</p>
 
  <div class="features-grid">
- <div class="feature-card glass-strong">
+ <div class="feature-card card-elevated">
  <div class="fc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="0.8" fill="currentColor"/></svg></div>
  <div class="fc-name">Match Live — saisie par zones</div>
  <div class="fc-desc">Touchez la zone du terrain où l'action se produit : <b>panier, tir manqué, rebond, passe, faute</b>. Le score, le fil du match et les cartes de tir se mettent à jour en direct. Annulation en un geste.</div>
 </div>
- <div class="feature-card glass-strong">
+ <div class="feature-card card-elevated">
  <div class="fc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 20V10M12 20V4M19 20v-7"/></svg></div>
  <div class="fc-name">Box scores &amp; fiches joueurs</div>
  <div class="fc-desc">Chaque joueur a sa fiche : moyennes, radar d'aptitudes, historique. Le box score complet est prêt à la fin du match — <b>2R/3R, lancers, rebonds off/déf, évaluation</b> — au format des pros.</div>
 </div>
- <div class="feature-card glass-strong">
+ <div class="feature-card card-elevated">
  <div class="fc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5 3.5-5 3.5z" fill="currentColor" stroke="none"/></svg></div>
  <div class="fc-name">Récap 3D des actions</div>
  <div class="fc-desc">Rejouez n'importe quel match sur le terrain 3D : <b>des cercles lumineux apparaissent là où les paniers ont été marqués</b>, action par action, avec le cumul de points. Parfait pour débriefer l'équipe.</div>
 </div>
- <div class="feature-card glass-strong">
+ <div class="feature-card card-elevated">
  <div class="fc-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 17.5h2"/></svg></div>
  <div class="fc-name">HoopFeed — l'espace joueur</div>
  <div class="fc-desc">Chaque joueur reçoit son espace : objectifs d'entraînement, points chauds à travailler sur son terrain isométrique, et <b>un feed façon réseau social</b> où ses performances deviennent des posts à partager.</div>
@@ -590,7 +610,7 @@ footer{
  <h2 class="section-title">Le coach pilote, <em class="serif">le joueur vit</em></h2>
 
  <div class="spaces-grid">
- <div class="space-card glass-strong">
+ <div class="space-card card-elevated">
  <span class="sc-tag">Espace Coach</span>
  <div class="sc-title">La salle de contrôle du club</div>
  <div class="sc-list">
@@ -600,7 +620,7 @@ footer{
  <div class="sc-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg><span>Effectif complet avec box scores au format Proballers</span></div>
 </div>
 </div>
- <div class="space-card glass-strong">
+ <div class="space-card card-elevated">
  <span class="sc-tag">Espace Joueur</span>
  <div class="sc-title">La motivation dans la poche</div>
  <div class="sc-list">
@@ -615,29 +635,29 @@ footer{
 
  <!-- ============ BÊTA ============ -->
  <section class="section" id="beta">
- <div class="beta-card glass-strong">
+ <div class="beta-card card-elevated">
  <div class="beta-badge"><span class="pulse-dot"></span>Bêta ouverte</div>
  <h2 class="section-title">HoopBoard est <span class="serif">gratuit</span> pendant la bêta</h2>
  <p class="section-sub">Accès complet — saisie live, récaps 3D, espace coach et espace joueur. En échange, on veut vos retours du bord du terrain. Les clubs sont onboardés par ordre d'inscription.</p>
  <form class="beta-form" id="betaForm">
  <input class="beta-input" type="email" required placeholder="Email du coach ou du club" id="betaEmail" name="email">
  <input class="beta-input" type="text" placeholder="Nom du club (optionnel)" id="betaClub" name="club">
- <button class="btn-primary big" type="submit">Rejoindre la bêta</button>
+ <button class="btn btn-primary big" type="submit">Rejoindre la bêta</button>
  </form>
  <div class="beta-msg" id="betaMsg" role="status"></div>
  <div class="beta-links">
- <a class="btn-glass glass" href="/coach.html">Voir la démo coach</a>
- <a class="btn-glass glass" href="/joueur.html">Voir la démo joueur</a>
+ <a class="btn btn-ghost card" href="/coach.html">Voir la démo coach</a>
+ <a class="btn btn-ghost card" href="/joueur.html">Voir la démo joueur</a>
  </div>
  <div class="beta-note">Aucune carte bancaire · vos données restent exportables · désinscription en un clic</div>
  </div>
  </section>
 
  <!-- ============ CTA FINAL ============ -->
- <section class="final-cta glass-strong">
+ <section class="final-cta card-elevated">
  <h2>Votre prochain match mérite mieux <em class="serif">qu'une feuille de papier</em></h2>
  <p>La bêta est gratuite et complète. Le premier match analysé est souvent le déclic.</p>
- <a class="btn-primary big" href="#beta">
+ <a class="btn btn-primary big" href="#beta">
  Rejoindre la bêta gratuite
  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
 </button>

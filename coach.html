@@ -37,6 +37,8 @@
   --t4:rgba(178,225,216,0.38);
   --hair:rgba(255,255,255,0.08);
   --hair-soft:rgba(255,255,255,0.05);
+  --color-border:rgba(255,255,255,0.08);
+  --card-radius:16px;
   --radius:1rem;
 }
 *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
@@ -56,14 +58,14 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
 :focus-visible{outline:2px solid rgba(255,255,255,0.65); outline-offset:2px; border-radius:6px;}
 
 /* ============ LIQUID GLASS ============ */
-.glass,.glass-strong{
+.card,.card-elevated{
   position:relative; overflow:hidden;
   background:linear-gradient(165deg, rgba(255,255,255,0.035) 0%, rgba(255,255,255,0.012) 45%, rgba(64,232,213,0.025) 100%);
   backdrop-filter:blur(24px) saturate(1.4);
   -webkit-backdrop-filter:blur(24px) saturate(1.4);
   box-shadow:inset 0 1px 1px rgba(255,255,255,0.16), inset 0 -14px 34px rgba(90,235,215,0.045);
 }
-.glass::before,.glass-strong::before{
+.card::before,.card-elevated::before{
   content:""; position:absolute; inset:0; border-radius:inherit; padding:1.4px;
   background:linear-gradient(180deg,
     rgba(255,255,255,0.45) 0%, rgba(255,255,255,0.15) 20%,
@@ -75,19 +77,19 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
   mask-composite:exclude;
   pointer-events:none;
 }
-.glass-strong{
+.card-elevated{
   background:linear-gradient(165deg, rgba(255,255,255,0.055) 0%, rgba(255,255,255,0.015) 55%, rgba(64,232,213,0.035) 100%);
   backdrop-filter:blur(64px) saturate(1.5);
   -webkit-backdrop-filter:blur(64px) saturate(1.5);
   box-shadow:4px 4px 4px rgba(0,0,0,0.05), inset 0 1px 1px rgba(255,255,255,0.2), inset 0 -16px 44px rgba(90,235,215,0.055);
 }
-.glass-strong::before{
+.card-elevated::before{
   background:linear-gradient(180deg,
     rgba(255,255,255,0.62) 0%, rgba(255,255,255,0.24) 20%,
     rgba(150,245,232,0.06) 40%, rgba(150,245,232,0.06) 60%,
     rgba(255,255,255,0.24) 80%, rgba(255,255,255,0.62) 100%);
 }
-.glass-strong::after{
+.card-elevated::after{
   content:""; position:absolute; left:0; right:0; top:0; height:46%;
   border-radius:inherit;
   background:linear-gradient(180deg, rgba(255,255,255,0.035) 0%, transparent 100%);
@@ -96,6 +98,19 @@ button{font:inherit; color:inherit; background:none; border:none; cursor:pointer
 .hoverable{transition:transform .18s ease, background .18s ease;}
 .hoverable:hover{transform:scale(1.03);}
 .hoverable:active{transform:scale(0.97);}
+
+/* ============ PR3.2/3.3 — Card box-model (surface = .card/.card-elevated above; single unified system) ============ */
+.card-ghost{
+  position:relative; overflow:hidden;
+  background:rgba(255,255,255,0.02);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,0.06);
+}
+.metric-card,.panel,.table-card,.leader-card,.session-card{
+  padding:16px; border-radius:var(--card-radius);
+  border:1px solid var(--color-border);
+  transition:transform .2s ease, box-shadow .2s ease, background .2s ease;
+}
+.metric-card:hover,.panel:hover,.table-card:hover,.leader-card:hover,.session-card:hover{transform:translateY(-1px);}
 
 /* ============ FOND TERRAIN ============ */
 .bg{position:fixed; inset:0; z-index:0; pointer-events:none; background:radial-gradient(ellipse 130% 90% at 50% -10%, #071714 0%, var(--void) 58%);}
@@ -205,22 +220,14 @@ h1.hero-title{
 h1.hero-title .serif{color:#4FE3CF; letter-spacing:-0.02em;}
 .hero-sub{font-size:14px; color:var(--t3); max-width:42ch; line-height:1.65;}
 .cta-row{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:6px;}
-.cta{
-  display:inline-flex; align-items:center; gap:11px;
-  border-radius:999px; padding:9px 22px 9px 10px;
-  font-size:13.5px; font-weight:500; color:#EAFFFB;
-}
-.cta .cta-ico{
+.cta-ico{
   width:30px; height:30px; border-radius:50%;
   background:linear-gradient(135deg,var(--orange),var(--orange-deep));
   box-shadow:0 0 22px rgba(64,232,213,0.55);
   display:flex; align-items:center; justify-content:center;
 }
 .pill-row{display:flex; gap:9px; flex-wrap:wrap;}
-.mini-pill{
-  border-radius:999px; padding:8px 15px; font-size:11.5px; color:var(--t2); font-weight:500;
-}
-.mini-pill b{color:#EAFFFB; font-weight:600;}
+.btn-ghost b{color:#EAFFFB; font-weight:600;}
 .hero-quote{margin-top:auto; padding-top:26px;}
 .quote-label{font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--t4); margin-bottom:10px; font-weight:600;}
 .quote-text{font-size:16.5px; color:var(--t2); font-weight:400;}
@@ -302,16 +309,35 @@ h2.page-title .serif{color:#4FE3CF;}
   display:inline-flex; align-items:center; gap:9px; border-radius:999px;
   padding:10px 18px; font-size:12px; font-weight:500; color:var(--t2);
 }
+/* ============ PR3.1 — Unified Button System ============ */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:9px;
+  border:none; cursor:pointer; font-family:inherit; white-space:nowrap;
+  font-size:14px; font-weight:600; line-height:1;
+  padding:10px 16px; border-radius:12px;
+  transition:transform .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+}
+.btn:hover{transform:translateY(-1px);}
+.btn:active{transform:scale(0.98);}
 .btn-primary{
-  display:inline-flex; align-items:center; gap:9px; border-radius:999px;
-  padding:11px 20px; font-size:12.5px; font-weight:600; color:#D9FFF9;
-  background:linear-gradient(135deg, rgba(64,232,213,0.30), rgba(23,191,174,0.18)) !important;
+  color:#D9FFF9;
+  background:linear-gradient(135deg, rgba(64,232,213,0.30), rgba(23,191,174,0.18));
   box-shadow:0 10px 30px rgba(64,232,213,0.14), inset 0 1px 1px rgba(255,255,255,0.35);
 }
+.btn-primary:hover{box-shadow:0 12px 36px rgba(64,232,213,0.22), inset 0 1px 1px rgba(255,255,255,0.4);}
+.btn-secondary{
+  color:#40E8D5; background:rgba(64,232,213,0.14);
+  box-shadow:inset 0 1px 1px rgba(255,255,255,0.10);
+}
+.btn-secondary:hover{color:#EAFFFB; background:rgba(64,232,213,0.30);}
+.btn-ghost{color:var(--t3); background:transparent;}
+.btn-ghost:hover{color:#EAFFFB; background:var(--hair);}
+.btn-danger{color:#9FB6C6; background:rgba(159,182,198,0.13);}
+.btn-danger:hover{color:#EAFFFB; background:#9FB6C6;}
 
 /* ============ EFFECTIF ============ */
 .leaders-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:16px;}
-.leader-card{border-radius:20px; padding:18px 20px; display:flex; align-items:center; gap:14px;}
+.leader-card{display:flex; align-items:center; gap:14px;}
 .leader-card .avatar{width:46px; height:46px;}
 .leader-cat{font-size:9px; font-weight:700; color:var(--t4); text-transform:uppercase; letter-spacing:0.14em; margin-bottom:4px;}
 .leader-name{font-size:13.5px; font-weight:600; color:#EAFFFB;}
@@ -320,7 +346,6 @@ h2.page-title .serif{color:#4FE3CF;}
 .leader-val{font-size:22px; font-weight:700;}
 .leader-unit{font-size:8.5px; color:var(--t4); text-transform:uppercase; letter-spacing:0.1em; font-weight:600; margin-top:2px;}
 
-.table-card{border-radius:24px; overflow:hidden;}
 .table-scroll{overflow-x:auto;}
 table{width:100%; border-collapse:collapse; font-size:13px;}
 thead th{
@@ -367,7 +392,6 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 .pstat-label{font-size:8.5px; color:var(--t4); text-transform:uppercase; letter-spacing:0.12em; font-weight:600; margin-top:5px;}
 
 .content-grid{display:grid; grid-template-columns:340px 1fr; gap:18px; margin-top:18px;}
-.panel{border-radius:24px; padding:24px 26px;}
 .panel-title{font-size:12.5px; font-weight:600; color:var(--t2); display:flex; align-items:center; gap:9px; margin-bottom:18px;}
 .panel-title .dot{width:6px; height:6px; border-radius:50%; background:var(--orange); box-shadow:0 0 10px rgba(64,232,213,0.8);}
 .panel-sub{font-size:11px; color:var(--t4); margin:-12px 0 16px;}
@@ -483,10 +507,6 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 .lt-clock{font-size:13px; font-weight:600; color:var(--t2);}
 .lt-quarter{font-size:10.5px; color:var(--t4); font-weight:600; letter-spacing:0.1em;}
 .live-actions-row{display:flex; justify-content:flex-end; gap:9px; margin:14px 0;}
-.ghost-btn{
-  border-radius:999px; padding:8px 16px; font-size:11.5px; font-weight:500; color:var(--t3); transition:.16s;
-}
-.ghost-btn:hover{color:#EAFFFB; transform:scale(1.04);}
 
 .player-strip{display:flex; gap:10px; margin-bottom:16px; overflow-x:auto; padding:4px 2px 8px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.15) transparent;}
 .player-chip{
@@ -516,14 +536,6 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
   border-radius:15px; padding:7px; box-shadow:0 16px 44px rgba(0,0,0,0.5), inset 0 1px 1px rgba(255,255,255,0.15);
 }
 .shot-popup.open{display:flex;}
-.popup-btn{
-  font-size:11.5px; font-weight:600; padding:9px 14px; border-radius:10px;
-  display:flex; align-items:center; gap:6px; transition:.14s;
-}
-.popup-btn.make{background:var(--green-soft); color:var(--green);}
-.popup-btn.make:hover{background:rgba(64,232,213,0.35); color:#EAFFFB;}
-.popup-btn.miss{background:var(--red-soft); color:var(--red);}
-.popup-btn.miss:hover{background:var(--red); color:#EAFFFB;}
 .shot-dot{position:absolute; width:10px; height:10px; border-radius:50%; transform:translate(-50%,-50%); opacity:0; transition:.25s;}
 .shot-dot.show{opacity:1;}
 
@@ -565,7 +577,6 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 
 /* ============ ENTRAÎNEMENT ============ */
 .metrics-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:16px;}
-.metric-card{border-radius:20px; padding:20px 20px 14px;}
 .metric-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:13px;}
 .metric-tag{font-size:9px; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; padding:5px 10px; border-radius:999px; box-shadow:inset 0 1px 1px rgba(255,255,255,0.08);}
 .tag-2p{background:var(--orange-soft); color:var(--orange);}
@@ -584,7 +595,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 .tcell-val{font-size:13.5px; font-weight:700; color:var(--t1);}
 
 .session-list{display:flex; flex-direction:column; gap:12px;}
-.session-card{border-radius:18px; padding:16px 22px; display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
+.session-card{display:flex; align-items:center; gap:18px; flex-wrap:wrap;}
 .session-date{width:80px; flex-shrink:0;}
 .session-day{font-size:16px; font-weight:700; color:#EAFFFB;}
 .session-month{font-size:9px; color:var(--t4); text-transform:uppercase; letter-spacing:0.1em; font-weight:600; margin-top:2px;}
@@ -908,7 +919,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </svg>
 
 <header class="topnav">
-  <div class="nav-inner glass-strong">
+  <div class="nav-inner card-elevated">
     <div class="brand">
       <svg width="27" height="27" aria-hidden="true"><use href="#logo-hb"/></svg>
       <span class="brand-name">HoopBoard</span>
@@ -920,7 +931,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
       <button class="tab" data-goto="gamecenter">Matchs</button>
       <button class="tab" data-goto="training">Entraînement</button>
 </nav>
-    <div class="account glass hoverable">
+    <div class="account card hoverable">
       <div class="account-avatar mono">PF</div>
       <span class="account-name">Staff INSEP</span>
 </div>
@@ -935,13 +946,13 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 <section class="page active" id="page-dashboard">
   <div class="hero-grid">
 
-    <div class="hero-panel glass-strong">
+    <div class="hero-panel card-elevated">
       <div class="eyebrow">Pôle France · U18 · ANGT Belgrade 2026</div>
       <div class="hero-core">
         <h1 class="hero-title">Pilotez la saison<br>des <em class="serif">Bleuets</em></h1>
         <p class="hero-sub">Statistiques en direct, suivi de progression et analyse de vos joueurs — tout le club dans une seule plateforme.</p>
         <div class="cta-row">
-          <button class="cta glass-strong hoverable" data-goto="live">
+          <button class="btn btn-primary card-elevated" data-goto="live">
             <span class="cta-ico">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="#D9FFF9"><path d="M8 5v14l11-7z"/></svg>
 </span>
@@ -949,9 +960,9 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </button>
 </div>
         <div class="pill-row">
-          <button class="mini-pill glass hoverable" data-goto="effectif"><b>12</b> joueurs suivis</button>
-          <button class="mini-pill glass hoverable" data-goto="gamecenter"><b>4</b> matchs joués</button>
-          <button class="mini-pill glass hoverable" data-goto="training"><b>14</b> séances</button>
+          <button class="btn btn-ghost card" data-goto="effectif"><b>12</b> joueurs suivis</button>
+          <button class="btn btn-ghost card" data-goto="gamecenter"><b>4</b> matchs joués</button>
+          <button class="btn btn-ghost card" data-goto="training"><b>14</b> séances</button>
 </div>
 </div>
 
@@ -959,7 +970,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 
     <div class="side-col">
       <div class="pills-duo">
-        <div class="pill-card glass hoverable">
+        <div class="pill-card card hoverable">
           <div class="pill-label">Dernier match</div>
           <div class="pill-main">
             <span class="pill-badge win">V</span>
@@ -968,7 +979,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
           <div class="pill-opp">Finale — vs Crvena Zvezda</div>
           <div class="pill-sub">23 mars · ANGT Belgrade</div>
 </div>
-        <div class="pill-card glass hoverable">
+        <div class="pill-card card hoverable">
           <div class="pill-label">Prochain match</div>
           <div class="pill-main">
             <span class="pill-badge next mono">J-2</span>
@@ -979,7 +990,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 </div>
 
-      <div class="record-card glass-strong">
+      <div class="record-card card-elevated">
         <div>
           <div class="record-value mono"><span class="w">4V</span><span class="sep">–</span><span class="l">0D</span></div>
           <div class="record-caption">ANGT Belgrade — invaincus · qualifiés Finals</div>
@@ -998,7 +1009,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 </div>
 
-      <div class="stats-strip glass">
+      <div class="stats-strip card">
         <div class="stat-item"><div class="stat-label">PPG</div><div class="stat-value mono">94.8</div></div>
         <div class="stat-item"><div class="stat-label">FG%</div><div class="stat-value mono">57%</div></div>
         <div class="stat-item"><div class="stat-label">PTPG</div><div class="stat-value mono">74.5</div></div>
@@ -1006,7 +1017,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 
       <div class="impact-duo">
-        <div class="impact-card glass hoverable">
+        <div class="impact-card card hoverable">
           <div class="impact-tag eval">Évaluation</div>
           <div class="avatar"><span class="init" style="font-size:19px;">NS</span></div>
           <div class="impact-name">Nathan Soliman</div>
@@ -1014,7 +1025,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
           <div class="impact-value o mono">23.0</div>
           <div class="impact-unit">ÉVA / match</div>
 </div>
-        <div class="impact-card glass hoverable">
+        <div class="impact-card card hoverable">
           <div class="impact-tag score">Scoring</div>
           <div class="avatar"><span class="init" style="font-size:19px;">MY</span></div>
           <div class="impact-name">Messi Yangala</div>
@@ -1040,13 +1051,13 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <div class="page-meta">U18 Pôle France · ANGT Belgrade · 4V – 0D</div>
 </div>
 </div>
-    <button class="btn-primary glass hoverable" data-goto="live">
+    <button class="btn btn-primary card hoverable" data-goto="live">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="#D9FFF9"><path d="M8 5v14l11-7z"/></svg>
       Démarrer le match live
 </button>
 </div>
 
-  <div class="court-hero glass-strong">
+  <div class="court-hero card-elevated">
     <div>
       <div class="panel-title"><span class="dot"></span>Le Terrain — <span style="color:var(--orange);">ANGT Finals</span></div>
       <div class="panel-sub">Cliquez sur une zone du parquet pour analyser le tir de votre équipe</div>
@@ -1186,7 +1197,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 
   <div class="next-wrap">
     <div class="next-halo"></div>
-    <div class="next-hero glass-strong wide">
+    <div class="next-hero card-elevated wide">
       <div class="beam"></div>
       <div>
         <div class="nh-eyebrow">Prochain match · ANGT Finals · J-2</div>
@@ -1234,7 +1245,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <div class="page-meta">12 joueurs · INSEP — champions ANGT Belgrade 2026</div>
 </div>
 </div>
-    <button class="select-glass glass hoverable">
+    <button class="select-glass card hoverable">
       ANGT 2025–2026
       <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
 </button>
@@ -1242,7 +1253,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 
   <div class="section-label" style="margin-top:0;">Leaders du tournoi — ANGT Belgrade</div>
   <div class="leaders-grid">
-    <div class="leader-card glass hoverable">
+    <div class="leader-card card">
       <div class="avatar"><span class="init" style="font-size:15px;">MY</span></div>
       <div>
         <div class="leader-cat">Points</div>
@@ -1254,7 +1265,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <div class="leader-unit">Pts / match</div>
 </div>
 </div>
-    <div class="leader-card glass hoverable">
+    <div class="leader-card card">
       <div class="avatar"><span class="init" style="font-size:15px;">NS</span></div>
       <div>
         <div class="leader-cat">Rebonds</div>
@@ -1266,7 +1277,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <div class="leader-unit">Reb / match</div>
 </div>
 </div>
-    <div class="leader-card glass hoverable">
+    <div class="leader-card card">
       <div class="avatar"><span class="init" style="font-size:15px;">AE</span></div>
       <div>
         <div class="leader-cat">Passes décisives</div>
@@ -1281,7 +1292,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 
   <div class="section-label">Box score — victoire 91–58 vs Hapoel Tel Aviv · 20 mars 2026</div>
-  <div class="table-card glass-strong">
+  <div class="table-card card-elevated">
     <div class="table-scroll">
     <table>
       <thead>
@@ -1442,7 +1453,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
     <button data-goto="effectif">Effectif</button><span class="sep">/</span><span class="current">Nathan Soliman</span>
 </div>
 
-  <div class="profile-hero glass-strong">
+  <div class="profile-hero card-elevated">
     <div class="avatar"><span class="init" style="font-size:30px;">NS</span></div>
     <div>
       <div class="profile-name">Nathan <em class="serif">Soliman</em></div>
@@ -1461,7 +1472,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 
   <div class="content-grid">
-    <div class="panel glass-strong radar-panel">
+    <div class="panel card-elevated radar-panel">
       <div class="panel-title" style="align-self:flex-start;"><span class="dot"></span>Profil de jeu</div>
       <svg width="250" height="250" viewBox="0 0 260 260" role="img" aria-label="Radar des aptitudes" style="overflow:visible;">
         <polygon points="130,30 219,92 185,196 75,196 41,92" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
@@ -1488,7 +1499,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
       <div class="radar-caption">Évalué par le staff INSEP — ANGT Belgrade, mars 2026</div>
 </div>
 
-    <div class="panel glass-strong">
+    <div class="panel card-elevated">
       <div class="panel-title"><span class="dot"></span>Chiffres clés — saison</div>
       <div class="numbers-grid">
         <div class="num-cell"><div class="num-val o mono">13.5</div><div class="num-label">Points</div></div>
@@ -1506,7 +1517,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 
   <div class="section-label">ANGT Belgrade 2026 — 4 matchs · 4 victoires</div>
-  <div class="table-card glass-strong">
+  <div class="table-card card-elevated">
     <div class="table-scroll">
     <table>
       <thead>
@@ -1557,7 +1568,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
     <span class="current">vs Hapoel Tel Aviv</span>
 </div>
 
-  <div class="match-header glass-strong">
+  <div class="match-header card-elevated">
     <div class="mh-team">
       <div class="mh-crest home mono">PF</div>
       <div>
@@ -1578,7 +1589,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 </div>
 
-  <div class="panel glass-strong" style="margin-top:18px;">
+  <div class="panel card-elevated" style="margin-top:18px;">
     <div class="panel-title"><span class="dot"></span>Temps de jeu — Nathan Soliman</div>
     <div class="panel-sub">Alternance terrain / banc par quart-temps</div>
     <div class="time-bar">
@@ -1598,13 +1609,13 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 
   <div class="interactive-grid">
-    <div class="panel glass-strong" style="padding:18px 14px;">
+    <div class="panel card-elevated" style="padding:18px 14px;">
       <div class="panel-title" style="padding:0 10px;"><span class="dot"></span>Actions du match</div>
       <div class="panel-sub" style="padding:0 10px;">Touchez une action pour voir la zone</div>
       <div class="actions-list" id="actionsList"></div>
 </div>
 
-    <div class="court-panel glass-strong">
+    <div class="court-panel card-elevated">
       <div class="court-box" id="matchCourtBox">
         <svg width="100%" viewBox="0 0 300 320" fill="none">
           <use href="#parquet-court"/>
@@ -1629,7 +1640,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
      PAGE 5 — MATCH LIVE
 ============================================================ -->
 <section class="page" id="page-live">
-  <div class="live-topbar glass-strong">
+  <div class="live-topbar card-elevated">
     <div class="mh-team">
       <div class="mh-crest home mono">PF</div>
       <div class="mh-name">Pôle France</div>
@@ -1649,14 +1660,14 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 
   <div class="live-actions-row">
-    <button class="ghost-btn glass hoverable">⏸ Pause</button>
-    <button class="ghost-btn glass hoverable">Fin du quart-temps</button>
+    <button class="btn btn-ghost card">⏸ Pause</button>
+    <button class="btn btn-ghost card">Fin du quart-temps</button>
 </div>
 
   <div class="player-strip" id="playerStrip"></div>
 
   <div class="live-grid">
-    <div class="court-panel glass-strong">
+    <div class="court-panel card-elevated">
       <div class="panel-title" style="align-self:flex-start;"><span class="dot"></span>Terrain — <span id="selectedPlayerLabel" style="color:var(--orange);">Nathan Soliman</span></div>
       <div class="panel-sub" style="align-self:flex-start;">Touchez une zone pour enregistrer un tir</div>
       <div class="court-box" id="liveCourtBox">
@@ -1670,11 +1681,11 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
           <path class="zone" data-pts="3" data-zone="Top de la clé" d="M70 300 H230 L282 96 A132 132 0 0 1 18 96 Z"/>
 </svg>
         <div class="shot-popup" id="shotPopup">
-          <button class="popup-btn make" id="btnMake">
+          <button class="btn btn-secondary" id="btnMake">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
             Réussi
 </button>
-          <button class="popup-btn miss" id="btnMiss">
+          <button class="btn btn-danger" id="btnMiss">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
             Manqué
 </button>
@@ -1683,41 +1694,41 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 
     <div style="display:flex; flex-direction:column; gap:16px;">
-      <div class="panel glass-strong" style="padding:20px 20px 16px;">
+      <div class="panel card-elevated" style="padding:20px 20px 16px;">
         <div class="panel-title"><span class="dot"></span>Actions rapides</div>
         <div class="qa-grid">
-          <button class="qa-btn glass" data-action="Rebond offensif">
+          <button class="qa-btn card" data-action="Rebond offensif">
             <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M5 10l7-7 7 7"/></svg></span>
             <span class="qa-label">Rebond<br>Off.</span>
 </button>
-          <button class="qa-btn glass" data-action="Rebond défensif">
+          <button class="qa-btn card" data-action="Rebond défensif">
             <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V3M5 14l7 7 7-7"/></svg></span>
             <span class="qa-label">Rebond<br>Déf.</span>
 </button>
-          <button class="qa-btn glass" data-action="Passe décisive">
+          <button class="qa-btn card" data-action="Passe décisive">
             <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h13M12 5l7 7-7 7"/></svg></span>
             <span class="qa-label">Passe<br>Décisive</span>
 </button>
-          <button class="qa-btn glass" data-action="Interception">
+          <button class="qa-btn card" data-action="Interception">
             <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21l2-7.5L2 9h7z"/></svg></span>
             <span class="qa-label">Inter-<br>ception</span>
 </button>
-          <button class="qa-btn glass" data-action="Contre">
+          <button class="qa-btn card" data-action="Contre">
             <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20L20 4M4 4l16 16"/></svg></span>
             <span class="qa-label">Contre</span>
 </button>
-          <button class="qa-btn glass" data-action="Perte de balle">
+          <button class="qa-btn card" data-action="Perte de balle">
             <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg></span>
             <span class="qa-label">Perte de<br>balle</span>
 </button>
-          <button class="qa-foul glass" id="btnFoul">
+          <button class="qa-foul card" id="btnFoul">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
             Faute
 </button>
 </div>
 </div>
 
-      <div class="panel glass-strong" style="padding:20px 20px 12px;">
+      <div class="panel card-elevated" style="padding:20px 20px 12px;">
         <div class="feed-head">
           <div class="panel-title" style="margin-bottom:0;"><span class="dot"></span>Fil du match</div>
           <button class="undo-btn" id="undoBtn">
@@ -1743,14 +1754,14 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <div class="page-meta">U18 Pôle France · préparation ANGT Finals — 14 séances depuis le 3 mars 2026</div>
 </div>
 </div>
-    <button class="btn-primary glass hoverable">
+    <button class="btn btn-primary card hoverable">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#D9FFF9" stroke-width="2.6"><path d="M12 5v14M5 12h14"/></svg>
       Nouvelle séance
 </button>
 </div>
 
   <div class="metrics-grid">
-    <div class="metric-card glass hoverable">
+    <div class="metric-card card">
       <div class="metric-top">
         <span class="metric-tag tag-2p">Tir 2PT</span>
         <span class="metric-delta"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>+6 pts</span>
@@ -1764,7 +1775,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <circle cx="200" cy="8" r="3" fill="#40E8D5"/>
 </svg>
 </div>
-    <div class="metric-card glass hoverable">
+    <div class="metric-card card">
       <div class="metric-top">
         <span class="metric-tag tag-3p">Tir 3PT</span>
         <span class="metric-delta"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>+6 pts</span>
@@ -1778,7 +1789,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <circle cx="200" cy="11" r="3" fill="#9BF3E8"/>
 </svg>
 </div>
-    <div class="metric-card glass hoverable">
+    <div class="metric-card card">
       <div class="metric-top">
         <span class="metric-tag tag-int">Intensité</span>
         <span class="metric-delta"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>+1.1</span>
@@ -1792,7 +1803,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <circle cx="200" cy="8" r="3" fill="#2CCFBB"/>
 </svg>
 </div>
-    <div class="metric-card glass hoverable">
+    <div class="metric-card card">
       <div class="metric-top">
         <span class="metric-tag tag-qi">QI Basket</span>
         <span class="metric-delta"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M7 17L17 7M17 7H7M17 7V17"/></svg>+0.9</span>
@@ -1809,7 +1820,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 
   <div class="section-label">Progression par joueur — depuis le début de saison</div>
-  <div class="table-card glass-strong">
+  <div class="table-card card-elevated">
     <div class="table-scroll">
     <table>
       <thead>
@@ -1865,7 +1876,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 
   <div class="section-label">Historique des séances</div>
   <div class="session-list">
-    <div class="session-card glass hoverable">
+    <div class="session-card card">
       <div class="session-date"><div class="session-day mono">28</div><div class="session-month">Juin 2026</div></div>
       <div class="session-divider"></div>
       <div class="session-main">
@@ -1879,7 +1890,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <div class="sb-val mono">48%</div>
 </div>
 </div>
-    <div class="session-card glass hoverable">
+    <div class="session-card card">
       <div class="session-date"><div class="session-day mono">21</div><div class="session-month">Juin 2026</div></div>
       <div class="session-divider"></div>
       <div class="session-main">
@@ -1893,7 +1904,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <div class="sb-val mono">9.0/10</div>
 </div>
 </div>
-    <div class="session-card glass hoverable">
+    <div class="session-card card">
       <div class="session-date"><div class="session-day mono">14</div><div class="session-month">Juin 2026</div></div>
       <div class="session-divider"></div>
       <div class="session-main">
@@ -1907,7 +1918,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <div class="sb-val mono">8.1/10</div>
 </div>
 </div>
-    <div class="session-card glass hoverable">
+    <div class="session-card card">
       <div class="session-date"><div class="session-day mono">07</div><div class="session-month">Juin 2026</div></div>
       <div class="session-divider"></div>
       <div class="session-main">
@@ -1921,7 +1932,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <div class="sb-val mono">66%</div>
 </div>
 </div>
-    <div class="session-card glass hoverable">
+    <div class="session-card card">
       <div class="session-date"><div class="session-day mono">31</div><div class="session-month">Mai 2026</div></div>
       <div class="session-divider"></div>
       <div class="session-main">
@@ -1935,7 +1946,7 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
         <div class="sb-val mono">42%</div>
 </div>
 </div>
-    <div class="session-card glass hoverable">
+    <div class="session-card card">
       <div class="session-date"><div class="session-day mono">24</div><div class="session-month">Mai 2026</div></div>
       <div class="session-divider"></div>
       <div class="session-main">
@@ -2039,7 +2050,7 @@ function renderStrip(){
   strip.innerHTML ='';
   players.forEach((p,i) => {
     const chip = document.createElement('button');
-    chip.className ='player-chip glass' + (i===selected ?' selected' :'');
+    chip.className ='player-chip card' + (i===selected ?' selected' :'');
     let dots ='';
     for(let f=0; f<5; f++) dots += `<span class="foul-dot ${f<p.fouls?'active':''}"></span>`;
     chip.innerHTML = `
@@ -2058,7 +2069,7 @@ function renderStrip(){
     strip.appendChild(chip);
   });
   const bench = document.createElement('button');
-  bench.className ='player-chip glass';
+  bench.className ='player-chip card';
   bench.style.opacity ='0.65';
   bench.innerHTML = `<span style="display:flex;align-items:center;gap:7px;padding:0 4px;color:var(--t3);font-size:12px;font-weight:500;">
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg> Banc</span>`;
@@ -2177,7 +2188,7 @@ const coachGrid = document.getElementById('coachMatchGrid');
 coachMatches.forEach((m, i) => {
   const diff = m.us - m.them;
   const card = document.createElement('article');
-  card.className ='gcard glass-strong';
+  card.className ='gcard card-elevated';
   card.innerHTML = `
     <div class="gc-top">
       <span class="gc-date">${m.date}</span>
@@ -2295,7 +2306,7 @@ async function hydrateFromAPI(){
     const {players: roster} = await playersR.json();
 
     // pills du dashboard
-    const pills = document.querySelectorAll('.mini-pill b');
+    const pills = document.querySelectorAll('.pill-row .btn b');
     if(pills[0]) pills[0].textContent = roster.length;
     if(pills[1]) pills[1].textContent = tournoi.resultats.length;
 
