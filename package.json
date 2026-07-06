@@ -1,0 +1,10 @@
+{
+  "name": "hoopboard",
+  "version": "0.1.0-beta",
+  "private": true,
+  "description": "HoopBoard — la plateforme des clubs de basket (bêta)",
+  "scripts": {
+    "dev": "vercel dev",
+    "deploy": "vercel --prod"
+  }
+}
