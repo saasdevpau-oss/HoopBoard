@@ -489,8 +489,8 @@ footer{
  <rect x="0" y="0" width="560" height="300" rx="14" fill="#0B1011"/>
  <rect x="0" y="0" width="560" height="300" rx="14" fill="url(#fc-conf)" opacity="0.5"/>
  <rect x="0.8" y="0.8" width="558.4" height="298.4" rx="13.4" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="1.6"/>
- <text x="280" y="13.5" text-anchor="middle" font-family="Outfit" font-size="8" font-weight="700" letter-spacing="3" fill="rgba(234,255,251,0.5)">HOOPBOARD · PÔLE FRANCE</text>
- <text x="280" y="294" text-anchor="middle" font-family="Outfit" font-size="7" font-weight="700" letter-spacing="2.5" fill="rgba(234,255,251,0.35)">ANGT BELGRADE · @POLEFRANCEBASKET</text>
+ <text x="280" y="13.5" text-anchor="middle" font-family="Outfit" font-size="8" font-weight="700" letter-spacing="3" fill="rgba(234,255,251,0.5)">HOOPBOARD · ŽALGIRIS KAUNAS</text>
+ <text x="280" y="294" text-anchor="middle" font-family="Outfit" font-size="7" font-weight="700" letter-spacing="2.5" fill="rgba(234,255,251,0.35)">EUROLEAGUE 2025–26 · @BCZALGIRIS</text>
 
  <!-- parquet érable -->
  <rect x="30" y="20" width="500" height="260" fill="url(#fc-planks)"/>
@@ -559,7 +559,7 @@ footer{
  <div class="zone-demo">
  <div>
  <div class="zd-label" id="zdLabel">CLIQUEZ UNE ZONE DU PARQUET</div>
- <div class="zd-detail" id="zdDetail">Chaque zone révèle les statistiques de tir de votre équipe — données réelles du Pôle France à l'ANGT</div>
+ <div class="zd-detail" id="zdDetail">Chaque zone révèle les statistiques de tir de votre équipe — données réelles du Žalgiris Kaunas en EuroLeague</div>
 </div>
  <div class="zd-pct mono" id="zdPct">—</div>
 </div>
@@ -617,7 +617,7 @@ footer{
  <div class="sc-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg><span>Dashboard de saison : bilan, jauge de victoires, impact players</span></div>
  <div class="sc-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg><span>Game Center avec terrain parquet 3D et analyse de zones</span></div>
  <div class="sc-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg><span>Saisie live en match, feuilles de match, suivi d'entraînement</span></div>
- <div class="sc-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg><span>Effectif complet avec box scores au format Proballers</span></div>
+ <div class="sc-item"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg><span>Effectif complet avec box scores au format officiel EuroLeague</span></div>
 </div>
 </div>
  <div class="space-card card-elevated">
@@ -680,9 +680,11 @@ footer{
 </footer>
 
 <script>
-/* ============ ZONES DÉMO (données réelles Pôle France / ANGT) ============ */
+/* ============ ZONES DÉMO (Žalgiris Kaunas — EuroLeague 2025–26) ============ */
+/* TODO : les splits de tir par zone ne sont pas publiés par le feed officiel
+   EuroLeague ; valeurs conservées à titre de démonstration. */
 const demoZones = {
- 'raquette': {name:'Raquette', pct:'58%', detail:'46/79 aux tirs · 96 pts · meilleur secteur : Messi Yangala'},
+ 'raquette': {name:'Raquette', pct:'58%', detail:'46/79 aux tirs · 96 pts · meilleur secteur : Moses Wright'},
  'corner-gauche': {name:'Corner gauche (3PT)', pct:'39%', detail:'12/31 à 3 points · votre meilleur spot extérieur'},
  'corner-droit': {name:'Corner droit (3PT)', pct:'35%', detail:'11/31 à 3 points · à consolider en sortie d\'écran'},
  'md-gauche': {name:'Mi-distance gauche', pct:'41%', detail:'14/34 · privilégier le drive ou le kick-out'},

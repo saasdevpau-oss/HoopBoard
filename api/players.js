@@ -10,12 +10,27 @@ module.exports = (req, res) => {
   const url = new URL(req.url, "http://x");
   const id = url.searchParams.get("id");
 
-  const roster = DATA.matchHapoel.joueurs.map((j) => ({ id: slug(j.nom), ...j }));
+  // Identité/effectif issus du box score (poste, taille, id), puis on superpose
+  // les MOYENNES SAISON (Effectif = moyennes saison, pas la ligne d'un match).
+  // Les clés exposées restent identiques (min, pts, reb, pd, int, ct, bp,
+  // tirsPct, eva) ; on ajoute mj (matchs joués). Compatibilité API préservée.
+  const saison = new Map((DATA.statsSaison?.joueurs || []).map((s) => [s.nom, s]));
+  const roster = DATA.matchHapoel.joueurs.map((j) => {
+    const s = saison.get(j.nom);
+    const base = { id: slug(j.nom), ...j };
+    if (!s) return base;
+    return {
+      ...base,
+      mj: s.mj,
+      min: s.min, pts: s.pts, reb: s.reb, pd: s.pd,
+      int: s.int, ct: s.ct, bp: s.bp, tirsPct: s.tirsPct, eva: s.eva,
+    };
+  });
 
   if (!id) {
     return send(res, 200, {
       club: DATA.club.nom,
-      source: "Box score vs Hapoel Tel Aviv (Proballers, 20/03/2026)",
+      source: "Moyennes saison EuroLeague 2025-26 (valeurs démo — cf. statsSaison.demo)",
       players: roster,
     });
   }
