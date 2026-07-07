@@ -1195,6 +1195,13 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 </div>
 </div>
 
+  <!-- PR4.5 — Terrain analytics saison (8 zones depuis /api/club → zonesTir) -->
+  <div class="card-elevated" style="border-radius:24px; padding:24px 28px 20px; margin-bottom:20px;">
+    <div class="panel-title"><span class="dot"></span>Terrain analytics — <span style="color:var(--orange);">saison par zone</span></div>
+    <div class="panel-sub">Volume de tirs et % de réussite par zone · EuroLeague 2025-26</div>
+    <div id="seasonCourt" style="max-width:440px; margin:16px auto 0;"></div>
+  </div>
+
   <div class="next-wrap">
     <div class="next-halo"></div>
     <div class="next-hero card-elevated wide">
@@ -1666,6 +1673,13 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 
   <div class="player-strip" id="playerStrip"></div>
 
+  <!-- PR4.5 — Carte des tirs 2D live (structure lib/match-events.js) -->
+  <div class="panel card-elevated" style="padding:20px 24px 16px; margin-bottom:16px;">
+    <div class="panel-title"><span class="dot"></span>Carte des tirs — <span style="color:var(--orange);">2D live</span></div>
+    <div class="panel-sub">Tirs SHOT_MADE / SHOT_MISSED enregistrés pendant ce match</div>
+    <div id="liveShotChart2D" style="max-width:360px; margin:12px auto 0;"></div>
+  </div>
+
   <div class="live-grid">
     <div class="court-panel card-elevated">
       <div class="panel-title" style="align-self:flex-start;"><span class="dot"></span>Terrain — <span id="selectedPlayerLabel" style="color:var(--orange);">Sylvain Francisco</span></div>
@@ -1965,6 +1979,8 @@ tfoot td:first-child{text-align:left; font-family:'Outfit',sans-serif;}
 
 </main>
 
+<!-- PR4.5 — composant terrain analytics 2D (assets/court-analytics.js) -->
+<script src="/assets/court-analytics.js"></script>
 <script>
 /* ============ NAVIGATION ============ */
 function goto(id){
@@ -2119,12 +2135,14 @@ document.getElementById('btnMake').addEventListener('click', () => {
   scoreHome += pendingZone.pts;
   document.getElementById('scoreHome').textContent = scoreHome;
   dropMarker(pendingZone.x, pendingZone.y,'#40E8D5');
+  recordShot(true, pendingZone); /* PR4.5 — alimente la carte 2D live */
   pushFeed('make', `Panier à ${pendingZone.pts}pts — ${pendingZone.name} (+${pendingZone.pts})`);
   closePopup();
 });
 document.getElementById('btnMiss').addEventListener('click', () => {
   if(!pendingZone) return;
   dropMarker(pendingZone.x, pendingZone.y,'#9FB6C6');
+  recordShot(false, pendingZone); /* PR4.5 — alimente la carte 2D live */
   pushFeed('miss', `Tir manqué — ${pendingZone.name}`);
   closePopup();
 });
@@ -2139,6 +2157,39 @@ function dropMarker(x, y, color){
   liveBox.appendChild(dot);
   requestAnimationFrame(() => dot.classList.add('show'));
 }
+
+/* ============ PR4.5 — Carte des tirs 2D live (structure match-events) ============
+   Chaque tir enregistré devient un événement au format lib/match-events.js
+   (SHOT_MADE / SHOT_MISSED + meta.zone), puis est projeté en 2D via
+   assets/court-analytics.js. Aucune 3D, aucune API modifiée. */
+const ZONE_FR2KEY = {
+  'Raquette':'RAQUETTE',
+  'Mi-distance gauche':'MI_DISTANCE_GAUCHE',
+  'Mi-distance droite':'MI_DISTANCE_DROITE',
+  'Corner gauche':'CORNER_3_GAUCHE',
+  'Corner droit':'CORNER_3_DROIT',
+  'Top de la clé':'TOP_KEY_GAUCHE',
+};
+const liveTimeline = { meta:{}, events:[] };
+function renderLiveChart(){
+  const box = document.getElementById('liveShotChart2D');
+  if(box && window.HoopBoardCourt){
+    HoopBoardCourt.renderLiveCourt(box, HoopBoardCourt.shotsFromTimeline(liveTimeline));
+  }
+}
+function recordShot(made, zone){
+  if(!zone) return;
+  liveTimeline.events.push({
+    type: made ? 'SHOT_MADE' : 'SHOT_MISSED',
+    player: players[selected] ? players[selected].name : null,
+    points: made ? zone.pts : 0,
+    period: null,
+    clock: null,
+    meta: { zone: ZONE_FR2KEY[zone.name] || 'RAQUETTE' },
+  });
+  renderLiveChart();
+}
+renderLiveChart(); /* rendu initial : terrain 2D vide tant qu'aucun tir n'existe */
 
 document.querySelectorAll('.qa-btn').forEach(btn => {
   btn.addEventListener('click', () => pushFeed('neutral', btn.dataset.action));
@@ -2304,8 +2355,13 @@ async function hydrateFromAPI(){
   try{
     const [clubR, playersR] = await Promise.all([fetch('/api/club'), fetch('/api/players')]);
     if(!clubR.ok || !playersR.ok) throw 0;
-    const {tournoi} = await clubR.json();
+    const {tournoi, zonesTir} = await clubR.json();
     const {players: roster} = await playersR.json();
+
+    // PR4.5 — terrain analytics saison alimenté par la structure zonesTir (PR4.3)
+    if(window.HoopBoardCourt && zonesTir){
+      HoopBoardCourt.renderSeasonCourt(document.getElementById('seasonCourt'), zonesTir);
+    }
 
     // pills du dashboard
     const pills = document.querySelectorAll('.pill-row .btn b');
@@ -2336,6 +2392,10 @@ async function hydrateFromAPI(){
   }catch(e){
     console.info('[HoopBoard] API indisponible — données embarquées utilisées.');
   }
+}
+/* PR4.5 — rendu initial des 8 zones (0 tir) avant l'hydratation API */
+if(window.HoopBoardCourt){
+  HoopBoardCourt.renderSeasonCourt(document.getElementById('seasonCourt'), {demo:true, zones:{}});
 }
 hydrateFromAPI();
 </script>

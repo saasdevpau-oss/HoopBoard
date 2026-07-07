@@ -805,6 +805,13 @@ h2.view-title .serif{color:#4FE3CF;}
  <div class="view-sub">Préparation Playoffs EuroLeague — programme du staff Žalgiris</div>
 </div>
 
+ <!-- PR4.5 — Terrain analytics individuel (structure préparée pour le joueur vedette) -->
+ <div class="card-elevated" style="border-radius:20px; padding:20px 24px 16px; margin-bottom:16px;">
+ <div class="panel-title"><span class="dot"></span>Terrain analytics — <span style="color:var(--tq,#40E8D5);">par zone</span></div>
+ <div class="panel-sub">Structure 2D par zone — préparée pour <b id="courtPlayerName">Sylvain Francisco</b></div>
+ <div id="playerCourt" style="max-width:340px; margin:14px auto 0;"></div>
+ </div>
+
  <div class="training-grid stagger">
  <div class="iso-panel card-elevated">
  <div class="panel-title"><span class="dot"></span>Mon terrain</div>
@@ -1198,6 +1205,8 @@ h2.view-title .serif{color:#4FE3CF;}
 </div>
 </div>
 
+<!-- PR4.5 — composant terrain analytics 2D (assets/court-analytics.js) -->
+<script src="/assets/court-analytics.js"></script>
 <script>
 /* ============ ONGLETS avec direction ============ */
 const order = ['training','games','feed'];
@@ -1517,6 +1526,9 @@ async function hydratePro(){
     const r = await fetch('/api/players?id=sylvain-francisco');
     if(!r.ok) throw 0;
     const {player} = await r.json();
+    // PR4.5 — nom du joueur vedette sur le terrain analytics individuel
+    const courtName = document.getElementById('courtPlayerName');
+    if(courtName && player.nom) courtName.textContent = player.nom;
     const m = player.profil.moyennesTournoi;
     document.querySelectorAll('.pro-stats').forEach(g => {
       const v = g.querySelectorAll('.ps-val');
@@ -1533,6 +1545,13 @@ async function hydratePro(){
   }
 }
 hydratePro();
+
+/* PR4.5 — terrain analytics individuel : structure 8 zones préparée (0 tir).
+   Les données par zone du joueur ne sont pas encore exposées par /api/players ;
+   on affiche la structure prête à être alimentée (cf. TODO court-analytics.js). */
+if(window.HoopBoardCourt){
+  HoopBoardCourt.renderSeasonCourt(document.getElementById('playerCourt'), {demo:true, zones:{}});
+}
 </script>
 
 </body>
