@@ -1,0 +1,535 @@
+/* =============================================================================
+   HoopBoard — Fondation visuelle partagée (Lot 0)
+   Réf. : docs/refonte-ui-ux/04-design-system.md (§4→§23), 08 (états, a11y).
+
+   NATURE — ADDITIF ET NON DESTRUCTIF.
+   - Cette feuille est chargée AVANT les <style> internes de chaque page ;
+     les tokens/règles spécifiques des pages continuent donc de gagner
+     (même spécificité, déclaration plus tardive) → aucune régression visuelle.
+   - Les tokens cibles ci-dessous portent des NOUVEAUX noms (préfixes propres),
+     ils n'écrasent aucune variable existante (--void, --tq/--orange, --t1..t4,
+     --hair…). Ils sont mis à DISPOSITION des 3 pages pour les lots suivants.
+   - Les composants de base sont NAMESPACÉS `hb-*` : ils n'entrent en collision
+     avec aucune classe existante (.btn, .card, .pill-*, .badge…). Tant qu'ils
+     ne sont pas appliqués dans le HTML, ils ne changent rien à l'affichage.
+   - Aucune dépendance, aucun @import, aucune police externe. Vanilla CSS.
+   ========================================================================== */
+
+:root {
+  /* ---- Fonds (04 §4) --------------------------------------------------- */
+  --hb-background-primary: #0A0E12;
+  --hb-background-secondary: #0F141A;
+  --hb-background-elevated: #151B22;
+
+  /* ---- Surfaces (04 §4) ------------------------------------------------ */
+  --hb-surface-primary: #161D25;
+  --hb-surface-secondary: #1C242E;
+  --hb-surface-interactive: #212B36;
+  --hb-surface-hover: #263140;
+  --hb-surface-active: #2E3A48;
+
+  /* ---- Bordures (04 §4) ------------------------------------------------ */
+  --hb-border-subtle: rgba(255, 255, 255, 0.06);
+  --hb-border-default: rgba(255, 255, 255, 0.10);
+  --hb-border-strong: rgba(255, 255, 255, 0.16);
+  --hb-border-focus: #5AA2FF;
+
+  /* ---- Textes (04 §4) -------------------------------------------------- */
+  --hb-text-primary: #F2F5F8;
+  --hb-text-secondary: #B7C0CB;
+  --hb-text-muted: #7E8894;
+  --hb-text-disabled: #55606B;
+  --hb-text-inverse: #0A0E12;
+
+  /* ---- Accent (04 §4) — orange ballon, non envahissant ----------------- */
+  --hb-accent-primary: #E8722C;
+  --hb-accent-primary-hover: #F2843F;
+  --hb-accent-primary-active: #CC5F1E;
+  --hb-accent-secondary: #2FB5A0;
+
+  /* ---- États (04 §4) — rouge réservé erreur/destructif/manqué ---------- */
+  --hb-success: #3FBF7A;
+  --hb-warning: #E5A93C;
+  --hb-error: #E4574C;
+  --hb-info: #5AA2FF;
+
+  /* ---- Données basket (04 §4) ------------------------------------------ */
+  --hb-shot-made: #3FBF7A;
+  --hb-shot-missed: #E0563F;
+  --hb-home-team: #E8722C;
+  --hb-away-team: #6B7683;
+  --hb-court-line: rgba(239, 231, 212, 0.55);
+  --hb-court-surface: #14202A;
+
+  /* ---- Typographie (04 §6, §7) ----------------------------------------- */
+  /* Principale : Inter si présente, sinon repli système (aucune police
+     externe chargée ici — décision « À décider » respectée). Affichage :
+     Outfit, déjà auto-hébergée dans chaque page. */
+  --hb-font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --hb-font-display: 'Outfit', system-ui, sans-serif;
+  --hb-tnum: 'tnum' 1, 'lnum' 1;
+
+  --hb-weight-regular: 400;
+  --hb-weight-medium: 500;
+  --hb-weight-semibold: 600;
+  --hb-weight-bold: 700;
+
+  /* Échelle typographique — valeurs desktop (mobile via média-requêtes) */
+  --hb-font-display-size: 40px;   --hb-font-display-lh: 1.1;
+  --hb-font-h1-size: 28px;        --hb-font-h1-lh: 1.2;
+  --hb-font-h2-size: 22px;        --hb-font-h2-lh: 1.25;
+  --hb-font-h3-size: 18px;        --hb-font-h3-lh: 1.3;
+  --hb-font-body-large-size: 16px; --hb-font-body-large-lh: 1.5;
+  --hb-font-body-size: 15px;     --hb-font-body-lh: 1.5;
+  --hb-font-body-small-size: 13px; --hb-font-body-small-lh: 1.45;
+  --hb-font-label-size: 13px;    --hb-font-label-lh: 1.2;
+  --hb-font-caption-size: 11px;  --hb-font-caption-lh: 1.3;
+  --hb-font-score-large-size: 56px; --hb-font-score-large-lh: 1.0;
+  --hb-font-score-medium-size: 32px; --hb-font-score-medium-lh: 1.0;
+
+  /* ---- Espacements (04 §8, base 4px) ----------------------------------- */
+  --hb-space-1: 4px;
+  --hb-space-2: 8px;
+  --hb-space-3: 12px;
+  --hb-space-4: 16px;
+  --hb-space-5: 20px;
+  --hb-space-6: 24px;
+  --hb-space-8: 32px;
+  --hb-space-10: 40px;
+  --hb-space-12: 48px;
+  --hb-space-16: 64px;
+
+  /* ---- Rayons (04 §9) -------------------------------------------------- */
+  --hb-radius-small: 6px;
+  --hb-radius-medium: 10px;
+  --hb-radius-large: 16px;
+  --hb-radius-pill: 999px;
+  --hb-radius-circle: 50%;
+
+  /* ---- Ombres (04 §10) — discrètes, pas de glow néon ------------------- */
+  --hb-shadow-low: 0 1px 2px rgba(0, 0, 0, 0.24), 0 2px 6px rgba(0, 0, 0, 0.20);
+  --hb-shadow-medium: 0 4px 10px rgba(0, 0, 0, 0.30), 0 8px 24px rgba(0, 0, 0, 0.24);
+  --hb-shadow-high: 0 12px 28px rgba(0, 0, 0, 0.40), 0 24px 64px rgba(0, 0, 0, 0.36);
+
+  /* ---- Bordures — épaisseurs (04 §11) --------------------------------- */
+  --hb-border-width: 1px;
+  --hb-border-width-strong: 1.5px;
+
+  /* ---- Cibles tactiles (04 §13) --------------------------------------- */
+  --hb-touch-target: 44px;
+  --hb-control-height-compact: 40px;
+  --hb-control-height: 44px;
+  --hb-control-height-touch: 48px;
+
+  /* ---- Micro-interactions (04 §23) ------------------------------------ */
+  --hb-motion-fast: 150ms;
+  --hb-motion-standard: 200ms;
+  --hb-motion-panel: 250ms;
+  --hb-ease: cubic-bezier(0.2, 0.6, 0.2, 1);
+}
+
+/* =============================================================================
+   TABLE DE CORRESPONDANCE (mapping) — legacy → cible
+   Documentation, ne modifie rien : sert de guide aux lots suivants pour
+   remplacer progressivement les valeurs dupliquées.
+
+     --void                → --hb-background-primary
+     --tq / --orange (=#40E8D5 teal, mal nommé)
+                           → accent d'appoint --hb-accent-secondary (à trancher)
+                             l'accent principal cible devient --hb-accent-primary (orange)
+     --t1 / --t2 / --t3 / --t4
+                           → --hb-text-primary / -secondary / -muted / -disabled
+     --hair                → --hb-border-default
+     --hair-soft           → --hb-border-subtle
+     --color-border        → --hb-border-default
+     --card-radius (16px)  → --hb-radius-large
+     --radius (1rem)       → --hb-radius-large
+   ========================================================================== */
+
+/* =============================================================================
+   PRIMITIVES TYPOGRAPHIQUES (opt-in, préfixées) — 04 §7
+   ========================================================================== */
+.hb-display     { font-family: var(--hb-font-display); font-size: var(--hb-font-display-size); line-height: var(--hb-font-display-lh); font-weight: var(--hb-weight-bold); }
+.hb-heading-1   { font-family: var(--hb-font-display); font-size: var(--hb-font-h1-size); line-height: var(--hb-font-h1-lh); font-weight: var(--hb-weight-bold); }
+.hb-heading-2   { font-size: var(--hb-font-h2-size); line-height: var(--hb-font-h2-lh); font-weight: var(--hb-weight-semibold); }
+.hb-heading-3   { font-size: var(--hb-font-h3-size); line-height: var(--hb-font-h3-lh); font-weight: var(--hb-weight-semibold); }
+.hb-body-large  { font-size: var(--hb-font-body-large-size); line-height: var(--hb-font-body-large-lh); }
+.hb-body        { font-size: var(--hb-font-body-size); line-height: var(--hb-font-body-lh); }
+.hb-body-small  { font-size: var(--hb-font-body-small-size); line-height: var(--hb-font-body-small-lh); }
+.hb-label       { font-size: var(--hb-font-label-size); line-height: var(--hb-font-label-lh); font-weight: var(--hb-weight-semibold); }
+.hb-caption     { font-size: var(--hb-font-caption-size); line-height: var(--hb-font-caption-lh); font-weight: var(--hb-weight-medium); }
+.hb-score-large { font-family: var(--hb-font-display); font-size: var(--hb-font-score-large-size); line-height: var(--hb-font-score-large-lh); font-weight: var(--hb-weight-bold); font-variant-numeric: tabular-nums; }
+.hb-score-medium{ font-family: var(--hb-font-display); font-size: var(--hb-font-score-medium-size); line-height: var(--hb-font-score-medium-lh); font-weight: var(--hb-weight-bold); font-variant-numeric: tabular-nums; }
+.hb-tnum        { font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  :root {
+    --hb-font-display-size: 30px;
+    --hb-font-h1-size: 24px;
+    --hb-font-h2-size: 20px;
+    --hb-font-h3-size: 17px;
+    --hb-font-score-large-size: 40px;
+    --hb-font-score-medium-size: 26px;
+  }
+}
+
+/* =============================================================================
+   ANNEAU DE FOCUS PARTAGÉ (04 §11) — jamais couleur seule (épaisseur + décalage)
+   Ne s'applique qu'aux composants hb-* (opt-in) pour ne pas toucher au reste.
+   ========================================================================== */
+.hb-btn:focus-visible,
+.hb-field:focus-visible,
+.hb-textarea:focus-visible,
+.hb-select:focus-visible,
+.hb-card--interactive:focus-visible,
+.hb-chip:focus-visible {
+  outline: 2px solid var(--hb-border-focus);
+  outline-offset: 2px;
+}
+
+/* =============================================================================
+   BOUTONS (04 §15.1→5, §18, §22)
+   ========================================================================== */
+.hb-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--hb-space-2);
+  min-height: var(--hb-control-height);
+  padding: 0 var(--hb-space-4);
+  border: var(--hb-border-width) solid transparent;
+  border-radius: var(--hb-radius-medium);
+  font-family: var(--hb-font-sans);
+  font-size: var(--hb-font-label-size);
+  font-weight: var(--hb-weight-semibold);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--hb-motion-fast) var(--hb-ease),
+              color var(--hb-motion-fast) var(--hb-ease),
+              border-color var(--hb-motion-fast) var(--hb-ease),
+              transform var(--hb-motion-fast) var(--hb-ease);
+}
+.hb-btn:active { transform: translateY(1px); } /* enfoncement 150ms (04 §18) */
+
+/* Principal — orange ballon (rare : une action dominante par zone, 04 §18) */
+.hb-btn--primary {
+  background: var(--hb-accent-primary);
+  color: var(--hb-text-inverse);
+}
+.hb-btn--primary:hover { background: var(--hb-accent-primary-hover); }
+.hb-btn--primary:active { background: var(--hb-accent-primary-active); }
+
+/* Secondaire — surface interactive, ne ressemble pas au principal (04 §15.2) */
+.hb-btn--secondary {
+  background: var(--hb-surface-interactive);
+  color: var(--hb-text-primary);
+  border-color: var(--hb-border-default);
+}
+.hb-btn--secondary:hover { background: var(--hb-surface-hover); }
+.hb-btn--secondary:active { background: var(--hb-surface-active); }
+
+/* Discret (ghost) — actions tertiaires (04 §15.3) */
+.hb-btn--ghost {
+  background: transparent;
+  color: var(--hb-text-secondary);
+}
+.hb-btn--ghost:hover { background: var(--hb-surface-hover); color: var(--hb-text-primary); }
+
+/* Destructif — suppression, confirmation requise (04 §15.4) */
+.hb-btn--danger {
+  background: transparent;
+  color: var(--hb-error);
+  border-color: var(--hb-error);
+}
+.hb-btn--danger:hover { background: var(--hb-error); color: var(--hb-text-primary); }
+
+/* Bouton icône — carré ≥ 44, aria-label obligatoire côté HTML (04 §15.5) */
+.hb-btn--icon {
+  min-width: var(--hb-control-height);
+  padding: 0;
+}
+
+/* Tailles */
+.hb-btn--compact { min-height: var(--hb-control-height-compact); }
+.hb-btn--touch { min-height: var(--hb-control-height-touch); }
+.hb-btn--block { display: flex; width: 100%; }
+
+/* États (04 §22) */
+.hb-btn:disabled,
+.hb-btn[aria-disabled="true"] {
+  color: var(--hb-text-disabled);
+  background: var(--hb-surface-secondary);
+  border-color: transparent;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+.hb-btn--loading { pointer-events: none; }
+.hb-btn--loading .hb-spinner { display: inline-block; }
+
+.hb-spinner {
+  width: 1em; height: 1em;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: var(--hb-radius-circle);
+  animation: hb-spin 700ms linear infinite;
+}
+@keyframes hb-spin { to { transform: rotate(360deg); } }
+
+/* =============================================================================
+   CHAMPS (04 §15.6→8, §22)
+   ========================================================================== */
+.hb-field,
+.hb-textarea,
+.hb-select {
+  display: block;
+  width: 100%;
+  min-height: var(--hb-control-height);
+  padding: var(--hb-space-2) var(--hb-space-3);
+  background: var(--hb-surface-interactive);
+  color: var(--hb-text-primary);
+  border: var(--hb-border-width) solid var(--hb-border-default);
+  border-radius: var(--hb-radius-small);
+  font-family: var(--hb-font-sans);
+  font-size: var(--hb-font-body-size);
+  line-height: var(--hb-font-body-lh);
+  transition: border-color var(--hb-motion-fast) var(--hb-ease),
+              background var(--hb-motion-fast) var(--hb-ease);
+}
+.hb-textarea { min-height: 96px; resize: vertical; }
+.hb-field::placeholder,
+.hb-textarea::placeholder { color: var(--hb-text-muted); }
+.hb-field:hover,
+.hb-textarea:hover,
+.hb-select:hover { border-color: var(--hb-border-strong); }
+.hb-field:focus,
+.hb-textarea:focus,
+.hb-select:focus { border-color: var(--hb-border-focus); outline: none; }
+
+.hb-field:disabled,
+.hb-textarea:disabled,
+.hb-select:disabled {
+  color: var(--hb-text-disabled);
+  background: var(--hb-surface-secondary);
+  cursor: not-allowed;
+}
+
+/* Erreur — bordure + message associé (jamais couleur seule, 04 §15.23) */
+.hb-field--error,
+.hb-textarea--error,
+.hb-select--error { border-color: var(--hb-error); }
+
+/* Label de champ (04 §7 label) */
+.hb-field-label {
+  display: block;
+  margin-bottom: var(--hb-space-2);
+  font-size: var(--hb-font-label-size);
+  font-weight: var(--hb-weight-semibold);
+  color: var(--hb-text-secondary);
+}
+
+/* =============================================================================
+   MESSAGE D'ERREUR (04 §15.23) — icône + texte, associé au contrôle
+   ========================================================================== */
+.hb-error-message {
+  display: flex;
+  align-items: center;
+  gap: var(--hb-space-2);
+  margin-top: var(--hb-space-2);
+  color: var(--hb-error);
+  font-size: var(--hb-font-body-small-size);
+  line-height: var(--hb-font-body-small-lh);
+}
+.hb-error-message .hb-icon { flex: none; }
+
+/* =============================================================================
+   BADGES (04 §15.14, §21)
+   ========================================================================== */
+.hb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hb-space-1);
+  padding: 2px var(--hb-space-2);
+  border-radius: var(--hb-radius-pill);
+  background: var(--hb-surface-secondary);
+  color: var(--hb-text-secondary);
+  font-size: var(--hb-font-caption-size);
+  line-height: var(--hb-font-caption-lh);
+  font-weight: var(--hb-weight-semibold);
+  white-space: nowrap;
+}
+.hb-badge--success { background: rgba(63, 191, 122, 0.15); color: var(--hb-success); }
+.hb-badge--warning { background: rgba(229, 169, 60, 0.15); color: var(--hb-warning); }
+.hb-badge--error   { background: rgba(228, 87, 76, 0.15); color: var(--hb-error); }
+.hb-badge--info    { background: rgba(90, 162, 255, 0.15); color: var(--hb-info); }
+.hb-badge--accent  { background: rgba(232, 114, 44, 0.15); color: var(--hb-accent-primary); }
+
+/* Badge « Données de démonstration » — Option A (04 §21) : discret, caption,
+   icône + libellé (jamais couleur seule). Composant réutilisable dédié. */
+.hb-badge--demo {
+  background: rgba(229, 169, 60, 0.14);
+  color: var(--hb-warning);
+  border: var(--hb-border-width) solid rgba(229, 169, 60, 0.30);
+}
+
+/* =============================================================================
+   CARTES (04 §17)
+   ========================================================================== */
+.hb-card {
+  padding: var(--hb-space-4);
+  background: var(--hb-surface-primary);
+  border: var(--hb-border-width) solid var(--hb-border-default);
+  border-radius: var(--hb-radius-medium);
+}
+.hb-card--compact { padding: var(--hb-space-3); }
+.hb-card--comfortable { padding: var(--hb-space-6); }
+
+/* Cliquable — toute la carte est une cible (04 §17) */
+.hb-card--interactive { cursor: pointer; transition: background var(--hb-motion-standard) var(--hb-ease), box-shadow var(--hb-motion-standard) var(--hb-ease); }
+.hb-card--interactive:hover { background: var(--hb-surface-hover); box-shadow: var(--hb-shadow-low); }
+
+/* Sélectionnée — bordure accent + surface active (jamais couleur seule) */
+.hb-card--selected {
+  border-color: var(--hb-accent-primary);
+  border-width: var(--hb-border-width-strong);
+  background: var(--hb-surface-active);
+}
+.hb-card-title {
+  margin: 0 0 var(--hb-space-3);
+  font-size: var(--hb-font-h3-size);
+  line-height: var(--hb-font-h3-lh);
+  font-weight: var(--hb-weight-semibold);
+  color: var(--hb-text-primary);
+}
+
+/* =============================================================================
+   FILTRE (CHIP) (04 §15.12) — selected = fond + texte + coche
+   ========================================================================== */
+.hb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--hb-space-1);
+  min-height: var(--hb-control-height-compact);
+  padding: 0 var(--hb-space-3);
+  border: var(--hb-border-width) solid var(--hb-border-default);
+  border-radius: var(--hb-radius-pill);
+  background: transparent;
+  color: var(--hb-text-secondary);
+  font-size: var(--hb-font-body-small-size);
+  font-weight: var(--hb-weight-medium);
+  cursor: pointer;
+  transition: background var(--hb-motion-fast) var(--hb-ease), color var(--hb-motion-fast) var(--hb-ease);
+}
+.hb-chip:hover { background: var(--hb-surface-hover); color: var(--hb-text-primary); }
+.hb-chip--selected {
+  background: var(--hb-surface-active);
+  color: var(--hb-text-primary);
+  border-color: var(--hb-accent-primary);
+}
+
+/* =============================================================================
+   MODALE (04 §15.18, §10) — shadow-high
+   Overlay + boîte. Focus piégé / Échap : gérés en JS par les lots concernés.
+   ========================================================================== */
+.hb-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--hb-space-4);
+  background: rgba(0, 0, 0, 0.55);
+}
+.hb-modal {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow: auto;
+  padding: var(--hb-space-6);
+  background: var(--hb-surface-primary);
+  border: var(--hb-border-width) solid var(--hb-border-strong);
+  border-radius: var(--hb-radius-large);
+  box-shadow: var(--hb-shadow-high);
+}
+
+/* =============================================================================
+   DRAWER (04 §15.19, §10) — panneau latéral / bas, shadow-high
+   ========================================================================== */
+.hb-drawer {
+  position: fixed;
+  z-index: 1000;
+  background: var(--hb-surface-primary);
+  border: var(--hb-border-width) solid var(--hb-border-strong);
+  box-shadow: var(--hb-shadow-high);
+  overflow: auto;
+}
+.hb-drawer--right {
+  top: 0; right: 0; bottom: 0;
+  width: min(420px, 92vw);
+  border-radius: var(--hb-radius-large) 0 0 var(--hb-radius-large);
+  padding: var(--hb-space-6);
+}
+.hb-drawer--bottom {
+  left: 0; right: 0; bottom: 0;
+  max-height: 88vh;
+  border-radius: var(--hb-radius-large) var(--hb-radius-large) 0 0;
+  padding: var(--hb-space-6);
+}
+
+/* =============================================================================
+   ÉTAT VIDE (04 §15.22) — message + explication + action
+   ========================================================================== */
+.hb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: var(--hb-space-3);
+  padding: var(--hb-space-8) var(--hb-space-4);
+  color: var(--hb-text-secondary);
+}
+.hb-empty-icon { color: var(--hb-text-muted); }
+.hb-empty-title {
+  font-size: var(--hb-font-h3-size);
+  font-weight: var(--hb-weight-semibold);
+  color: var(--hb-text-primary);
+}
+.hb-empty-text {
+  max-width: 42ch;
+  font-size: var(--hb-font-body-size);
+  line-height: var(--hb-font-body-lh);
+}
+
+/* =============================================================================
+   ICONOGRAPHIE (04 §14) — enveloppe cohérente pour SVG (Lucide + custom terrain)
+   Trait ~2px, tailles standard/compacte/touch. Les SVG sont fournis inline
+   dans le HTML ; cette classe fixe la taille et l'alignement.
+   ========================================================================== */
+.hb-icon {
+  display: inline-flex;
+  width: 20px;
+  height: 20px;
+  vertical-align: middle;
+  flex: none;
+}
+.hb-icon svg { width: 100%; height: 100%; display: block; }
+.hb-icon--compact { width: 16px; height: 16px; }
+.hb-icon--touch { width: 24px; height: 24px; }
+.hb-icon[stroke], .hb-icon svg { stroke-width: 2; }
+
+/* =============================================================================
+   MICRO-INTERACTIONS — prefers-reduced-motion (04 §23)
+   Ne touche que les composants hb-* pour rester non intrusif ; chaque page
+   conserve par ailleurs son propre bloc reduced-motion existant.
+   ========================================================================== */
+@media (prefers-reduced-motion: reduce) {
+  .hb-btn,
+  .hb-field, .hb-textarea, .hb-select,
+  .hb-card--interactive,
+  .hb-chip {
+    transition-duration: 0.01ms;
+  }
+  .hb-spinner { animation-duration: 0.01ms; animation-iteration-count: 1; }
+  .hb-btn:active { transform: none; }
+}
