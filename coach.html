@@ -206,83 +206,312 @@
 #marker .pulse{position:absolute; width:100%; height:100%; border-radius:50%; opacity:0.35; animation:pulse 1.6s ease-out infinite;}
 @keyframes pulse{0%{transform:scale(0.6); opacity:0.5;} 100%{transform:scale(2.2); opacity:0;}}
 
-/* ---------- Live ---------- */
-.live-topbar{padding:14px 24px; display:flex; align-items:center; justify-content:space-between; gap:14px;}
-.lt-score{font-family:var(--cond); font-size:34px; font-weight:700; color:var(--t1);}
-.lt-meta{display:flex; align-items:center; gap:10px; justify-content:center; margin-top:4px;}
-.live-dot{width:7px; height:7px; border-radius:50%; background:var(--orange); animation:blink 1.4s infinite;}
-@keyframes blink{0%,100%{opacity:1;} 50%{opacity:0.25;}}
-.lt-clock{font-family:var(--mono); font-size:13px; font-weight:600; color:var(--t2);}
-.lt-quarter{font-family:var(--mono); font-size:10.5px; color:var(--t4); letter-spacing:0.1em;}
-.live-actions-row{display:flex; justify-content:flex-end; gap:9px; margin:14px 0;}
+/* ---------- Live (v2 — outil de saisie) ---------- */
+.lv{display:flex; flex-direction:column; gap:14px;}
 
-.player-strip{display:flex; gap:8px; margin-bottom:16px; overflow-x:auto; padding:4px 2px 8px; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.15) transparent;}
-.player-chip{
-  flex-shrink:0; display:flex; align-items:center; gap:10px;
-  border-radius:4px; padding:8px 15px 8px 8px; cursor:pointer; transition:.15s;
+/* bandeau score collant */
+.lv-board{
+  position:sticky; top:46px; z-index:40;
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px;
+  padding:12px 20px; border-radius:var(--card-radius);
+  background:var(--surface-2); border:1px solid var(--hair);
 }
-.player-chip:hover{border-color:rgba(241,235,224,0.25);}
-.player-chip.selected{background:var(--orange-soft) !important; border-color:rgba(228,104,42,0.5) !important;}
-.chip-avatar{width:34px; height:34px; position:relative;}
-.chip-avatar .avatar{width:34px; height:34px;}
-.chip-num{
-  position:absolute; bottom:-3px; right:-3px; min-width:15px; height:15px; padding:0 3px; border-radius:3px;
-  background:var(--orange); color:#180D06; font-family:var(--cond); font-size:9px; font-weight:700;
+.lv-side{display:flex; align-items:center; gap:14px; min-width:0;}
+.lv-side.away{flex-direction:row-reverse; text-align:right;}
+.lv-crest{
+  width:40px; height:40px; border-radius:4px; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
+  font-family:var(--cond); font-size:13px; font-weight:700; color:var(--t3);
+  border:1px solid var(--hair); background:var(--surface-1);
 }
-.chip-name{font-size:12px; font-weight:600; color:var(--t1); white-space:nowrap;}
-.chip-fouls{display:flex; gap:2.5px; margin-top:4px;}
-.foul-dot{width:5px; height:5px; border-radius:1px; background:var(--surface-2); border:1px solid var(--hair-soft);}
-.foul-dot.active{background:var(--loss); border-color:var(--loss);}
+.lv-crest.home{border-color:rgba(228,104,42,0.5); background:var(--orange-soft); color:var(--orange);}
+.lv-team-name{font-size:13px; font-weight:600; color:var(--t1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.lv-team-fouls{font-family:var(--mono); font-size:10px; color:var(--t4); margin-top:2px;}
+.lv-team-fouls.bonus{color:var(--loss);}
+.lv-score{font-family:var(--cond); font-size:44px; font-weight:700; line-height:1; color:var(--t1); font-variant-numeric:tabular-nums;}
+.lv-score.flash{animation:lvFlash .5s ease;}
+@keyframes lvFlash{0%{color:var(--orange);} 100%{color:var(--t1);}}
+.lv-center{display:flex; flex-direction:column; align-items:center; gap:6px; padding:0 6px;}
+.lv-clockrow{display:flex; align-items:center; gap:10px;}
+.lv-quarter{
+  font-family:var(--cond); font-size:13px; font-weight:700; letter-spacing:0.06em;
+  color:var(--orange); border:1px solid rgba(228,104,42,0.4); border-radius:3px; padding:2px 8px 1px;
+}
+.lv-clock{font-family:var(--cond); font-size:26px; font-weight:700; color:var(--t1); font-variant-numeric:tabular-nums; letter-spacing:0.01em;}
+.lv-clock.paused{color:var(--t4);}
+.lv-statusrow{display:flex; align-items:center; gap:8px;}
+.lv-status{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--t3);
+}
+.lv-livedot{width:6px; height:6px; border-radius:50%; background:var(--win); }
+.lv-livedot.run{background:var(--orange); animation:blink 1.4s infinite;}
+.lv-livedot.stop{background:var(--t4);}
+.lv-boardbtn{
+  width:30px; height:30px; border-radius:4px; border:1px solid var(--hair);
+  display:inline-flex; align-items:center; justify-content:center; color:var(--t2); transition:.15s;
+}
+.lv-boardbtn:hover{border-color:var(--orange); color:var(--orange);}
+.lv-menu{position:relative;}
+.lv-menu-pop{
+  position:absolute; right:0; top:calc(100% + 6px); z-index:60; min-width:210px;
+  background:#191512; border:1px solid var(--hair); border-radius:5px; padding:5px;
+  box-shadow:0 14px 40px rgba(0,0,0,0.5); display:none;
+}
+.lv-menu-pop.open{display:block;}
+.lv-menu-pop button{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%;
+  padding:9px 11px; border-radius:4px; font-size:12.5px; color:var(--t2); text-align:left; transition:.12s;
+}
+.lv-menu-pop button:hover{background:var(--hair-soft); color:var(--t1);}
+.lv-menu-pop .sep{height:1px; background:var(--hair-soft); margin:4px 2px;}
+.lv-menu-pop button.danger:hover{color:var(--loss);}
+.lv-menu-pop .kbd{font-family:var(--mono); font-size:10px; color:var(--t4);}
 
-.live-grid{display:grid; grid-template-columns:minmax(0,1fr) 340px; gap:16px; align-items:start;}
-.zone{fill:transparent; cursor:pointer; transition:.12s;}
-.zone:hover{fill:rgba(228,104,42,0.10);}
-.shot-popup{
-  position:absolute; display:none; gap:7px; z-index:20; transform:translate(-50%,-115%);
-  background:#191512; border:1px solid var(--hair);
-  border-radius:5px; padding:7px; box-shadow:0 14px 38px rgba(0,0,0,0.5);
+/* grille principale */
+.lv-grid{display:grid; grid-template-columns:238px minmax(0,1fr) 300px; gap:14px; align-items:start;}
+.lv-col-feed{grid-column:1 / -1;}
+.lv-col{display:flex; flex-direction:column; gap:12px; min-width:0;}
+.lv-panel{border:1px solid var(--hair); border-radius:var(--card-radius); background:var(--surface-1); min-width:0;}
+.lv-phead{
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:10px 14px; border-bottom:1px solid var(--hair-soft);
 }
-.shot-popup.open{display:flex;}
-.shot-dot{position:absolute; width:10px; height:10px; border-radius:50%; transform:translate(-50%,-50%); opacity:0; transition:.25s;}
-.shot-dot.show{opacity:1;}
+.lv-ptitle{font-family:var(--cond); font-size:12px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--t2);}
+.lv-pbody{padding:12px 14px;}
 
-.qa-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
-.qa-btn{
-  display:flex; flex-direction:column; align-items:center; gap:7px;
-  border-radius:4px; padding:13px 6px; transition:.13s; text-align:center;
+/* cinq sur le terrain */
+.lv-lineup{display:flex; flex-direction:column;}
+.lv-player{
+  display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  padding:10px 12px; border-top:1px solid var(--hair-soft); transition:background .12s;
+  border-left:2px solid transparent;
 }
-.qa-btn:hover{border-color:rgba(228,104,42,0.5); background:var(--orange-soft);}
-.qa-btn:active{transform:translateY(1px);}
-.qa-icon{width:22px; height:22px; display:flex; align-items:center; justify-content:center; color:var(--orange);}
-.qa-label{font-size:10.5px; font-weight:600; color:var(--t2); line-height:1.25;}
-.qa-foul{
-  grid-column:span 3; display:flex; align-items:center; justify-content:center; gap:8px;
-  background:var(--loss-soft) !important; color:var(--loss); border-radius:4px;
-  padding:12px; font-family:var(--cond); font-size:13px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase;
-  transition:.14s;
+.lv-player:first-child{border-top:none;}
+.lv-player:hover{background:rgba(241,235,224,0.03);}
+.lv-player.selected{background:var(--orange-soft); border-left-color:var(--orange);}
+.lv-pnum{
+  width:26px; height:26px; border-radius:4px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--cond); font-size:13px; font-weight:700; color:var(--t2);
+  border:1px solid var(--hair); background:var(--surface-2);
 }
-.qa-foul:hover{background:var(--loss) !important; color:#F1EBE0;}
+.lv-player.selected .lv-pnum{border-color:var(--orange); color:var(--orange);}
+.lv-pinfo{flex:1; min-width:0;}
+.lv-pname{font-size:12.5px; font-weight:600; color:var(--t1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.lv-pmeta{display:flex; align-items:center; gap:8px; margin-top:3px;}
+.lv-pfouls{display:flex; gap:2.5px;}
+.lv-fdot{width:5px; height:5px; border-radius:1px; background:var(--surface-2); border:1px solid var(--hair-soft);}
+.lv-fdot.on{background:var(--loss); border-color:var(--loss);}
+.lv-fdot.warn{background:var(--warn); border-color:var(--warn);}
+.lv-ppts{font-family:var(--mono); font-size:10.5px; color:var(--t3);}
+.lv-pwarn{
+  font-family:var(--cond); font-size:9.5px; font-weight:700; letter-spacing:0.06em; text-transform:uppercase;
+  padding:1px 5px; border-radius:2px; margin-left:auto; flex-shrink:0;
+}
+.lv-pwarn.warn{color:var(--warn); border:1px solid rgba(201,158,99,0.45);}
+.lv-pwarn.out{color:var(--loss); border:1px solid rgba(192,118,107,0.5);}
 
-.feed-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;}
-.undo-btn{
-  display:flex; align-items:center; gap:6px;
+/* terrain */
+.lv-court-panel{overflow:hidden;}
+.lv-context{
+  display:flex; align-items:center; gap:12px; flex-wrap:wrap;
+  padding:10px 14px; border-bottom:1px solid var(--hair-soft); min-height:46px;
+}
+.lv-ctx-text{font-size:12.5px; color:var(--t2);}
+.lv-ctx-text b{color:var(--t1); font-weight:600;}
+.lv-ctx-text .arm{color:var(--orange); font-weight:600;}
+.lv-ctx-actions{margin-left:auto; display:flex; align-items:center; gap:8px;}
+.lv-cancel{
+  display:none; align-items:center; gap:6px;
   font-family:var(--cond); font-size:11px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--t3);
   border:1px solid var(--hair); border-radius:4px; padding:6px 11px; transition:.15s;
 }
-.undo-btn:hover{color:var(--orange); border-color:var(--orange);}
-.feed-list{display:flex; flex-direction:column; max-height:250px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.15) transparent;}
-.feed-item{display:flex; align-items:center; gap:10px; padding:9px 2px; border-bottom:1px solid var(--hair-soft); animation:slideIn .22s ease;}
-.feed-item:last-child{border-bottom:none;}
-@keyframes slideIn{from{opacity:0; transform:translateY(-6px);} to{opacity:1; transform:translateY(0);}}
-.feed-icon{width:24px; height:24px; border-radius:3px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
-.feed-icon.make{background:var(--win-soft); color:var(--win);}
-.feed-icon.miss{background:var(--loss-soft); color:var(--loss);}
-.feed-icon.neutral{background:var(--surface-2); color:var(--t3); border:1px solid var(--hair-soft);}
-.feed-text{font-size:11.5px; color:var(--t3); flex:1;}
-.feed-text b{font-weight:600; color:var(--t1);}
-.feed-time{font-family:var(--mono); font-size:9.5px; color:var(--t4);}
-.feed-empty{font-size:11.5px; color:var(--t4); text-align:center; padding:22px 0;}
+.lv-cancel:hover{color:var(--loss); border-color:var(--loss);}
+.lv-cancel.show{display:inline-flex;}
+.lv-courtwrap{position:relative; padding:14px clamp(10px,2vw,26px) 8px;}
+.lv-courtwrap.armed{cursor:crosshair;}
+.lv-court{display:block; width:100%; max-width:560px; margin:0 auto; touch-action:manipulation;}
+.lv-court .ln{stroke:#EFE7D4; stroke-width:1.6; fill:none;}
+.lv-court .ln-soft{stroke:rgba(241,235,224,0.5); stroke-width:1; fill:none;}
+.lv-court .ln-div{stroke:rgba(241,235,224,0.14); stroke-width:1; fill:none;}
+.lv-court .rim{stroke:#E4682A; stroke-width:2; fill:none;}
+.lv-hit{fill:transparent;}
+.lv-courtwrap.armed .lv-hit{fill:rgba(228,104,42,0.03);}
+.lv-zonehi{fill:rgba(228,104,42,0.18); stroke:var(--orange); stroke-width:1.2; opacity:0; pointer-events:none; transition:opacity .12s;}
+.lv-zonehi.on{opacity:1;}
+.mk-made circle.core{fill:var(--win);}
+.mk-made circle.ring{fill:none; stroke:var(--win); stroke-width:1.6;}
+.mk-miss line{stroke:var(--loss); stroke-width:2; stroke-linecap:round;}
+.mk{animation:mkin .3s cubic-bezier(.3,1.3,.4,1) both;}
+@keyframes mkin{from{opacity:0; transform:scale(.4);} to{opacity:1; transform:scale(1);}}
+.lv-crosshair{position:absolute; width:16px; height:16px; margin:-8px 0 0 -8px; pointer-events:none; opacity:0; z-index:5;}
+.lv-crosshair::before,.lv-crosshair::after{content:""; position:absolute; background:var(--orange);}
+.lv-crosshair::before{left:7px; top:0; width:2px; height:16px;}
+.lv-crosshair::after{top:7px; left:0; height:2px; width:16px;}
+.lv-courtwrap.armed .lv-crosshair.show{opacity:.8;}
+/* popup made/miss inline (fallback tap terrain) */
+.lv-shotpop{
+  position:absolute; z-index:20; display:none; gap:6px; transform:translate(-50%,-118%);
+  background:#191512; border:1px solid var(--hair); border-radius:5px; padding:6px;
+  box-shadow:0 14px 38px rgba(0,0,0,0.5);
+}
+.lv-shotpop.open{display:flex;}
+.lv-courtfoot{
+  display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;
+  padding:8px 14px 2px; font-family:var(--mono); font-size:10px; color:var(--t4);
+}
+.lv-legend{display:flex; align-items:center; gap:14px;}
+.lv-legend span{display:flex; align-items:center; gap:5px;}
+.lv-lg-made{width:8px; height:8px; border-radius:50%; background:var(--win);}
+.lv-lg-miss{width:8px; height:8px; border-radius:50%; border:1.5px solid var(--loss);}
+
+/* actions rapides */
+.lv-actions .lv-pbody{display:flex; flex-direction:column; gap:14px;}
+.lv-agroup-lab{
+  font-family:var(--cond); font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase;
+  color:var(--t4); margin-bottom:8px;
+}
+.lv-arow{display:grid; grid-template-columns:1fr 1fr; gap:7px;}
+.lv-arow.tri{grid-template-columns:1fr 1fr 1fr;}
+.lv-act{
+  display:flex; align-items:center; justify-content:center; gap:7px;
+  min-height:44px; padding:9px 10px; border-radius:4px;
+  border:1px solid var(--hair); background:var(--surface-1);
+  font-family:var(--cond); font-size:12.5px; font-weight:600; letter-spacing:0.03em; color:var(--t1);
+  text-align:center; transition:background .12s, border-color .12s, color .12s;
+}
+.lv-act:hover{border-color:rgba(228,104,42,0.5); background:var(--orange-soft);}
+.lv-act:disabled{opacity:0.4; cursor:not-allowed;}
+.lv-act:disabled:hover{border-color:var(--hair); background:var(--surface-1);}
+.lv-act .ic{width:15px; height:15px; flex-shrink:0; color:var(--t3);}
+.lv-act.made{border-color:rgba(127,160,95,0.5);}
+.lv-act.made:hover{background:var(--win-soft);}
+.lv-act.made .ic{color:var(--win);}
+.lv-act.made.armed{background:var(--win-soft); border-color:var(--win); color:var(--win);}
+.lv-act.miss{border-color:rgba(192,118,107,0.5);}
+.lv-act.miss:hover{background:var(--loss-soft);}
+.lv-act.miss .ic{color:var(--loss);}
+.lv-act.miss.armed{background:var(--loss-soft); border-color:var(--loss); color:var(--loss);}
+.lv-act.warn:hover{border-color:rgba(201,158,99,0.5); background:rgba(201,158,99,0.10);}
+.lv-act.admin{color:var(--t3); font-size:12px;}
+.lv-more{
+  width:100%; margin-top:2px; padding:8px; border-radius:4px; border:1px dashed var(--hair);
+  font-family:var(--cond); font-size:11.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--t3);
+  transition:.15s;
+}
+.lv-more:hover{color:var(--orange); border-color:var(--orange);}
+.lv-admin-wrap{display:none;}
+.lv-admin-wrap.open{display:block;}
+
+/* fil du match */
+.lv-feed-panel{overflow:hidden;}
+.lv-undo{
+  display:inline-flex; align-items:center; gap:7px;
+  font-family:var(--cond); font-size:12px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--t1);
+  border:1px solid var(--hair); border-radius:4px; padding:7px 13px; transition:.15s;
+}
+.lv-undo:hover{border-color:var(--orange); color:var(--orange);}
+.lv-undo:disabled{opacity:0.4; cursor:not-allowed;}
+.lv-undo:disabled:hover{border-color:var(--hair); color:var(--t1);}
+.lv-feed{max-height:340px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.15) transparent;}
+.lv-ev{
+  display:grid; grid-template-columns:auto auto 1fr auto auto; align-items:center; gap:10px;
+  width:100%; text-align:left; padding:9px 14px; border-top:1px solid var(--hair-soft); transition:background .12s;
+}
+.lv-ev:first-child{border-top:none;}
+.lv-ev:hover{background:rgba(241,235,224,0.03);}
+.lv-ev.last{background:rgba(228,104,42,0.05);}
+.lv-ev-time{font-family:var(--mono); font-size:9.5px; color:var(--t4); line-height:1.3; white-space:nowrap;}
+.lv-ev-dot{width:20px; height:20px; border-radius:3px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.lv-ev-dot.made{background:var(--win-soft); color:var(--win);}
+.lv-ev-dot.miss{background:var(--loss-soft); color:var(--loss);}
+.lv-ev-dot.neutral{background:var(--surface-2); color:var(--t3); border:1px solid var(--hair-soft);}
+.lv-ev-dot.foul{background:rgba(201,158,99,0.14); color:var(--warn);}
+.lv-ev-dot.admin{background:var(--surface-2); color:var(--t4); border:1px solid var(--hair-soft);}
+.lv-ev-main{min-width:0;}
+.lv-ev-lab{font-size:12px; color:var(--t2); line-height:1.35;}
+.lv-ev-lab b{color:var(--t1); font-weight:600;}
+.lv-ev-sub{font-family:var(--mono); font-size:9.5px; color:var(--t4); margin-top:1px;}
+.lv-ev-score{font-family:var(--cond); font-size:12px; font-weight:700; color:var(--t3); white-space:nowrap;}
+.lv-ev-del{
+  width:24px; height:24px; border-radius:3px; display:inline-flex; align-items:center; justify-content:center;
+  color:var(--t4); border:1px solid var(--hair-soft); opacity:0.5; transition:opacity .12s, color .12s, border-color .12s;
+}
+.lv-ev:hover .lv-ev-del,.lv-ev-del:focus-visible{opacity:1;}
+.lv-ev-del:hover{color:var(--loss); border-color:var(--loss); opacity:1;}
+.lv-feed-empty{padding:26px 14px; text-align:center; font-size:12px; color:var(--t4);}
+
+/* drawer de changement */
+.lv-overlay-root{position:fixed; inset:0; z-index:120; overflow:hidden; pointer-events:none;}
+.lv-drawer-scrim{
+  position:absolute; inset:0; background:rgba(10,8,7,0.6);
+  opacity:0; pointer-events:none; transition:opacity .2s;
+}
+.lv-drawer-scrim.open{opacity:1; pointer-events:auto;}
+.lv-drawer{
+  position:absolute; top:0; right:0; bottom:0; width:min(380px,90vw);
+  background:var(--surface-1); border-left:1px solid var(--hair);
+  transform:translateX(100%); transition:transform .22s ease;
+  display:flex; flex-direction:column;
+}
+.lv-drawer.open{transform:translateX(0); pointer-events:auto;}
+.lv-drawer-head{display:flex; align-items:center; justify-content:space-between; padding:16px 18px; border-bottom:1px solid var(--hair);}
+.lv-drawer-title{font-family:var(--cond); font-size:16px; font-weight:600; letter-spacing:0.04em; text-transform:uppercase; color:var(--t1);}
+.lv-drawer-sub{padding:12px 18px 4px; font-size:11.5px; color:var(--t3); line-height:1.5;}
+.lv-drawer-list{flex:1; overflow-y:auto; padding:8px 12px 16px;}
+.lv-drawer-group{font-family:var(--cond); font-size:10.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--t4); padding:12px 6px 6px;}
+.lv-sub-player{
+  display:flex; align-items:center; gap:11px; width:100%; text-align:left;
+  padding:10px 10px; border-radius:4px; transition:background .12s; border:1px solid transparent;
+}
+.lv-sub-player:hover{background:var(--hair-soft);}
+.lv-sub-player.picked{border-color:var(--orange); background:var(--orange-soft);}
+.lv-sub-player .lv-pnum{background:var(--surface-1);}
+
+/* toast */
+.lv-toast{
+  position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px); z-index:130;
+  display:flex; align-items:center; gap:9px; padding:10px 18px; border-radius:5px;
+  background:#191512; border:1px solid var(--hair); box-shadow:0 14px 40px rgba(0,0,0,0.5);
+  font-size:12.5px; color:var(--t1); opacity:0; pointer-events:none; transition:opacity .18s, transform .18s;
+}
+.lv-toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
+.lv-toast .tk{width:20px; height:20px; border-radius:3px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.lv-toast .tk.made{background:var(--win-soft); color:var(--win);}
+.lv-toast .tk.miss{background:var(--loss-soft); color:var(--loss);}
+.lv-toast .tk.neutral{background:var(--orange-soft); color:var(--orange);}
+
+/* responsive */
+@media(max-width:1240px){
+  .lv-grid{grid-template-columns:210px minmax(0,1fr) 270px;}
+}
+@media(max-width:1080px){
+  .lv-board{top:54px;}
+  /* tablette paysage : terrain + actions, joueurs en rangée au-dessus, fil en dessous */
+  .lv-grid{grid-template-columns:minmax(0,1fr) 280px;}
+  .lv-col-players{grid-column:1 / -1; order:-1;}
+  .lv-lineup{flex-direction:row; overflow-x:auto; min-width:0; scrollbar-width:thin;}
+  .lv-player{border-top:none; border-left:none; border-right:1px solid var(--hair-soft); min-width:168px; width:auto; flex:0 0 auto;}
+  .lv-player.selected{border-left:none; border-bottom:2px solid var(--orange);}
+  .lv-col-feed{grid-column:1 / -1;}
+}
+@media(max-width:760px){
+  .lv-board{grid-template-columns:1fr auto 1fr; padding:10px 12px; gap:8px;}
+  .lv-score{font-size:34px;}
+  .lv-clock{font-size:22px;}
+  .lv-team-name{font-size:11px;}
+  .lv-grid{grid-template-columns:1fr;}
+  .lv-col-actions,.lv-col-feed,.lv-col-players{grid-column:auto;}
+  .lv-arow{grid-template-columns:1fr 1fr;}
+  .lv-court{max-width:none;}
+  .lv-crest{width:32px; height:32px;}
+}
+@media(max-width:520px){
+  .lv-teaminfo{display:none;}
+  .lv-board{gap:6px;}
+  .lv-side{gap:8px;}
+}
 
 /* ---------- Entraînement ---------- */
 .metrics-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
@@ -1223,107 +1452,223 @@
      PAGE 5 — MATCH LIVE
 ============================================================ -->
 <section class="page" id="page-live">
-  <div class="live-topbar card-elevated">
-    <div class="mh-team">
-      <div class="mh-crest home mono">ZAL</div>
-      <div class="mh-name">Žalgiris</div>
-</div>
-    <div class="mh-center">
-      <div class="lt-score mono"><span id="scoreHome">66</span><span style="color:var(--t4); font-weight:400; margin:0 10px;">–</span><span id="scoreAway">40</span></div>
-      <div class="lt-meta">
-        <div class="live-dot"></div>
-        <span class="lt-clock mono">03:27</span>
-        <span class="lt-quarter">Q3</span>
-</div>
-</div>
-    <div class="mh-team right">
-      <div class="mh-crest mono">HTA</div>
-      <div class="mh-name">Hapoel Tel Aviv</div>
-</div>
-</div>
+  <div class="lv">
 
-  <div class="live-actions-row">
-    <button class="btn btn-ghost">⏸ Pause</button>
-    <button class="btn btn-ghost">Fin du quart-temps</button>
-</div>
+    <!-- ===== 1. BANDEAU DE MATCH ===== -->
+    <div class="lv-board" role="group" aria-label="Tableau de score">
+      <div class="lv-side home">
+        <span class="lv-crest home mono">ZAL</span>
+        <div class="lv-teaminfo" style="min-width:0;">
+          <div class="lv-team-name">Žalgiris</div>
+          <div class="lv-team-fouls" id="lvTfHome">Fautes équipe : 3</div>
+        </div>
+        <div class="lv-score mono" id="lvScoreHome" aria-live="polite">66</div>
+      </div>
 
-  <div class="player-strip" id="playerStrip"></div>
+      <div class="lv-center">
+        <div class="lv-clockrow">
+          <span class="lv-quarter" id="lvQuarter">Q3</span>
+          <span class="lv-clock mono" id="lvClock">06:00</span>
+        </div>
+        <div class="lv-statusrow">
+          <span class="lv-status" id="lvStatus"><span class="lv-livedot run" id="lvDot"></span><span id="lvStatusText">En cours</span></span>
+          <button class="lv-boardbtn" id="lvPause" aria-label="Mettre le match en pause" title="Pause / Reprise">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" id="lvPauseIco"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg>
+          </button>
+          <div class="lv-menu">
+            <button class="lv-boardbtn" id="lvMenuBtn" aria-label="Actions du match" aria-haspopup="true" aria-expanded="false">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+            <div class="lv-menu-pop" id="lvMenu" role="menu">
+              <button role="menuitem" data-mact="away-plus">Panier adverse <span class="kbd">+1</span></button>
+              <button role="menuitem" data-mact="away-minus">Corriger score adverse <span class="kbd">−1</span></button>
+              <div class="sep"></div>
+              <button role="menuitem" data-mact="prev-q">Quart-temps précédent</button>
+              <button role="menuitem" data-mact="next-q">Quart-temps suivant</button>
+              <div class="sep"></div>
+              <button role="menuitem" class="danger" data-mact="end">Terminer le match</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
-  <div class="live-grid">
-    <div class="court-panel card-elevated">
-      <div class="panel-title" style="align-self:flex-start;"><span class="dot"></span>Terrain — <span id="selectedPlayerLabel" style="color:var(--orange);">Sylvain Francisco</span></div>
-      <div class="panel-sub" style="align-self:flex-start;">Touchez une zone pour enregistrer un tir</div>
-      <div class="court-box" id="liveCourtBox">
-        <svg width="100%" viewBox="0 0 300 320" fill="none">
-          <use href="#parquet-court"/>
-          <rect class="zone" data-pts="2" data-zone="Raquette" x="110" y="4" width="80" height="118"/>
-          <path class="zone" data-pts="2" data-zone="Mi-distance gauche" d="M4 4 H110 V150 L4 190 Z"/>
-          <path class="zone" data-pts="2" data-zone="Mi-distance droite" d="M296 4 H190 V150 L296 190 Z"/>
-          <path class="zone" data-pts="3" data-zone="Corner gauche" d="M4 190 L4 300 H70 L18 96 Z"/>
-          <path class="zone" data-pts="3" data-zone="Corner droit" d="M296 190 L296 300 H230 L282 96 Z"/>
-          <path class="zone" data-pts="3" data-zone="Top de la clé" d="M70 300 H230 L282 96 A132 132 0 0 1 18 96 Z"/>
-</svg>
-        <div class="shot-popup" id="shotPopup">
-          <button class="btn btn-secondary" id="btnMake">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
-            Réussi
-</button>
-          <button class="btn btn-danger" id="btnMiss">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg>
-            Manqué
-</button>
-</div>
-</div>
-</div>
+      <div class="lv-side away">
+        <span class="lv-crest mono">HTA</span>
+        <div class="lv-teaminfo" style="min-width:0;">
+          <div class="lv-team-name">Hapoel Tel Aviv</div>
+          <div class="lv-team-fouls" id="lvTfAway">Fautes équipe : 2</div>
+        </div>
+        <div class="lv-score mono" id="lvScoreAway">40</div>
+      </div>
+    </div>
 
-    <div style="display:flex; flex-direction:column; gap:16px;">
-      <div class="panel card-elevated" style="padding:20px 20px 16px;">
-        <div class="panel-title"><span class="dot"></span>Actions rapides</div>
-        <div class="qa-grid">
-          <button class="qa-btn card" data-action="Rebond offensif">
-            <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M5 10l7-7 7 7"/></svg></span>
-            <span class="qa-label">Rebond<br>Off.</span>
-</button>
-          <button class="qa-btn card" data-action="Rebond défensif">
-            <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V3M5 14l7 7 7-7"/></svg></span>
-            <span class="qa-label">Rebond<br>Déf.</span>
-</button>
-          <button class="qa-btn card" data-action="Passe décisive">
-            <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h13M12 5l7 7-7 7"/></svg></span>
-            <span class="qa-label">Passe<br>Décisive</span>
-</button>
-          <button class="qa-btn card" data-action="Interception">
-            <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21l2-7.5L2 9h7z"/></svg></span>
-            <span class="qa-label">Inter-<br>ception</span>
-</button>
-          <button class="qa-btn card" data-action="Contre">
-            <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 20L20 4M4 4l16 16"/></svg></span>
-            <span class="qa-label">Contre</span>
-</button>
-          <button class="qa-btn card" data-action="Perte de balle">
-            <span class="qa-icon"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg></span>
-            <span class="qa-label">Perte de<br>balle</span>
-</button>
-          <button class="qa-foul card" id="btnFoul">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><path d="M12 9v4M12 17h.01"/></svg>
-            Faute
-</button>
-</div>
-</div>
+    <!-- ===== GRILLE ===== -->
+    <div class="lv-grid">
 
-      <div class="panel card-elevated" style="padding:20px 20px 12px;">
-        <div class="feed-head">
-          <div class="panel-title" style="margin-bottom:0;"><span class="dot"></span>Fil du match</div>
-          <button class="undo-btn" id="undoBtn">
-            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M9 14L4 9l5-5"/><path d="M4 9h10a6 6 0 010 12h-2"/></svg>
-            Annuler
-</button>
-</div>
-        <div class="feed-list" id="feedList"></div>
-</div>
-</div>
-</div>
+      <!-- 2. CINQ SUR LE TERRAIN -->
+      <div class="lv-col lv-col-players">
+        <div class="lv-panel lv-actions">
+          <div class="lv-phead">
+            <span class="lv-ptitle">Cinq sur le terrain</span>
+            <button class="lv-undo" id="lvSubBtn" style="padding:6px 11px;" aria-label="Effectuer un changement">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4l-3 3 3 3M4 7h11a5 5 0 015 5M17 20l3-3-3-3M20 17H9a5 5 0 01-5-5"/></svg>
+              Changer
+            </button>
+          </div>
+          <div class="lv-lineup" id="lvLineup" role="listbox" aria-label="Joueurs sur le terrain"></div>
+        </div>
+      </div>
+
+      <!-- 3. TERRAIN -->
+      <div class="lv-col lv-col-court">
+        <div class="lv-panel lv-court-panel">
+          <div class="lv-context">
+            <span class="lv-ctx-text" id="lvContext">Sélectionnez un joueur pour saisir une action</span>
+            <span class="lv-ctx-actions">
+              <button class="lv-cancel" id="lvCancel">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 6l12 12M18 6L6 18"/></svg>
+                Annuler
+              </button>
+            </span>
+          </div>
+          <div class="lv-courtwrap" id="lvCourtWrap">
+            <div class="lv-crosshair" id="lvCross"></div>
+            <svg class="lv-court" id="lvCourt" viewBox="0 0 500 372" role="img"
+                 aria-label="Demi-terrain de basket. Touchez l'emplacement d'un tir pour le localiser.">
+              <defs>
+                <clipPath id="lvClip"><rect x="6" y="6" width="488" height="360" rx="4"/></clipPath>
+                <pattern id="lvWood" width="500" height="30" patternUnits="userSpaceOnUse">
+                  <rect width="500" height="30" fill="#8C6A3E"/>
+                  <rect width="500" height="1" y="0" fill="rgba(255,232,198,0.06)"/>
+                  <rect width="500" height="1" y="15" fill="rgba(40,26,14,0.35)"/>
+                </pattern>
+              </defs>
+              <g clip-path="url(#lvClip)">
+                <rect x="6" y="6" width="488" height="360" fill="url(#lvWood)"/>
+                <rect x="6" y="6" width="488" height="360" fill="rgba(20,16,12,0.30)"/>
+                <!-- guides de zones -->
+                <line class="ln-div" x1="223" y1="6" x2="223" y2="191"/>
+                <line class="ln-div" x1="277" y1="6" x2="277" y2="191"/>
+                <line class="ln-div" x1="309.1" y1="72.5" x2="481" y2="143.8"/>
+                <line class="ln-div" x1="274.5" y1="107.1" x2="345.8" y2="279"/>
+                <line class="ln-div" x1="225.5" y1="107.1" x2="154.2" y2="279"/>
+                <line class="ln-div" x1="190.9" y1="72.5" x2="19" y2="143.8"/>
+                <!-- surbrillance zone -->
+                <circle id="lvZoneHi" class="lv-zonehi" r="30" cx="-100" cy="-100"/>
+                <!-- lignes de terrain -->
+                <rect class="ln" x="6" y="6" width="488" height="360" rx="4"/>
+                <rect class="ln" x="169" y="6" width="162" height="185"/>
+                <circle class="ln-soft" cx="250" cy="191" r="58"/>
+                <path class="ln" d="M212 48 A40 40 0 0 0 288 48"/>
+                <line class="ln" x1="32" y1="6" x2="32" y2="90"/>
+                <line class="ln" x1="468" y1="6" x2="468" y2="90"/>
+                <path class="ln" d="M32 90 A222 222 0 0 0 468 90"/>
+                <line class="ln" x1="230" y1="40" x2="270" y2="40"/>
+                <line class="rim" x1="250" y1="40" x2="250" y2="46"/>
+                <circle class="rim" cx="250" cy="50" r="7"/>
+              </g>
+              <g id="lvMarks"></g>
+              <rect class="lv-hit" id="lvHit" x="6" y="6" width="488" height="306"/>
+            </svg>
+            <div class="lv-shotpop" id="lvShotpop">
+              <button class="lv-act made" data-pop="made" style="min-height:38px;">
+                <span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg></span>Réussi
+              </button>
+              <button class="lv-act miss" data-pop="missed" style="min-height:38px;">
+                <span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M6 6l12 12M18 6L6 18"/></svg></span>Manqué
+              </button>
+            </div>
+          </div>
+          <div class="lv-courtfoot">
+            <div class="lv-legend">
+              <span><span class="lv-lg-made"></span>Réussi</span>
+              <span><span class="lv-lg-miss"></span>Manqué</span>
+            </div>
+            <span id="lvCourtHint">La valeur (2 ou 3 pts) est déterminée par la position</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 4. ACTIONS RAPIDES -->
+      <div class="lv-col lv-col-actions">
+        <div class="lv-panel lv-actions">
+          <div class="lv-phead"><span class="lv-ptitle">Actions rapides</span></div>
+          <div class="lv-pbody">
+            <div>
+              <div class="lv-agroup-lab">Tirs</div>
+              <div class="lv-arow">
+                <button class="lv-act made" data-shot="made"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg></span>Tir réussi</button>
+                <button class="lv-act miss" data-shot="missed"><span class="ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 6l12 12M18 6L6 18"/></svg></span>Tir manqué</button>
+                <button class="lv-act made" data-ft="made">LF réussi</button>
+                <button class="lv-act miss" data-ft="missed">LF manqué</button>
+              </div>
+            </div>
+            <div>
+              <div class="lv-agroup-lab">Jeu</div>
+              <div class="lv-arow">
+                <button class="lv-act" data-ev="reb-def" data-lab="Rebond défensif"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21V3M5 14l7 7 7-7"/></svg></span>Rebond déf.</button>
+                <button class="lv-act" data-ev="reb-off" data-lab="Rebond offensif"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M5 10l7-7 7 7"/></svg></span>Rebond off.</button>
+                <button class="lv-act" data-ev="assist" data-lab="Passe décisive"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12h13M12 5l7 7-7 7"/></svg></span>Passe déc.</button>
+                <button class="lv-act" data-ev="steal" data-lab="Interception"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5L18.5 21 12 16.5 5.5 21l2-7.5L2 9h7z"/></svg></span>Interception</button>
+                <button class="lv-act" data-ev="block" data-lab="Contre"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 19L19 5M5 5l14 14"/></svg></span>Contre</button>
+                <button class="lv-act" data-ev="turnover" data-lab="Perte de balle"><span class="ic"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg></span>Perte de balle</button>
+              </div>
+            </div>
+            <div>
+              <div class="lv-agroup-lab">Fautes</div>
+              <div class="lv-arow tri">
+                <button class="lv-act warn" data-foul="foul-perso" data-lab="Faute personnelle">Perso.</button>
+                <button class="lv-act warn" data-foul="foul-off" data-lab="Faute offensive">Offensive</button>
+                <button class="lv-act warn" data-foul="foul-drawn" data-lab="Faute provoquée">Provoquée</button>
+              </div>
+            </div>
+            <button class="lv-more" id="lvMoreBtn" aria-expanded="false">Gestion du match ▾</button>
+            <div class="lv-admin-wrap" id="lvAdmin">
+              <div class="lv-arow tri">
+                <button class="lv-act admin" data-admin="timeout">Temps mort</button>
+                <button class="lv-act admin" data-admin="sub">Changement</button>
+                <button class="lv-act admin" data-admin="end-q">Fin de QT</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. FIL DU MATCH -->
+      <div class="lv-col lv-col-feed">
+        <div class="lv-panel lv-feed-panel">
+          <div class="lv-phead">
+            <span class="lv-ptitle">Fil du match</span>
+            <button class="lv-undo" id="lvUndo" disabled>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a6 6 0 010 12h-3"/></svg>
+              Annuler la dernière
+            </button>
+          </div>
+          <div class="lv-feed" id="lvFeed"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- drawer de changement (root clippant pour éviter tout débordement hors-écran) -->
+  <div class="lv-overlay-root">
+  <div class="lv-drawer-scrim" id="lvDrawerScrim"></div>
+  <aside class="lv-drawer" id="lvDrawer" aria-label="Changement de joueur" aria-hidden="true">
+    <div class="lv-drawer-head">
+      <span class="lv-drawer-title">Changement</span>
+      <button class="lv-boardbtn" id="lvDrawerClose" aria-label="Fermer">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="lv-drawer-sub" id="lvDrawerSub">1. Choisissez le joueur qui sort · 2. choisissez le remplaçant.</div>
+    <div class="lv-drawer-list" id="lvDrawerList"></div>
+  </aside>
+  </div>
+
+  <div class="lv-toast" id="lvToast" role="status" aria-live="polite"></div>
 </section>
+
 
 <!-- ============================================================
      PAGE 6 — ENTRAÎNEMENT
@@ -1618,131 +1963,475 @@ function selectAction(i){
 }
 selectAction(0);
 
-/* ============ PAGE LIVE ============ */
-const players = [
-  {name:"Sylvain Francisco", num:3, fouls:1},
-  {name:"Nigel Williams-Goss", num:1, fouls:0},
-  {name:"Moses Wright", num:7, fouls:2},
-  {name:"Maodo Lô", num:12, fouls:0},
-  {name:"Ąžuolas Tubelis", num:10, fouls:1},
-];
-let selected = 0;
-let scoreHome = 66;
-const feed = [];
+/* ============ PAGE LIVE (v2 — outil de saisie) ============
+   Démo 100% client : la liste `events` est la source de vérité.
+   Score, fautes, points, marqueurs de tir et fil sont DÉRIVÉS via recompute(),
+   ce qui rend annulation et correction toujours cohérentes. */
+(function initLive(){
+  const $ = id => document.getElementById(id);
+  const court = $('lvCourt');
+  if(!court) return;
 
-const strip = document.getElementById('playerStrip');
-function renderStrip(){
-  strip.innerHTML ='';
-  players.forEach((p,i) => {
-    const chip = document.createElement('button');
-    chip.className ='player-chip card' + (i===selected ?' selected' :'');
-    let dots ='';
-    for(let f=0; f<5; f++) dots += `<span class="foul-dot ${f<p.fouls?'active':''}"></span>`;
-    chip.innerHTML = `
-      <span class="chip-avatar">
-        <span class="avatar"><span class="init" style="font-size:11px;">${p.name.split(/[ -]/).map(w=>w[0]).join('').slice(0,2).toUpperCase()}</span></span>
-        <span class="chip-num mono">${p.num}</span>
-</span>
-      <span style="text-align:left;">
-        <span class="chip-name">${p.name}</span>
-        <span class="chip-fouls">${dots}</span>
-</span>`;
-    chip.addEventListener('click', () => {
-      selected = i; renderStrip();
-      document.getElementById('selectedPlayerLabel').textContent = p.name;
+  /* ---- effectif (num, nom, valeurs de départ avant les événements suivis) ---- */
+  const players = [
+    {num:3,  name:'Sylvain Francisco',   short:'S. Francisco',    f0:1, p0:15},
+    {num:1,  name:'Nigel Williams-Goss', short:'N. Williams-Goss',f0:0, p0:10},
+    {num:7,  name:'Moses Wright',        short:'M. Wright',       f0:2, p0:18},
+    {num:12, name:'Maodo Lô',            short:'M. Lô',           f0:0, p0:13},
+    {num:10, name:'Ąžuolas Tubelis',     short:'Ą. Tubelis',      f0:1, p0:10},
+    {num:9,  name:'Ignas Brazdeikis',    short:'I. Brazdeikis',   f0:0, p0:5},
+    {num:8,  name:'Dustin Sleva',        short:'D. Sleva',        f0:1, p0:5},
+    {num:6,  name:'Edgaras Ulanovas',    short:'E. Ulanovas',     f0:0, p0:4},
+    {num:5,  name:'Arnas Butkevičius',   short:'A. Butkevičius',  f0:0, p0:2},
+    {num:13, name:'Laurynas Birutis',    short:'L. Birutis',      f0:0, p0:0},
+  ];
+  const byNum = n => players.find(p => p.num === n);
+  const initOf = p => p.short;
+
+  const OPEN_HOME=66, OPEN_AWAY=40, OPEN_TFH=3, OPEN_TFA=2, FOUL_LIMIT=5;
+  let courtNums = [3,1,7,12,10];
+  let selNum = null;
+  let events = []; let uid = 1;
+  let quarter = 3, clock = 6*60, running = true, ended = false;
+  let armed = null;    // 'made' | 'missed' — tir en attente de localisation
+  let pending = null;  // {cx,cy,nx,ny,zone,zoneId,val} — tap terrain en attente de réussi/manqué
+  let subOut = null;   // num choisi pour sortir (drawer)
+
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---- zones analytiques (géométrie réelle du demi-terrain, hoop = 250,48) ---- */
+  const ZN = {
+    'restricted-area':'Cercle restreint', 'paint-left':'Raquette gauche',
+    'paint-center':'Raquette centre', 'paint-right':'Raquette droite',
+    'midrange-left-baseline':'Ligne de fond gauche', 'midrange-left-wing':'Aile gauche',
+    'midrange-center':'Mi-distance centrale', 'midrange-right-wing':'Aile droite',
+    'midrange-right-baseline':'Ligne de fond droite',
+    'three-left-corner':'Corner gauche 3pts', 'three-left-wing':'Aile gauche 3pts',
+    'three-top':'Tête de raquette 3pts', 'three-right-wing':'Aile droite 3pts',
+    'three-right-corner':'Corner droit 3pts',
+  };
+  function classify(x, y){
+    const dx = x-250, dy = y-48, d = Math.hypot(dx, dy);
+    let a = Math.atan2(dy, dx) * 180/Math.PI; if(a < 0) a += 360; // 0=fond droit, 90=axe, 180=fond gauche
+    // corners (lignes droites du 3pts)
+    if(x <= 32 && y <= 150) return {val:3, zoneId:'three-left-corner'};
+    if(x >= 468 && y <= 150) return {val:3, zoneId:'three-right-corner'};
+    if(d >= 222){ // au-delà de l'arc
+      if(a < 67.5) return {val:3, zoneId:'three-right-wing'};
+      if(a < 112.5) return {val:3, zoneId:'three-top'};
+      return {val:3, zoneId:'three-left-wing'};
+    }
+    if(d <= 40) return {val:2, zoneId:'restricted-area'};
+    if(x >= 169 && x <= 331 && y <= 191){ // raquette
+      if(x < 223) return {val:2, zoneId:'paint-left'};
+      if(x <= 277) return {val:2, zoneId:'paint-center'};
+      return {val:2, zoneId:'paint-right'};
+    }
+    if(a < 22.5) return {val:2, zoneId:'midrange-right-baseline'};
+    if(a < 67.5) return {val:2, zoneId:'midrange-right-wing'};
+    if(a < 112.5) return {val:2, zoneId:'midrange-center'};
+    if(a < 157.5) return {val:2, zoneId:'midrange-left-wing'};
+    return {val:2, zoneId:'midrange-left-baseline'};
+  }
+
+  /* ---- état dérivé ---- */
+  function recompute(){
+    const foulsN = {}, ptsN = {};
+    let sh = OPEN_HOME, sa = OPEN_AWAY, tfh = OPEN_TFH, tfa = OPEN_TFA;
+    players.forEach(p => { foulsN[p.num] = p.f0; ptsN[p.num] = p.p0; });
+    events.forEach(e => {
+      if(e.made && (e.type==='shot' || e.type==='ft')){ sh += e.val; ptsN[e.num] += e.val; }
+      if(e.type==='foul'){
+        if(e.fk === 'foul-drawn'){ tfa++; }
+        else { if(e.num!=null) foulsN[e.num]++; tfh++; }
+      }
+      if(e.type==='admin' && e.ak==='away'){ sa += e.delta; }
     });
-    strip.appendChild(chip);
-  });
-  const bench = document.createElement('button');
-  bench.className ='player-chip card';
-  bench.style.opacity ='0.65';
-  bench.innerHTML = `<span style="display:flex;align-items:center;gap:7px;padding:0 4px;color:var(--t3);font-size:12px;font-weight:500;">
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg> Banc</span>`;
-  strip.appendChild(bench);
-}
-renderStrip();
-
-const feedList = document.getElementById('feedList');
-function renderFeed(){
-  if(feed.length === 0){
-    feedList.innerHTML ='<div class="feed-empty">Aucune action enregistrée pour le moment</div>';
-    return;
+    return {sh, sa, tfh, tfa, foulsN, ptsN};
   }
-  feedList.innerHTML = feed.slice().reverse().map(f => `
-    <div class="feed-item">
-      <span class="feed-icon ${f.type}">${icons[f.type ==='make' ?'make' : f.type ==='miss' ?'miss' :'neutral']}</span>
-      <span class="feed-text"><b>${f.player}</b> — ${f.label}</span>
-      <span class="feed-time mono">${f.time}</span>
-</div>`).join('');
-}
-renderFeed();
 
-function pushFeed(type, label){
-  feed.push({type, label, player: players[selected].name, time:'03:27'});
-  renderFeed();
-}
+  /* ---- helpers ---- */
+  const pad = n => String(n).padStart(2,'0');
+  const fmt = s => pad(Math.floor(s/60)) + ':' + pad(s%60);
+  const qLabel = () => quarter <= 4 ? 'Q' + quarter : 'P' + (quarter-4);
+  const ICON = {
+    made:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg>',
+    miss:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+    neutral:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8"/></svg>',
+    foul:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>',
+    admin:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>',
+  };
 
-const liveBox = document.getElementById('liveCourtBox');
-const popup = document.getElementById('shotPopup');
-let pendingZone = null;
+  /* ---- rendu ---- */
+  function render(){
+    const s = recompute();
+    // bandeau
+    $('lvScoreHome').textContent = s.sh;
+    $('lvScoreAway').textContent = s.sa;
+    const tfhEl = $('lvTfHome'), tfaEl = $('lvTfAway');
+    tfhEl.textContent = 'Fautes équipe : ' + s.tfh + (s.tfh>=FOUL_LIMIT?' · bonus':'');
+    tfhEl.classList.toggle('bonus', s.tfh>=FOUL_LIMIT);
+    tfaEl.textContent = 'Fautes équipe : ' + s.tfa + (s.tfa>=FOUL_LIMIT?' · bonus':'');
+    tfaEl.classList.toggle('bonus', s.tfa>=FOUL_LIMIT);
+    $('lvQuarter').textContent = qLabel();
+    $('lvClock').textContent = fmt(clock);
+    // état
+    const st = $('lvStatusText'), dot = $('lvDot');
+    if(ended){ st.textContent='Terminé'; dot.className='lv-livedot stop'; }
+    else if(running){ st.textContent='En cours'; dot.className='lv-livedot run'; }
+    else { st.textContent='En pause'; dot.className='lv-livedot stop'; }
+    $('lvClock').classList.toggle('paused', !running || ended);
+    renderLineup(s);
+    renderFeed(s);
+    renderMarkers();
+    renderContext();
+    $('lvUndo').disabled = events.length === 0;
+    updateAvail();
+  }
 
-document.querySelectorAll('.zone').forEach(z => {
-  z.addEventListener('click', (e) => {
-    const rect = liveBox.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    popup.style.left = x +'px';
-    popup.style.top = y +'px';
+  function renderLineup(s){
+    const el = $('lvLineup'); el.innerHTML = '';
+    courtNums.forEach(num => {
+      const p = byNum(num), f = s.foulsN[num], pts = s.ptsN[num];
+      const b = document.createElement('button');
+      b.className = 'lv-player' + (num===selNum ? ' selected' : '');
+      b.setAttribute('role','option');
+      b.setAttribute('aria-selected', num===selNum);
+      let dots = '';
+      for(let i=0;i<FOUL_LIMIT;i++){
+        const cls = i<f ? (f>=FOUL_LIMIT?'on':(f===4?'warn':'on')) : '';
+        dots += `<span class="lv-fdot ${cls}"></span>`;
+      }
+      const warn = f>=FOUL_LIMIT ? '<span class="lv-pwarn out">5 F.</span>'
+                 : f===4 ? '<span class="lv-pwarn warn">4 F.</span>' : '';
+      b.innerHTML = `
+        <span class="lv-pnum mono">${num}</span>
+        <span class="lv-pinfo">
+          <span class="lv-pname">${p.short}</span>
+          <span class="lv-pmeta"><span class="lv-pfouls">${dots}</span><span class="lv-ppts mono">${pts} pts</span></span>
+        </span>${warn}`;
+      b.addEventListener('click', () => selectPlayer(num));
+      el.appendChild(b);
+    });
+  }
+
+  function renderFeed(s){
+    const el = $('lvFeed');
+    if(events.length === 0){ el.innerHTML = '<div class="lv-feed-empty">Aucune action enregistrée. Sélectionnez un joueur pour commencer.</div>'; return; }
+    // score cumulé à chaque événement (pour la colonne score)
+    let sh = OPEN_HOME, sa = OPEN_AWAY; const scores = {};
+    events.forEach(e => {
+      if(e.made && (e.type==='shot'||e.type==='ft')) sh += e.val;
+      if(e.type==='admin' && e.ak==='away') sa += e.delta;
+      scores[e.id] = sh + '–' + sa;
+    });
+    el.innerHTML = events.slice().reverse().map((e,i) => {
+      const dotCls = e.type==='shot'||e.type==='ft' ? (e.made?'made':'miss')
+        : e.type==='foul' ? 'foul' : e.type==='admin' ? 'admin'
+        : e.ek==='turnover' ? 'miss' : 'neutral';
+      const ic = e.type==='shot'||e.type==='ft' ? (e.made?ICON.made:ICON.miss)
+        : e.type==='foul' ? ICON.foul : e.type==='admin' ? ICON.admin : ICON.neutral;
+      const who = e.num!=null ? `<b>#${e.num} ${byNum(e.num).short}</b> — ` : '';
+      const showScore = (e.type==='shot'||e.type==='ft') && e.made || (e.type==='admin'&&e.ak==='away');
+      return `<div class="lv-ev${i===0?' last':''}" data-id="${e.id}">
+        <span class="lv-ev-time mono">${e.q}<br>${e.clock}</span>
+        <span class="lv-ev-dot ${dotCls}">${ic}</span>
+        <span class="lv-ev-main"><span class="lv-ev-lab">${who}${e.label}</span></span>
+        <span class="lv-ev-score mono">${showScore?scores[e.id]:''}</span>
+        <button class="lv-ev-del" data-del="${e.id}" aria-label="Supprimer cette action" title="Supprimer">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+        </button>
+      </div>`;
+    }).join('');
+  }
+
+  function renderMarkers(){
+    const g = $('lvMarks'); g.innerHTML = '';
+    events.filter(e => e.type==='shot').forEach(e => {
+      const ns = 'http://www.w3.org/2000/svg';
+      const grp = document.createElementNS(ns,'g');
+      grp.setAttribute('class','mk ' + (e.made?'mk-made':'mk-miss'));
+      if(e.made){
+        grp.innerHTML = `<circle class="ring" cx="${e.cx}" cy="${e.cy}" r="7"></circle><circle class="core" cx="${e.cx}" cy="${e.cy}" r="2.6"></circle>`;
+      } else {
+        const s=5;
+        grp.innerHTML = `<line x1="${e.cx-s}" y1="${e.cy-s}" x2="${e.cx+s}" y2="${e.cy+s}"></line><line x1="${e.cx+s}" y1="${e.cy-s}" x2="${e.cx-s}" y2="${e.cy+s}"></line>`;
+      }
+      g.appendChild(grp);
+    });
+  }
+
+  function renderContext(){
+    const el = $('lvContext'), cancel = $('lvCancel');
+    if(ended){ el.innerHTML = 'Match terminé — la saisie est close.'; cancel.classList.remove('show'); return; }
+    if(armed && selNum!=null){
+      const p = byNum(selNum);
+      el.innerHTML = `Touchez l'emplacement du tir de <b>#${selNum} ${p.short}</b> — <span class="arm">${armed==='made'?'Réussi':'Manqué'}</span>`;
+      cancel.classList.add('show');
+    } else if(selNum!=null){
+      const p = byNum(selNum);
+      el.innerHTML = `Action pour <b>#${selNum} ${p.name}</b>`;
+      cancel.classList.remove('show');
+    } else {
+      el.innerHTML = 'Sélectionnez un joueur pour saisir une action';
+      cancel.classList.remove('show');
+    }
+  }
+
+  function updateAvail(){
+    const needsPlayer = document.querySelectorAll('[data-shot],[data-ft],[data-ev],[data-foul]');
+    needsPlayer.forEach(b => { b.disabled = (selNum==null || ended); });
+  }
+
+  /* ---- sélection joueur ---- */
+  function selectPlayer(num){
+    selNum = (selNum===num) ? null : num;
+    if(armed && selNum==null) disarm();
+    render();
+  }
+
+  /* ---- tir ---- */
+  function armShot(kind){
+    if(selNum==null || ended) return;
+    armed = kind; pending = null; closePopup();
+    document.querySelectorAll('[data-shot]').forEach(b => b.classList.toggle('armed', b.dataset.shot===kind));
+    $('lvCourtWrap').classList.add('armed');
+    renderContext();
+  }
+  function disarm(){
+    armed = null; pending = null; closePopup();
+    document.querySelectorAll('[data-shot]').forEach(b => b.classList.remove('armed'));
+    $('lvCourtWrap').classList.remove('armed');
+    renderContext();
+  }
+  function recordShot(kind, c){
+    const p = byNum(selNum), made = kind==='made';
+    highlightZone(c.cx, c.cy);
+    addEvent({
+      type:'shot', kind, made, val:c.val, num:selNum, zone:ZN[c.zoneId], zoneId:c.zoneId,
+      cx:c.cx, cy:c.cy, nx:+(c.cx/500).toFixed(4), ny:+(c.cy/372).toFixed(4),
+      label:`Tir à ${c.val} pts ${made?'réussi':'manqué'} — ${ZN[c.zoneId]}`
+    });
+    disarm();
+    toast(made?'made':'miss', `Tir à ${c.val} pts ${made?'enregistré':'manqué'}`);
+    if(made) flashScore();
+  }
+
+  /* ---- coords SVG ---- */
+  function svgPoint(evt){
+    const pt = court.createSVGPoint();
+    const t = ('touches' in evt && evt.touches[0]) ? evt.touches[0] : evt;
+    pt.x = t.clientX; pt.y = t.clientY;
+    const m = court.getScreenCTM();
+    if(!m) return null;
+    const p = pt.matrixTransform(m.inverse());
+    return {x:p.x, y:p.y};
+  }
+
+  const hit = $('lvHit');
+  function onCourtTap(evt){
+    if(ended) return;
+    const p = svgPoint(evt); if(!p) return;
+    const c = classify(p.x, p.y);
+    c.cx = Math.round(p.x); c.cy = Math.round(p.y);
+    if(armed){
+      recordShot(armed, c);
+    } else if(selNum!=null){
+      pending = c; showPopup(evt, c);
+    } else {
+      toast('neutral','Sélectionnez d\'abord un joueur');
+    }
+  }
+  hit.addEventListener('click', onCourtTap);
+
+  // crosshair (desktop, mode armé)
+  const cross = $('lvCross'), wrap = $('lvCourtWrap');
+  wrap.addEventListener('mousemove', e => {
+    if(!armed){ cross.classList.remove('show'); return; }
+    const r = wrap.getBoundingClientRect();
+    cross.style.left = (e.clientX - r.left) + 'px';
+    cross.style.top = (e.clientY - r.top) + 'px';
+    cross.classList.add('show');
+  });
+  wrap.addEventListener('mouseleave', () => cross.classList.remove('show'));
+
+  // popup made/miss (fallback : tap terrain sans tir armé)
+  const popup = $('lvShotpop');
+  function showPopup(evt, c){
+    const r = wrap.getBoundingClientRect();
+    const t = ('touches' in evt && evt.changedTouches && evt.changedTouches[0]) ? evt.changedTouches[0] : evt;
+    popup.style.left = (t.clientX - r.left) + 'px';
+    popup.style.top  = (t.clientY - r.top) + 'px';
     popup.classList.add('open');
-    pendingZone = { pts: parseInt(z.dataset.pts), name: z.dataset.zone, x, y };
-  });
-});
-function closePopup(){ popup.classList.remove('open'); pendingZone = null; }
-
-document.getElementById('btnMake').addEventListener('click', () => {
-  if(!pendingZone) return;
-  scoreHome += pendingZone.pts;
-  document.getElementById('scoreHome').textContent = scoreHome;
-  dropMarker(pendingZone.x, pendingZone.y,'#E4682A');
-  pushFeed('make', `Panier à ${pendingZone.pts}pts — ${pendingZone.name} (+${pendingZone.pts})`);
-  closePopup();
-});
-document.getElementById('btnMiss').addEventListener('click', () => {
-  if(!pendingZone) return;
-  dropMarker(pendingZone.x, pendingZone.y,'#C0766B');
-  pushFeed('miss', `Tir manqué — ${pendingZone.name}`);
-  closePopup();
-});
-
-function dropMarker(x, y, color){
-  const dot = document.createElement('div');
-  dot.className ='shot-dot';
-  dot.style.left = x +'px';
-  dot.style.top = y +'px';
-  dot.style.background = color;
-  dot.style.boxShadow ='0 0 0 3px' + color +'33, 0 0 12px' + color +'88';
-  liveBox.appendChild(dot);
-  requestAnimationFrame(() => dot.classList.add('show'));
-}
-
-document.querySelectorAll('.qa-btn').forEach(btn => {
-  btn.addEventListener('click', () => pushFeed('neutral', btn.dataset.action));
-});
-document.getElementById('btnFoul').addEventListener('click', () => {
-  players[selected].fouls = Math.min(5, players[selected].fouls + 1);
-  renderStrip();
-  pushFeed('miss','Faute personnelle');
-});
-document.getElementById('undoBtn').addEventListener('click', () => {
-  if(feed.length === 0) return;
-  const last = feed.pop();
-  if(last.type ==='make'){
-    const pts = last.label.includes('3pts') ? 3 : 2;
-    scoreHome -= pts;
-    document.getElementById('scoreHome').textContent = scoreHome;
   }
-  renderFeed();
-});
+  function closePopup(){ popup.classList.remove('open'); }
+  popup.querySelectorAll('[data-pop]').forEach(b => {
+    b.addEventListener('click', () => { if(pending){ recordShot(b.dataset.pop, pending); pending=null; } });
+  });
+
+  function highlightZone(cx, cy){
+    const z = $('lvZoneHi');
+    z.setAttribute('cx', cx); z.setAttribute('cy', cy);
+    z.classList.add('on');
+    setTimeout(() => z.classList.remove('on'), reduce?200:650);
+  }
+
+  /* ---- armement du tir (joueur -> reussi/manque -> terrain) ---- */
+  document.querySelectorAll('[data-shot]').forEach(b => {
+    b.addEventListener('click', () => armShot(b.dataset.shot));
+  });
+
+  /* ---- lancers francs ---- */
+  document.querySelectorAll('[data-ft]').forEach(b => {
+    b.addEventListener('click', () => {
+      if(selNum==null || ended) return;
+      const made = b.dataset.ft==='made';
+      addEvent({type:'ft', made, val:1, num:selNum, label:`Lancer franc ${made?'réussi':'manqué'}`});
+      toast(made?'made':'miss', `Lancer franc ${made?'réussi':'manqué'}`);
+      if(made) flashScore();
+    });
+  });
+
+  /* ---- actions de jeu ---- */
+  document.querySelectorAll('[data-ev]').forEach(b => {
+    b.addEventListener('click', () => {
+      if(selNum==null || ended) return;
+      addEvent({type:'play', ek:b.dataset.ev, num:selNum, label:b.dataset.lab});
+      toast('neutral', b.dataset.lab + ' enregistré');
+    });
+  });
+
+  /* ---- fautes ---- */
+  document.querySelectorAll('[data-foul]').forEach(b => {
+    b.addEventListener('click', () => {
+      if(selNum==null || ended) return;
+      const fk = b.dataset.foul;
+      addEvent({type:'foul', fk, num:selNum, label:b.dataset.lab});
+      toast('neutral', b.dataset.lab + ' enregistrée');
+      if(fk!=='foul-drawn'){
+        const f = recompute().foulsN[selNum];
+        if(f>=FOUL_LIMIT) toast('miss', `#${selNum} ${byNum(selNum).short} — sorti pour ${FOUL_LIMIT} fautes`);
+      }
+    });
+  });
+
+  /* ---- gestion du match ---- */
+  $('lvMoreBtn').addEventListener('click', function(){
+    const open = $('lvAdmin').classList.toggle('open');
+    this.setAttribute('aria-expanded', open);
+    this.textContent = open ? 'Gestion du match ▴' : 'Gestion du match ▾';
+  });
+  document.querySelectorAll('[data-admin]').forEach(b => {
+    b.addEventListener('click', () => {
+      const a = b.dataset.admin;
+      if(a==='timeout'){ setRunning(false); addEvent({type:'admin', ak:'timeout', num:null, label:'Temps mort'}); toast('neutral','Temps mort'); }
+      else if(a==='end-q'){ endQuarter(); }
+      else if(a==='sub'){ openDrawer(); }
+    });
+  });
+
+  /* ---- événements + feedback ---- */
+  function addEvent(ev){
+    ev.id = uid++; ev.q = qLabel(); ev.clock = fmt(clock);
+    events.push(ev);
+    render();
+    if(navigator.vibrate && !reduce) navigator.vibrate(10);
+  }
+  $('lvUndo').addEventListener('click', () => { if(events.length){ events.pop(); render(); } });
+  $('lvFeed').addEventListener('click', e => {
+    const del = e.target.closest('[data-del]');
+    if(del){ const id = +del.dataset.del; events = events.filter(x => x.id!==id); render(); }
+  });
+
+  const scoreEl = $('lvScoreHome');
+  function flashScore(){ if(reduce) return; scoreEl.classList.remove('flash'); void scoreEl.offsetWidth; scoreEl.classList.add('flash'); }
+  const toastEl = $('lvToast'); let toastT;
+  function toast(kind, msg){
+    toastEl.innerHTML = `<span class="tk ${kind}">${ICON[kind]||ICON.neutral}</span>${msg}`;
+    toastEl.classList.add('show');
+    clearTimeout(toastT); toastT = setTimeout(() => toastEl.classList.remove('show'), 1700);
+  }
+
+  /* ---- horloge & statut ---- */
+  function setRunning(v){ if(ended) return; running = v; render(); }
+  $('lvPause').addEventListener('click', () => {
+    setRunning(!running);
+    $('lvPauseIco').innerHTML = running ? '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>' : '<path d="M8 5v14l11-7z"/>';
+  });
+  function endQuarter(){
+    addEvent({type:'admin', ak:'end-q', num:null, label:`Fin du ${qLabel()}`});
+    if(quarter < 8) quarter++;
+    clock = 10*60; setRunning(false); render();
+    toast('neutral','Quart-temps suivant · ' + qLabel());
+  }
+  setInterval(() => {
+    if(running && !ended && clock > 0){
+      clock--; $('lvClock').textContent = fmt(clock);
+      if(clock===0){ running=false; render(); toast('neutral','Fin du temps — ' + qLabel()); }
+    }
+  }, 1000);
+
+  /* ---- menu bandeau ---- */
+  const menu = $('lvMenu'), menuBtn = $('lvMenuBtn');
+  menuBtn.addEventListener('click', e => { e.stopPropagation(); const o = menu.classList.toggle('open'); menuBtn.setAttribute('aria-expanded', o); });
+  document.addEventListener('click', () => { menu.classList.remove('open'); menuBtn.setAttribute('aria-expanded','false'); });
+  menu.addEventListener('click', e => e.stopPropagation());
+  menu.querySelectorAll('[data-mact]').forEach(b => {
+    b.addEventListener('click', () => {
+      const a = b.dataset.mact;
+      if(a==='away-plus'){ addEvent({type:'admin', ak:'away', delta:1, num:null, label:'Panier adverse'}); }
+      else if(a==='away-minus'){ addEvent({type:'admin', ak:'away', delta:-1, num:null, label:'Correction score adverse (−1)'}); }
+      else if(a==='next-q'){ if(quarter<8) quarter++; clock=10*60; render(); }
+      else if(a==='prev-q'){ if(quarter>1) quarter--; clock=10*60; render(); }
+      else if(a==='end'){ ended=true; running=false; disarm(); render(); toast('neutral','Match terminé'); }
+      menu.classList.remove('open');
+    });
+  });
+
+  /* ---- changement (drawer) ---- */
+  const drawer = $('lvDrawer'), scrim = $('lvDrawerScrim');
+  function openDrawer(){ subOut=null; renderDrawer(); drawer.classList.add('open'); scrim.classList.add('open'); drawer.setAttribute('aria-hidden','false'); }
+  function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
+  $('lvSubBtn').addEventListener('click', openDrawer);
+  $('lvDrawerClose').addEventListener('click', closeDrawer);
+  scrim.addEventListener('click', closeDrawer);
+  function renderDrawer(){
+    $('lvDrawerSub').textContent = subOut==null
+      ? '1. Choisissez le joueur qui sort.'
+      : `#${subOut} ${byNum(subOut).short} sort · choisissez le remplaçant qui entre.`;
+    const bench = players.filter(p => !courtNums.includes(p.num));
+    const list = $('lvDrawerList');
+    const row = (p, kind) => `
+      <button class="lv-sub-player${subOut===p.num?' picked':''}" data-${kind}="${p.num}">
+        <span class="lv-pnum mono">${p.num}</span>
+        <span class="lv-pinfo"><span class="lv-pname">${p.name}</span></span>
+      </button>`;
+    list.innerHTML =
+      `<div class="lv-drawer-group">Sur le terrain — sort</div>` + courtNums.map(n => row(byNum(n),'out')).join('') +
+      `<div class="lv-drawer-group">Banc — entre</div>` + bench.map(p => row(p,'in')).join('');
+  }
+  $('lvDrawerList').addEventListener('click', e => {
+    const outB = e.target.closest('[data-out]'), inB = e.target.closest('[data-in]');
+    if(outB){ subOut = +outB.dataset.out; renderDrawer(); }
+    else if(inB && subOut!=null){
+      const inNum = +inB.dataset.in;
+      courtNums = courtNums.map(n => n===subOut ? inNum : n);
+      addEvent({type:'admin', ak:'sub-out', num:subOut, label:'Sortie'});
+      addEvent({type:'admin', ak:'sub-in',  num:inNum,  label:'Entrée en jeu'});
+      if(selNum===subOut) selNum = null;
+      closeDrawer(); render();
+      toast('neutral', `Changement : #${inNum} ${byNum(inNum).short} entre`);
+    }
+  });
+
+  /* ---- divers ---- */
+  $('lvCancel').addEventListener('click', disarm);
+  document.addEventListener('keydown', e => {
+    if(e.key==='Escape'){ if(armed) disarm(); closeDrawer(); }
+  });
+
+  render();
+})();
 
 /* ============ GAME CENTER (coach) ============ */
 const cdState = {d:2, h:7, m:42, s:18};
