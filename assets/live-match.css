@@ -1,0 +1,668 @@
+/* =============================================================================
+   HoopBoard — Match Live : outil de saisie au bord du terrain
+   Réf. : docs/refonte-ui-ux/05-match-live.md, 04-design-system.md, 08 (a11y).
+
+   PÉRIMÈTRE — cette feuille ne s'applique QU'À `#page-live`. Toutes les règles
+   sont préfixées `.lm-` et portées par `#page-live`, donc aucune autre page
+   (landing, dashboard, effectif, joueur, game center, entraînement) n'est
+   affectée. Elle est chargée APRÈS le <style> interne de coach.html pour que
+   les composants Match Live gagnent sur les anciennes règles `.live-*`.
+
+   Tokens : uniquement `--hb-*` (assets/theme.css) pour le châssis (panneaux,
+   boutons, listes). SEULE EXCEPTION : le terrain, qui reprend la palette
+   parquet du terrain 3D du Game Center (`.fullcourt` dans coach.html) pour ne
+   pas avoir deux directions artistiques de terrain dans le même produit.
+   ========================================================================== */
+
+#page-live {
+  --lm-gap: var(--hb-space-3);
+  --lm-hair: var(--hb-border-subtle);
+  --lm-radius: var(--hb-radius-medium);
+  --lm-tap: 44px;                       /* cible tactile minimale */
+
+  /* Terrain — mêmes valeurs que `.fullcourt` / `.fc-plane` (coach.html). */
+  --lm-court-tilt: 20deg;               /* inclinaison : lisible ET cliquable */
+  --lm-court-persp: 1800px;
+  --lm-wood: #CFA76A;
+  --lm-ink: #EFE7D4;
+  --lm-hoop: #D96F3F;
+  --lm-arena: #0B1011;
+
+  font-family: var(--hb-font-sans);
+  color: var(--hb-text-primary);
+}
+
+/* Neutralise les décorations héritées du thème sombre de coach.html. */
+#page-live .lm-panel {
+  background: var(--hb-background-secondary);
+  border: 1px solid var(--lm-hair);
+  border-radius: var(--lm-radius);
+  box-shadow: none;
+}
+
+/* ---------------------------------------------------------------------------
+   1. BANDEAU DE MATCH — score dominant, toujours visible (sticky).
+   ------------------------------------------------------------------------ */
+#page-live .lm-scoreboard {
+  position: sticky; top: 0; z-index: 30;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: var(--hb-space-4);
+  padding: var(--hb-space-3) var(--hb-space-4);
+  margin-bottom: var(--lm-gap);
+  background: var(--hb-background-elevated);
+  border: 1px solid var(--hb-border-default);
+  border-radius: var(--lm-radius);
+}
+#page-live .lm-team { display: flex; align-items: center; gap: var(--hb-space-3); min-width: 0; }
+#page-live .lm-team--away { justify-content: flex-end; }
+#page-live .lm-team-crest {
+  width: 34px; height: 34px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--hb-radius-small);
+  background: var(--hb-surface-secondary);
+  font-size: 11px; font-weight: var(--hb-weight-bold); letter-spacing: .04em;
+  color: var(--hb-text-secondary);
+}
+#page-live .lm-team--home .lm-team-crest { background: var(--hb-home-team); color: #fff; }
+#page-live .lm-team-block { min-width: 0; }
+#page-live .lm-team-name {
+  font-size: var(--hb-font-body-size); font-weight: var(--hb-weight-semibold);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#page-live .lm-team-meta {
+  font-size: var(--hb-font-caption-size); color: var(--hb-text-muted);
+  display: flex; align-items: center; gap: var(--hb-space-2); margin-top: 2px;
+}
+#page-live .lm-team--away .lm-team-block { text-align: right; }
+#page-live .lm-team--away .lm-team-meta { justify-content: flex-end; }
+
+/* Fautes collectives : bonus signalé par le texte ET par la couleur. */
+#page-live .lm-bonus {
+  padding: 1px 6px; border-radius: var(--hb-radius-small);
+  font-weight: var(--hb-weight-semibold); font-size: 10px; letter-spacing: .04em;
+  background: var(--hb-surface-secondary); color: var(--hb-text-muted);
+}
+#page-live .lm-bonus[data-bonus="true"] { background: rgba(229,169,60,.16); color: var(--hb-warning); }
+
+/* Repère de possession : flèche + texte lu par les lecteurs d'écran. */
+#page-live .lm-poss {
+  width: 0; height: 0; border-block: 5px solid transparent;
+  opacity: 0; transition: opacity .15s;
+}
+#page-live .lm-team--home .lm-poss { border-right: 7px solid var(--hb-accent-primary); }
+#page-live .lm-team--away .lm-poss { border-left: 7px solid var(--hb-accent-primary); }
+#page-live .lm-team[data-possession="true"] .lm-poss { opacity: 1; }
+
+#page-live .lm-scorebox { text-align: center; }
+#page-live .lm-score {
+  display: flex; align-items: baseline; justify-content: center; gap: var(--hb-space-3);
+  font-family: var(--hb-font-display);
+  font-size: clamp(30px, 5vw, var(--hb-font-score-large-size));
+  line-height: 1; font-weight: var(--hb-weight-bold);
+  font-variant-numeric: tabular-nums;
+}
+#page-live .lm-score-sep { color: var(--hb-text-disabled); font-size: .5em; font-weight: var(--hb-weight-regular); }
+#page-live .lm-score-value { transition: color .18s; }
+#page-live .lm-score-value.is-flash { color: var(--hb-accent-primary); }
+
+#page-live .lm-clockrow {
+  display: flex; align-items: center; justify-content: center;
+  gap: var(--hb-space-2); margin-top: 4px;
+}
+#page-live .lm-period {
+  font-size: var(--hb-font-caption-size); font-weight: var(--hb-weight-bold);
+  letter-spacing: .08em; color: var(--hb-text-secondary);
+  padding: 2px 7px; border-radius: var(--hb-radius-small);
+  background: var(--hb-surface-secondary);
+}
+#page-live .lm-clock {
+  font-family: var(--hb-font-display); font-variant-numeric: tabular-nums;
+  font-size: 22px; line-height: 1; font-weight: var(--hb-weight-bold);
+  letter-spacing: .01em;
+}
+#page-live .lm-clock.is-running { color: var(--hb-text-primary); }
+#page-live .lm-clock:not(.is-running) { color: var(--hb-text-muted); }
+
+#page-live .lm-status {
+  font-size: 10px; font-weight: var(--hb-weight-semibold); letter-spacing: .08em;
+  text-transform: uppercase; color: var(--hb-text-muted); margin-top: 3px;
+}
+#page-live .lm-status[data-status="live"] { color: var(--hb-success); }
+#page-live .lm-status[data-status="finished"] { color: var(--hb-text-muted); }
+
+#page-live .lm-scoreboard-actions {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: var(--hb-space-2);
+  align-items: center; padding-top: var(--hb-space-3);
+  border-top: 1px solid var(--lm-hair);
+}
+
+/* ---------------------------------------------------------------------------
+   2. BOUTONS — hiérarchie explicite (primaire / secondaire / discret / danger).
+   ------------------------------------------------------------------------ */
+#page-live .lm-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: 34px; padding: 0 var(--hb-space-3);
+  border: 1px solid var(--hb-border-default); border-radius: var(--hb-radius-small);
+  background: var(--hb-surface-interactive); color: var(--hb-text-primary);
+  font-family: inherit; font-size: var(--hb-font-body-small-size);
+  font-weight: var(--hb-weight-semibold); cursor: pointer;
+  transition: background .12s, border-color .12s, color .12s;
+}
+#page-live .lm-btn:hover:not(:disabled) { background: var(--hb-surface-hover); }
+#page-live .lm-btn:active:not(:disabled) { background: var(--hb-surface-active); }
+#page-live .lm-btn:disabled { opacity: .42; cursor: not-allowed; }
+#page-live .lm-btn--primary {
+  background: var(--hb-accent-primary); border-color: var(--hb-accent-primary); color: #fff;
+}
+#page-live .lm-btn--primary:hover:not(:disabled) {
+  background: var(--hb-accent-primary-hover); border-color: var(--hb-accent-primary-hover);
+}
+#page-live .lm-btn--quiet {
+  background: transparent; border-color: transparent; color: var(--hb-text-secondary);
+}
+#page-live .lm-btn--quiet:hover:not(:disabled) { background: var(--hb-surface-primary); color: var(--hb-text-primary); }
+#page-live .lm-btn--danger { color: var(--hb-error); border-color: rgba(228,87,76,.35); background: transparent; }
+#page-live .lm-btn--danger:hover:not(:disabled) { background: rgba(228,87,76,.12); }
+#page-live .lm-btn--sm { min-height: 28px; padding: 0 var(--hb-space-2); font-size: var(--hb-font-caption-size); }
+
+/* Focus visible partout — exigence a11y (08). */
+#page-live :focus-visible {
+  outline: 2px solid var(--hb-border-focus); outline-offset: 2px; border-radius: 3px;
+}
+
+/* ---------------------------------------------------------------------------
+   3. GRILLE PRINCIPALE — le terrain domine, le reste s'organise autour.
+
+   Le terrain occupe toute la colonne large et s'étend sur deux rangées ; le
+   pavé de tir et le cinq majeur tiennent le rail droit, le fil du match et les
+   actions rapides passent dessous. Aucune information n'est reléguée : tout
+   reste visible sans replier de panneau.
+   ------------------------------------------------------------------------ */
+#page-live .lm-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  grid-template-areas:
+    "court   shotpad"
+    "court   lineup"
+    "feed    actions";
+  gap: var(--lm-gap);
+  align-items: start;
+}
+#page-live .lm-col--lineup  { grid-area: lineup; }
+#page-live .lm-col--court   { grid-area: court; }
+#page-live .lm-col--actions { grid-area: actions; }
+#page-live .lm-col--shotpad { grid-area: shotpad; }
+#page-live .lm-col--feed    { grid-area: feed; }
+
+#page-live .lm-section-head {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: var(--hb-space-2);
+  padding: var(--hb-space-2) var(--hb-space-3);
+  border-bottom: 1px solid var(--lm-hair);
+}
+#page-live .lm-section-title {
+  font-size: var(--hb-font-caption-size); font-weight: var(--hb-weight-bold);
+  letter-spacing: .08em; text-transform: uppercase; color: var(--hb-text-muted);
+}
+
+/* ---------------------------------------------------------------------------
+   4. CINQ SUR LE TERRAIN
+   ------------------------------------------------------------------------ */
+#page-live .lm-lineup { display: flex; flex-direction: column; }
+#page-live .lm-player {
+  display: grid; grid-template-columns: auto 1fr auto; align-items: center;
+  gap: var(--hb-space-2);
+  width: 100%; min-height: var(--lm-tap);
+  padding: var(--hb-space-2) var(--hb-space-3);
+  border: 0; border-bottom: 1px solid var(--lm-hair); border-left: 3px solid transparent;
+  background: transparent; color: inherit; font-family: inherit;
+  text-align: left; cursor: pointer; transition: background .12s, border-color .12s;
+}
+#page-live .lm-player:last-child { border-bottom: 0; }
+#page-live .lm-player:hover { background: var(--hb-surface-primary); }
+#page-live .lm-player[aria-pressed="true"] {
+  background: rgba(232,114,44,.12); border-left-color: var(--hb-accent-primary);
+}
+#page-live .lm-player-num {
+  width: 28px; height: 28px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: var(--hb-radius-small); background: var(--hb-surface-secondary);
+  font-size: var(--hb-font-body-small-size); font-weight: var(--hb-weight-bold);
+  font-variant-numeric: tabular-nums; color: var(--hb-text-secondary);
+}
+#page-live .lm-player[aria-pressed="true"] .lm-player-num {
+  background: var(--hb-accent-primary); color: #fff;
+}
+#page-live .lm-player-name {
+  font-size: var(--hb-font-body-small-size); font-weight: var(--hb-weight-medium);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#page-live .lm-player-stats {
+  display: flex; gap: var(--hb-space-2); align-items: center;
+  font-size: var(--hb-font-caption-size); color: var(--hb-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+/* Fautes : le chiffre EST l'information, la couleur ne fait que la renforcer. */
+#page-live .lm-fouls { font-weight: var(--hb-weight-semibold); }
+#page-live .lm-fouls[data-level="warn"] { color: var(--hb-warning); }
+#page-live .lm-fouls[data-level="danger"] { color: var(--hb-error); }
+#page-live .lm-fouls[data-level="out"] {
+  color: var(--hb-error); text-decoration: underline; text-underline-offset: 2px;
+}
+#page-live .lm-lineup-warn {
+  display: flex; align-items: center; gap: 6px;
+  padding: var(--hb-space-2) var(--hb-space-3);
+  font-size: var(--hb-font-caption-size); color: var(--hb-warning);
+  border-top: 1px solid var(--lm-hair);
+}
+
+/* ---------------------------------------------------------------------------
+   5. TERRAIN — demi-terrain FIBA large, parquet érable, perspective 3D légère.
+
+   La 3D est portée par CSS (`perspective` sur la scène + `rotateX` sur le plan),
+   exactement comme `.fc-stage` / `.fc-plane` du Game Center. Conséquence
+   volontaire : le SVG reste à plat dans son propre repère, donc le hit-test des
+   zones est celui du navigateur — précis, sans calcul de projection.
+
+   Largeur du plan à 90 % : sous la perspective, l'arête AVANT (ligne de fond)
+   s'élargit d'environ 10 %. La réserve garantit 0 débordement horizontal à
+   toutes les largeurs, de 320 px à 1600 px.
+   ------------------------------------------------------------------------ */
+#page-live .lm-col--court { overflow: clip; }
+#page-live .lm-court-wrap { padding: 0 var(--hb-space-3); }
+#page-live .lm-stage {
+  perspective: var(--lm-court-persp);
+  perspective-origin: 50% 30%;
+  padding: var(--hb-space-3) 0 var(--hb-space-4);
+  display: flex; justify-content: center;
+}
+#page-live .lm-plane {
+  width: 90%;
+  transform: rotateX(var(--lm-court-tilt));
+  transform-origin: 50% 50%;
+  transition: transform .4s cubic-bezier(.2,.7,.2,1), width .4s cubic-bezier(.2,.7,.2,1);
+  filter: drop-shadow(0 26px 40px rgba(0,0,0,.6));
+}
+/* Vue à plat : précision maximale au doigt, sur demande du coach. */
+#page-live[data-court-view="flat"] .lm-plane {
+  width: 100%;
+  transform: none;
+  filter: drop-shadow(0 12px 26px rgba(0,0,0,.45));
+}
+#page-live .lm-court {
+  display: block; width: 100%; height: auto;
+  border-radius: 22px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Zones : toujours interactives — le terrain EST l'outil de saisie, pas une
+   illustration qu'il faudrait armer au préalable. Au repos, seules de fines
+   limites sombres révèlent le découpage sur le parquet. */
+#page-live .lm-zone {
+  fill: transparent;
+  stroke: rgba(20,14,6,.20); stroke-width: 2.5;
+  cursor: pointer;
+  transition: fill .1s linear, stroke .1s linear, stroke-width .1s linear;
+}
+@media (hover: hover) {
+  #page-live .lm-zone:hover {
+    fill: rgba(255,236,214,.26);
+    stroke: var(--lm-ink); stroke-width: 5;
+  }
+}
+/* Zone retenue : nettement plus marquée que le survol — elle attend une
+   validation, elle doit rester lisible même sans la main sur la souris. */
+#page-live .lm-zone.is-selected {
+  fill: rgba(232,114,44,.46);
+  stroke: #FFE2CB; stroke-width: 6;
+}
+#page-live .lm-zone:focus-visible {
+  outline: none;
+  fill: rgba(90,162,255,.30);
+  stroke: var(--hb-border-focus); stroke-width: 6;
+}
+
+/* Marqueurs de tir : la FORME distingue réussi/manqué, la couleur ne fait que
+   la renforcer. Ils vivent dans le SVG, donc ils suivent le plan incliné et ne
+   se décalent jamais au redimensionnement. */
+#page-live .lm-shot { pointer-events: none; }
+#page-live .lm-shot-disc { fill: var(--hb-shot-made); stroke: #06240F; stroke-width: 3; }
+#page-live .lm-shot-cross { stroke: var(--hb-shot-missed); stroke-width: 9; stroke-linecap: round; fill: none; }
+#page-live .lm-shot-ring { fill: none; stroke: rgba(6,10,12,.5); stroke-width: 3; }
+#page-live .lm-shot-val {
+  font-family: var(--hb-font-display); font-size: 30px; font-weight: 700;
+  text-anchor: middle; dominant-baseline: central;
+}
+#page-live .lm-shot--made .lm-shot-val { fill: #04220E; }
+#page-live .lm-shot--missed .lm-shot-val { fill: var(--hb-shot-missed); }
+#page-live .lm-shot-new { animation: lm-pop .28s ease-out; transform-box: fill-box; transform-origin: center; }
+@keyframes lm-pop { from { opacity: 0; transform: scale(.4); } to { opacity: 1; transform: scale(1); } }
+
+/* Infobulle de zone : positionnée sur les coordonnées du pointeur, donc exacte
+   quelle que soit l'inclinaison du plan. */
+#page-live .lm-courtbox { position: relative; }
+#page-live .lm-tip {
+  position: absolute; z-index: 5; left: 0; top: 0;
+  transform: translate(-50%, -140%);
+  padding: 5px 10px; border-radius: var(--hb-radius-small);
+  background: rgba(8,12,15,.94); border: 1px solid var(--hb-border-strong);
+  color: var(--hb-text-primary);
+  font-size: var(--hb-font-body-small-size); font-weight: var(--hb-weight-semibold);
+  white-space: nowrap; pointer-events: none;
+  opacity: 0; transition: opacity .1s linear;
+}
+#page-live .lm-tip.is-visible { opacity: 1; }
+#page-live .lm-tip b { color: var(--hb-accent-primary); }
+
+/* Légende : sous le terrain, jamais superposée aux zones cliquables. */
+#page-live .lm-legend {
+  display: flex; flex-wrap: wrap; align-items: center; gap: var(--hb-space-3);
+  padding: var(--hb-space-2) var(--hb-space-3);
+  border-top: 1px solid var(--lm-hair);
+  font-size: var(--hb-font-caption-size); color: var(--hb-text-secondary);
+}
+#page-live .lm-legend-item { display: inline-flex; align-items: center; gap: 6px; }
+#page-live .lm-legend-glyph {
+  width: 14px; height: 14px; flex-shrink: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: var(--hb-weight-bold); line-height: 1;
+}
+#page-live .lm-legend-glyph--made { border-radius: 50%; background: var(--hb-shot-made); }
+#page-live .lm-legend-glyph--missed { color: var(--hb-shot-missed); }
+#page-live .lm-legend-sep { flex: 1; }
+
+/* ---------------------------------------------------------------------------
+   5b. PAVÉ DE TIR — ce qui suit la sélection d'une zone : nom, valeur,
+   statistiques de la zone dans ce match, puis réussi / manqué.
+   ------------------------------------------------------------------------ */
+#page-live .lm-shotpad { padding: var(--hb-space-3); display: flex; flex-direction: column; gap: var(--hb-space-3); }
+#page-live .lm-shotpad-zone { display: flex; align-items: flex-start; gap: var(--hb-space-2); }
+#page-live .lm-shotpad-name {
+  flex: 1; min-width: 0;
+  font-size: var(--hb-font-h3-size); font-weight: var(--hb-weight-semibold);
+  line-height: 1.25;
+}
+#page-live .lm-shotpad[data-state="empty"] .lm-shotpad-name {
+  font-size: var(--hb-font-body-size); font-weight: var(--hb-weight-regular);
+  color: var(--hb-text-muted);
+}
+#page-live .lm-shotpad-value {
+  flex-shrink: 0; padding: 3px 9px; border-radius: var(--hb-radius-pill);
+  background: var(--hb-surface-secondary); color: var(--hb-text-secondary);
+  font-family: var(--hb-font-display); font-size: var(--hb-font-caption-size);
+  font-weight: var(--hb-weight-bold); letter-spacing: .06em;
+}
+#page-live .lm-shotpad-value[data-value="3"] { background: rgba(232,114,44,.18); color: var(--hb-accent-primary); }
+#page-live .lm-shotpad-meta {
+  font-size: var(--hb-font-body-small-size); color: var(--hb-text-secondary);
+  display: flex; flex-direction: column; gap: 3px;
+}
+#page-live .lm-shotpad-meta b { color: var(--hb-text-primary); font-weight: var(--hb-weight-semibold); }
+#page-live .lm-shotpad-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--hb-space-2); }
+#page-live .lm-shotbtn {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  min-height: 62px; padding: var(--hb-space-2);
+  border: 1px solid var(--hb-border-default); border-radius: var(--hb-radius-small);
+  background: var(--hb-surface-primary); color: var(--hb-text-primary);
+  font-family: inherit; font-size: var(--hb-font-body-size);
+  font-weight: var(--hb-weight-semibold); cursor: pointer;
+  transition: background .1s, border-color .1s, transform .06s;
+}
+#page-live .lm-shotbtn:active:not(:disabled) { transform: scale(.97); }
+#page-live .lm-shotbtn:disabled { opacity: .38; cursor: not-allowed; }
+#page-live .lm-shotbtn-glyph { font-size: 17px; line-height: 1; }
+#page-live .lm-shotbtn-kbd { font-size: 10px; font-weight: var(--hb-weight-regular); color: var(--hb-text-muted); }
+#page-live .lm-shotbtn--made { border-color: rgba(63,191,122,.45); }
+#page-live .lm-shotbtn--made:not(:disabled) .lm-shotbtn-glyph { color: var(--hb-shot-made); }
+#page-live .lm-shotbtn--made:hover:not(:disabled) { background: rgba(63,191,122,.16); border-color: var(--hb-shot-made); }
+#page-live .lm-shotbtn--missed { border-color: rgba(224,86,63,.45); }
+#page-live .lm-shotbtn--missed:not(:disabled) .lm-shotbtn-glyph { color: var(--hb-shot-missed); }
+#page-live .lm-shotbtn--missed:hover:not(:disabled) { background: rgba(224,86,63,.16); border-color: var(--hb-shot-missed); }
+
+/* Bandeau de mode contextuel : dit toujours ce qui est attendu. */
+#page-live .lm-prompt {
+  display: flex; align-items: center; gap: var(--hb-space-2);
+  padding: var(--hb-space-2) var(--hb-space-3);
+  border-bottom: 1px solid var(--lm-hair);
+  font-size: var(--hb-font-body-small-size);
+  min-height: 42px;
+}
+#page-live .lm-prompt-text { flex: 1; min-width: 0; }
+#page-live .lm-prompt[data-mode="idle"] { color: var(--hb-text-muted); }
+#page-live .lm-prompt[data-mode="player"] { color: var(--hb-text-secondary); }
+#page-live .lm-prompt[data-mode="aiming"] {
+  background: rgba(232,114,44,.10);
+  color: var(--hb-text-primary); font-weight: var(--hb-weight-semibold);
+}
+#page-live .lm-prompt-kbd {
+  font-size: 10px; color: var(--hb-text-muted); font-weight: var(--hb-weight-regular);
+  border: 1px solid var(--hb-border-default); border-radius: 3px; padding: 1px 4px;
+}
+
+/* ---------------------------------------------------------------------------
+   6. ACTIONS RAPIDES — familles séparées, fréquence = visibilité.
+   ------------------------------------------------------------------------ */
+#page-live .lm-actions { padding: var(--hb-space-3); display: flex; flex-direction: column; gap: var(--hb-space-3); }
+#page-live .lm-group { display: flex; flex-direction: column; gap: 6px; }
+#page-live .lm-group-label {
+  font-size: 10px; font-weight: var(--hb-weight-bold); letter-spacing: .08em;
+  text-transform: uppercase; color: var(--hb-text-muted);
+}
+#page-live .lm-group-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+#page-live .lm-group-grid--1 { grid-template-columns: 1fr; }
+
+#page-live .lm-action {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  min-height: var(--lm-tap); padding: 0 var(--hb-space-2);
+  border: 1px solid var(--hb-border-default); border-radius: var(--hb-radius-small);
+  background: var(--hb-surface-primary); color: var(--hb-text-primary);
+  font-family: inherit; font-size: var(--hb-font-body-small-size);
+  font-weight: var(--hb-weight-semibold); text-align: center; cursor: pointer;
+  transition: background .1s, border-color .1s, transform .06s;
+}
+#page-live .lm-action:hover:not(:disabled) { background: var(--hb-surface-hover); }
+#page-live .lm-action:active:not(:disabled) { transform: scale(.97); }
+#page-live .lm-action:disabled { opacity: .38; cursor: not-allowed; }
+#page-live .lm-action[aria-pressed="true"] {
+  background: var(--hb-accent-primary); border-color: var(--hb-accent-primary); color: #fff;
+}
+#page-live .lm-action--made { border-color: rgba(63,191,122,.4); }
+#page-live .lm-action--made:hover:not(:disabled) { background: rgba(63,191,122,.14); }
+#page-live .lm-action--missed { border-color: rgba(224,86,63,.4); }
+#page-live .lm-action--missed:hover:not(:disabled) { background: rgba(224,86,63,.14); }
+#page-live .lm-action-glyph { font-size: 13px; line-height: 1; }
+
+#page-live .lm-more { border-top: 1px solid var(--lm-hair); padding-top: var(--hb-space-3); }
+#page-live .lm-more[hidden] { display: none; }
+
+/* ---------------------------------------------------------------------------
+   7. FIL DU MATCH — liste dense à filets fins, pas une pile de cartes.
+   (Le fil est désormais une colonne de la grille, `.lm-col--feed`.)
+   ------------------------------------------------------------------------ */
+#page-live .lm-feed { max-height: 260px; overflow-y: auto; }
+#page-live .lm-event {
+  display: grid; grid-template-columns: 74px 1fr auto auto;
+  align-items: center; gap: var(--hb-space-2);
+  width: 100%; padding: 7px var(--hb-space-3);
+  border: 0; border-bottom: 1px solid var(--lm-hair); border-left: 3px solid transparent;
+  background: transparent; color: inherit; font-family: inherit; font-size: var(--hb-font-body-small-size);
+  text-align: left; cursor: pointer;
+}
+#page-live .lm-event:hover { background: var(--hb-surface-primary); }
+#page-live .lm-event.is-latest { border-left-color: var(--hb-accent-primary); background: rgba(232,114,44,.06); }
+#page-live .lm-event-time {
+  font-variant-numeric: tabular-nums; font-size: var(--hb-font-caption-size);
+  color: var(--hb-text-muted);
+}
+#page-live .lm-event-label { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#page-live .lm-event-who { font-weight: var(--hb-weight-semibold); }
+#page-live .lm-event-score {
+  font-variant-numeric: tabular-nums; font-size: var(--hb-font-caption-size);
+  color: var(--hb-text-muted);
+}
+#page-live .lm-event-tag {
+  font-size: 10px; font-weight: var(--hb-weight-bold); padding: 1px 5px;
+  border-radius: 3px; background: var(--hb-surface-secondary); color: var(--hb-text-muted);
+}
+#page-live .lm-event-tag[data-kind="made"] { background: rgba(63,191,122,.16); color: var(--hb-success); }
+#page-live .lm-event-tag[data-kind="missed"] { background: rgba(224,86,63,.16); color: var(--hb-shot-missed); }
+#page-live .lm-event-tag[data-kind="foul"] { background: rgba(229,169,60,.16); color: var(--hb-warning); }
+#page-live .lm-empty {
+  padding: var(--hb-space-5) var(--hb-space-3); text-align: center;
+  font-size: var(--hb-font-body-small-size); color: var(--hb-text-muted);
+}
+
+/* Barre d'annulation : présente en permanence, jamais confondue avec une stat. */
+#page-live .lm-undobar {
+  display: flex; align-items: center; gap: var(--hb-space-2);
+  padding: var(--hb-space-2) var(--hb-space-3);
+  border-top: 1px solid var(--lm-hair);
+}
+#page-live .lm-undo-what {
+  flex: 1; min-width: 0; font-size: var(--hb-font-caption-size); color: var(--hb-text-muted);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#page-live .lm-btn--undo.is-boosted {
+  border-color: var(--hb-accent-primary); color: var(--hb-accent-primary);
+}
+
+/* ---------------------------------------------------------------------------
+   8. ÉTAT DE CONNEXION / SAUVEGARDE
+   ------------------------------------------------------------------------ */
+#page-live .lm-conn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--hb-font-caption-size); color: var(--hb-text-muted);
+}
+#page-live .lm-conn-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--hb-text-disabled); flex-shrink: 0;
+}
+#page-live .lm-conn[data-state="synced"] .lm-conn-dot { background: var(--hb-success); }
+#page-live .lm-conn[data-state="pending"] .lm-conn-dot { background: var(--hb-warning); }
+#page-live .lm-conn[data-state="offline"] .lm-conn-dot { background: var(--hb-error); }
+
+/* Retour bref après enregistrement (aria-live). */
+#page-live .lm-toast {
+  position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%);
+  z-index: 60; padding: 9px var(--hb-space-4);
+  border: 1px solid var(--hb-border-default); border-radius: var(--hb-radius-pill);
+  background: var(--hb-background-elevated); color: var(--hb-text-primary);
+  font-size: var(--hb-font-body-small-size); font-weight: var(--hb-weight-semibold);
+  box-shadow: var(--hb-shadow-medium);
+  opacity: 0; pointer-events: none; transition: opacity .16s, transform .16s;
+}
+#page-live .lm-toast.is-visible { opacity: 1; transform: translateX(-50%) translateY(-4px); }
+
+/* ---------------------------------------------------------------------------
+   9. PANNEAUX (changements, lancers francs, correction) — <dialog> natif.
+   ------------------------------------------------------------------------ */
+#page-live .lm-dialog {
+  width: min(560px, calc(100vw - 24px));
+  padding: 0; border: 1px solid var(--hb-border-default);
+  border-radius: var(--hb-radius-large);
+  background: var(--hb-background-elevated); color: var(--hb-text-primary);
+}
+#page-live .lm-dialog::backdrop { background: rgba(0,0,0,.6); }
+#page-live .lm-dialog-head {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--hb-space-3);
+  padding: var(--hb-space-3) var(--hb-space-4); border-bottom: 1px solid var(--lm-hair);
+}
+#page-live .lm-dialog-title { font-size: var(--hb-font-h3-size); font-weight: var(--hb-weight-semibold); }
+#page-live .lm-dialog-body { padding: var(--hb-space-4); }
+#page-live .lm-dialog-foot {
+  display: flex; justify-content: flex-end; gap: var(--hb-space-2);
+  padding: var(--hb-space-3) var(--hb-space-4); border-top: 1px solid var(--lm-hair);
+}
+#page-live .lm-subgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+#page-live .lm-sub-hint {
+  font-size: var(--hb-font-body-small-size); color: var(--hb-text-secondary);
+  margin-bottom: var(--hb-space-3);
+}
+#page-live .lm-ft-row {
+  display: flex; align-items: center; gap: var(--hb-space-2);
+  padding: var(--hb-space-2) 0; border-bottom: 1px solid var(--lm-hair);
+}
+#page-live .lm-ft-row:last-child { border-bottom: 0; }
+#page-live .lm-ft-label { flex: 1; font-size: var(--hb-font-body-small-size); }
+#page-live .lm-ft-state { font-size: var(--hb-font-caption-size); color: var(--hb-text-muted); min-width: 62px; }
+
+/* ---------------------------------------------------------------------------
+   10. RESPONSIVE — tablette prioritaire, jamais un conteneur format téléphone.
+   ------------------------------------------------------------------------ */
+
+/* Tablette paysage / petit portable : rail droit resserré. */
+@media (max-width: 1180px) {
+  #page-live .lm-layout { grid-template-columns: minmax(0, 1fr) 260px; }
+}
+
+/* Tablette portrait et en dessous : une seule colonne. L'ordre suit le geste —
+   choisir le joueur, viser la zone sur le terrain, valider, puis consulter.
+   Le terrain reste EN PERMANENCE visible et pleine largeur : c'est l'outil de
+   saisie, il ne peut pas être derrière un mode. */
+@media (max-width: 900px) {
+  #page-live .lm-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas: "lineup" "court" "shotpad" "actions" "feed";
+  }
+  #page-live .lm-lineup { flex-direction: row; overflow-x: auto; scrollbar-width: thin; }
+  #page-live .lm-player {
+    flex: 0 0 auto; min-width: 152px;
+    border-bottom: 0; border-right: 1px solid var(--lm-hair);
+    border-left: 0; border-top: 3px solid transparent;
+  }
+  #page-live .lm-player[aria-pressed="true"] { border-left-color: transparent; border-top-color: var(--hb-accent-primary); }
+  #page-live .lm-group-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+  /* Pavé de tir dans le flux, juste sous le terrain. Volontairement PAS
+     `position: sticky` : collé au bas du viewport il se superposerait au
+     terrain et intercepterait les appuis sur les zones. Le terrain est la
+     cible prioritaire, rien ne doit passer devant. */
+  #page-live .lm-shotpad-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* Téléphone : parcours séquentiel. Inclinaison réduite et zones plus contrastées
+   — au doigt, la précision compte plus que l'effet de relief. */
+@media (max-width: 640px) {
+  #page-live { --lm-court-tilt: 13deg; }
+  #page-live .lm-scoreboard { grid-template-columns: 1fr auto 1fr; padding: var(--hb-space-2) var(--hb-space-3); gap: var(--hb-space-2); }
+  #page-live .lm-team-name { font-size: var(--hb-font-body-small-size); }
+  #page-live .lm-team-crest { width: 28px; height: 28px; }
+  #page-live .lm-clock { font-size: 18px; }
+  #page-live .lm-stage { padding: var(--hb-space-2) 0 var(--hb-space-3); }
+  #page-live .lm-plane { width: 96%; }
+  #page-live .lm-court-wrap { padding: 0; }
+  #page-live .lm-zone { stroke-width: 3.5; }
+  #page-live .lm-feed { max-height: 200px; }
+  #page-live .lm-action { min-height: 46px; }
+  #page-live .lm-shotbtn { min-height: var(--lm-tap); }
+}
+
+/* Appareil tactile : TOUTES les cibles atteignent 44px, y compris les
+   commandes secondaires (possession, score adverse, changement…). En pointeur
+   fin on garde une densité d'outil professionnel. */
+@media (pointer: coarse) {
+  #page-live .lm-btn,
+  #page-live .lm-btn--sm { min-height: var(--lm-tap); padding: 0 var(--hb-space-3); }
+  #page-live .lm-event { padding-block: 11px; }
+  #page-live .lm-player { min-height: 52px; }
+  /* Sans survol, l'infobulle n'a pas de sens : le nom de la zone est déjà dans
+     le bandeau de mode et dans le pavé de tir. */
+  #page-live .lm-tip { display: none; }
+}
+
+/* Respect de prefers-reduced-motion (08 §a11y). Le balayage de vernis animé du
+   parquet n'est pas injecté du tout dans ce cas (cf. live-match.js). */
+@media (prefers-reduced-motion: reduce) {
+  #page-live *, #page-live *::before, #page-live *::after {
+    animation-duration: .001ms !important; animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+  }
+}
+
+/* Contraste renforcé : on ne compte jamais sur la seule couleur. */
+@media (prefers-contrast: more) {
+  #page-live .lm-panel, #page-live .lm-scoreboard { border-color: var(--hb-border-strong); }
+  #page-live .lm-zone { stroke: rgba(12,8,3,.5); stroke-width: 4; }
+  #page-live .lm-zone.is-selected { stroke: #FFFFFF; stroke-width: 7; }
+}
