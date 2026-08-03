@@ -419,3 +419,28 @@ input[type="text"],input[type="email"],textarea,select{
 @media (prefers-reduced-motion: reduce){
   *,*::before,*::after{animation-duration:0.01ms !important; animation-iteration-count:1 !important; transition-duration:0.01ms !important;}
 }
+
+/* ================================================================
+   Composant terrain unique — BasketballCourt (assets/court.js)
+   Terrain FIBA partagé : Match Live, analyse, carte de tir, etc.
+   ================================================================ */
+.hbc-root{width:100%;}
+.hbc-svg{width:100%;height:auto;display:block;}
+.hbc-ln{stroke:var(--t2);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.hbc-bounds{stroke:var(--t3);}
+.hbc-dash{stroke-dasharray:7 7;opacity:.55;}
+.hbc-board{stroke:var(--t1);stroke-width:3.4;}
+.hbc-rim{stroke:var(--orange);stroke-width:2.6;}
+.hbc-soft{opacity:.4;}
+.hbc-hit{outline:none;}
+.hbc-shot.made{fill:var(--win);stroke:var(--bg);stroke-width:1;}
+.hbc-shot.miss line{stroke:var(--loss);stroke-width:2.6;stroke-linecap:round;}
+.hbc-debug-id{font:8px/1 monospace;fill:#fff;paint-order:stroke;stroke:#000;stroke-width:2px;}
+.hbc-readout{margin-top:8px;font:12px/1.4 monospace;color:var(--orange);}
+
+/* ---- état vide / erreur / chargement réutilisable (section 22) ---- */
+.hb-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:clamp(40px,8vw,80px) 24px;color:var(--t3);min-height:40vh;}
+.hb-empty svg{opacity:.55;color:var(--t4);}
+.hb-empty h3{font-size:18px;color:var(--t1);font-weight:600;margin:0;}
+.hb-empty p{max-width:440px;line-height:1.55;margin:0;font-size:14px;color:var(--t3);}
+.hb-empty .btn{margin-top:6px;}

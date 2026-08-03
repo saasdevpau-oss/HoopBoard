@@ -1770,6 +1770,18 @@
 </div>
 </section>
 
+<!-- ============================================================
+     PAGE — 404 / EN CONSTRUCTION (gérée par le routeur)
+============================================================ -->
+<section class="page" id="page-404">
+  <div class="hb-empty">
+    <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.2 9.2a3 3 0 015.6 1.5c0 2-3 2.5-3 2.5"/><path d="M12 17h.01"/></svg>
+    <h3 id="p404Title">Page introuvable</h3>
+    <p id="p404Msg">La page demandée n’existe pas ou a été déplacée.</p>
+    <button class="btn btn-primary" data-route="#/">Retour au dashboard</button>
+  </div>
+</section>
+
 </main>
 </div>
 </div>
@@ -1823,18 +1835,85 @@
 
 
 <script>
-/* ============ NAVIGATION ============ */
-function goto(id){
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const page = document.getElementById('page-' + id);
-  if(page) page.classList.add('active');
-  const tabMap = {dashboard:'dashboard', effectif:'effectif', joueur:'effectif', match:'effectif', gamecenter:'gamecenter', live:'gamecenter', training:'training'};
-  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.goto === tabMap[id]));
-  window.scrollTo({top:0, behavior:'instant'});
-  if(id ==='gamecenter') animateCoachGauges();
+/* ============ ROUTEUR (hash) ============
+   Source unique de navigation. URLs distinctes, partageables, qui survivent
+   à l'actualisation et à l'accès direct (#/matchs/:id/feuille, #/joueurs/:id…).
+   Chaque vue peut enregistrer un hook `routeHandlers[view] = fn(params)` appelé
+   à l'entrée — point d'extension pour les pages à venir (feuille, analyse…). */
+const ROUTES = [
+  ['^/?$',                             'dashboard'],
+  ['^/dashboard/?$',                   'dashboard'],
+  ['^/matchs/?$',                      'matchs'],
+  ['^/matchs/([^/]+)/feuille/?$',      'feuille',        ['matchId']],
+  ['^/matchs/([^/]+)/analyse/?$',      'analyse',        ['matchId']],
+  ['^/matchs/([^/]+)/live/?$',         'live',           ['matchId']],
+  ['^/matchs/nouveau/?$',              'match-new'],
+  ['^/matchs/([^/]+)/?$',              'match',          ['matchId']],
+  ['^/live/?$',                        'live'],
+  ['^/joueurs/([^/]+)/?$',             'joueur',         ['playerId']],
+  ['^/effectif/?$',                    'effectif'],
+  ['^/entrainements/nouveau/?$',       'training-new'],
+  ['^/entrainements/([^/]+)/?$',       'training-detail',['trainingId']],
+  ['^/entrainements/?$',               'training']
+];
+/* vues disposant déjà d'une section ; les autres -> placeholder « en construction » */
+const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training' };
+const VIEW_TAB     = { dashboard:'dashboard', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
+const VIEW_TITLE   = { dashboard:'Dashboard', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
+const PLACEHOLDER  = { feuille:'Feuille de match', analyse:'Analyse du match', 'match-new':'Nouveau match', 'training-new':'Nouvelle séance', 'training-detail':'Séance' };
+/* boutons hérités data-goto -> hash (les ids réels arriveront via data-route) */
+const GOTO_HASH = { dashboard:'#/', gamecenter:'#/matchs', effectif:'#/effectif', training:'#/entrainements', live:'#/live', joueur:'#/joueurs/sylvain-francisco', match:'#/matchs/hapoel' };
+
+const routeHandlers = {};
+const currentRoute = { view:null, params:{}, path:'/' };
+
+function parseHash(){
+  let h = decodeURI(location.hash.replace(/^#/, '')) || '/';
+  if(h[0] !== '/') h = '/' + h;
+  for(const [pat, view, names] of ROUTES){
+    const m = new RegExp(pat).exec(h);
+    if(m){ const params = {}; (names||[]).forEach((n,i) => params[n] = m[i+1]); return { view, params, path:h }; }
+  }
+  return { view:'notfound', params:{}, path:h };
 }
-document.querySelectorAll('[data-goto]').forEach(el => {
-  el.addEventListener('click', () => goto(el.dataset.goto));
+function navigate(hash){ if(location.hash === hash) handleRoute(); else location.hash = hash; }
+function goto(id){ navigate(GOTO_HASH[id] || '#/' + id); }   // alias de compatibilité
+function closeNav(){ document.body.classList.remove('nav-open'); const b = document.getElementById('menuBtn'); if(b) b.setAttribute('aria-expanded','false'); }
+
+function render404(r){
+  const title = document.getElementById('p404Title');
+  const msg   = document.getElementById('p404Msg');
+  const ph    = PLACEHOLDER[r.view];
+  if(!title || !msg) return;
+  if(ph){ title.textContent = ph; msg.textContent = 'Cette section arrive dans un prochain incrément. Elle sera accessible à cette adresse.'; }
+  else  { title.textContent = 'Page introuvable'; msg.textContent = 'La page « ' + r.path + ' » n’existe pas ou a été déplacée.'; }
+}
+
+function handleRoute(){
+  const r = parseHash();
+  currentRoute.view = r.view; currentRoute.params = r.params; currentRoute.path = r.path;
+  let sectionId = VIEW_SECTION[r.view] || 'page-404';
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const sec = document.getElementById(sectionId) || document.getElementById('page-404');
+  if(sec) sec.classList.add('active');
+  if(sectionId === 'page-404') render404(r);
+  const tab = VIEW_TAB[r.view];
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', !!tab && t.dataset.goto === tab));
+  const tb = document.getElementById('tbTitle'); if(tb) tb.textContent = VIEW_TITLE[r.view] || 'HoopBoard';
+  window.scrollTo({ top:0, behavior:'instant' });
+  closeNav();
+  const fn = routeHandlers[r.view]; if(typeof fn === 'function') fn(r.params);
+  if(r.view === 'matchs' && typeof animateCoachGauges === 'function') animateCoachGauges();
+}
+
+/* clics de navigation : data-route (prioritaire) puis data-goto (hérité) */
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-route],[data-goto]');
+  if(!el) return;
+  const dest = el.dataset.route || GOTO_HASH[el.dataset.goto];
+  if(!dest) return;
+  e.preventDefault();
+  navigate(dest);
 });
 
 /* ============ PAGE MATCH : liste d'actions + terrain ============ */
@@ -2506,24 +2585,19 @@ async function hydrateFromAPI(){
 }
 hydrateFromAPI();
 
-/* ============ SHELL — présentation uniquement (drawer, titre de page) ============ */
-const TB_TITLES = {dashboard:'Dashboard', gamecenter:'Matchs', effectif:'Effectif', joueur:'Fiche joueur', match:'Feuille de match', live:'Match live', training:'Entraînement'};
-const tbTitleEl = document.getElementById('tbTitle');
+/* ============ SHELL — drawer mobile (titre & navigation gérés par le routeur) ============ */
 const menuBtn = document.getElementById('menuBtn');
 const appScrim = document.getElementById('appScrim');
-function closeNav(){ document.body.classList.remove('nav-open'); menuBtn.setAttribute('aria-expanded','false'); }
-menuBtn.addEventListener('click', () => {
+if(menuBtn) menuBtn.addEventListener('click', () => {
   const open = document.body.classList.toggle('nav-open');
   menuBtn.setAttribute('aria-expanded', open);
 });
-appScrim.addEventListener('click', closeNav);
+if(appScrim) appScrim.addEventListener('click', closeNav);
 document.addEventListener('keydown', e => { if(e.key === 'Escape') closeNav(); });
-document.addEventListener('click', e => {
-  const el = e.target.closest('[data-goto]');
-  if(!el) return;
-  if(tbTitleEl && TB_TITLES[el.dataset.goto]) tbTitleEl.textContent = TB_TITLES[el.dataset.goto];
-  closeNav();
-});
+
+/* démarrage du routeur (après définition de toutes les vues et hooks) */
+window.addEventListener('hashchange', handleRoute);
+handleRoute();
 </script>
 
 </body>
