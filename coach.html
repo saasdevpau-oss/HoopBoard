@@ -1361,6 +1361,12 @@
 </div>
 </div>
 
+  <div class="mh-actions" id="mhActions">
+    <button class="btn btn-primary sm" data-match-action="feuille" data-route="#/matchs/hapoel/feuille">Feuille de match</button>
+    <button class="btn btn-secondary sm" data-match-action="analyse" data-route="#/matchs/hapoel/analyse">Analyse</button>
+    <button class="btn btn-secondary sm" data-match-action="live" data-route="#/matchs/hapoel/live">Match live</button>
+  </div>
+
   <div class="panel card-elevated" style="margin-top:18px;">
     <div class="panel-title"><span class="dot"></span>Temps de jeu — Sylvain Francisco</div>
     <div class="panel-sub">Alternance terrain / banc par quart-temps</div>
@@ -1771,6 +1777,11 @@
 </section>
 
 <!-- ============================================================
+     PAGE — FEUILLE DE MATCH (rendue par renderFeuille depuis le store)
+============================================================ -->
+<section class="page" id="page-feuille"></section>
+
+<!-- ============================================================
      PAGE — 404 / EN CONSTRUCTION (gérée par le routeur)
 ============================================================ -->
 <section class="page" id="page-404">
@@ -1834,6 +1845,11 @@
 <div class="lv-toast" id="lvToast" role="status" aria-live="polite"></div>
 
 
+<!-- Modèle de données unique (source de vérité UI) : vraies données Žalgiris
+     + moteur d'événements ; le box score est DÉRIVÉ des événements. -->
+<script src="/lib/data.js"></script>
+<script src="/lib/match-events.js"></script>
+<script src="/assets/store.js"></script>
 <script>
 /* ============ ROUTEUR (hash) ============
    Source unique de navigation. URLs distinctes, partageables, qui survivent
@@ -1857,10 +1873,10 @@ const ROUTES = [
   ['^/entrainements/?$',               'training']
 ];
 /* vues disposant déjà d'une section ; les autres -> placeholder « en construction » */
-const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training' };
+const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training' };
 const VIEW_TAB     = { dashboard:'dashboard', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
 const VIEW_TITLE   = { dashboard:'Dashboard', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
-const PLACEHOLDER  = { feuille:'Feuille de match', analyse:'Analyse du match', 'match-new':'Nouveau match', 'training-new':'Nouvelle séance', 'training-detail':'Séance' };
+const PLACEHOLDER  = { analyse:'Analyse du match', 'match-new':'Nouveau match', 'training-new':'Nouvelle séance', 'training-detail':'Séance' };
 /* boutons hérités data-goto -> hash (les ids réels arriveront via data-route) */
 const GOTO_HASH = { dashboard:'#/', gamecenter:'#/matchs', effectif:'#/effectif', training:'#/entrainements', live:'#/live', joueur:'#/joueurs/sylvain-francisco', match:'#/matchs/hapoel' };
 
@@ -1915,6 +1931,112 @@ document.addEventListener('click', e => {
   e.preventDefault();
   navigate(dest);
 });
+
+/* ============ PAGE FEUILLE DE MATCH (rendue depuis le store) ============ */
+(function(){
+  const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const MONTHS = ['janvier','février','mars','avril','mai','juin','juillet','août','septembre','octobre','novembre','décembre'];
+  const fmtDate = iso => { if(!iso) return ''; const p=iso.split('-').map(Number); return `${p[2]} ${MONTHS[p[1]-1]||''} ${p[0]}`; };
+  const STATUS = { final:'Terminé', upcoming:'À venir', live:'En direct' };
+  const pctStr = (m,a) => { const p = window.HoopStore ? HoopStore.pct(m,a) : (a>0?Math.round(m/a*1000)/10:null); return p==null?'—':p.toFixed(1); };
+
+  function emptyState(title,msg,backHash,backLabel){
+    return `<div class="hb-empty"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <h3>${esc(title)}</h3><p>${esc(msg)}</p>
+      <button class="btn btn-primary" data-route="${backHash||'#/matchs'}">${esc(backLabel||'Retour aux matchs')}</button></div>`;
+  }
+
+  const COLS = [
+    ['№',    l=>l.num==null?'—':l.num, 'c'],
+    ['Joueur', l=>`<span class="fs-pname">${esc(l.name)}</span>`, 'l'],
+    ['Titu', l=>l.starter?'<span class="fs-dot" title="Titulaire"></span>':'', 'c'],
+    ['Min',  l=>l.min, 'c'],
+    ['2 pts',l=>`${l.p2m}/${l.p2a}`, 'c'], ['2pt%',l=>pctStr(l.p2m,l.p2a), 'c'],
+    ['3 pts',l=>`${l.p3m}/${l.p3a}`, 'c'], ['3pt%',l=>pctStr(l.p3m,l.p3a), 'c'],
+    ['LF',   l=>`${l.ftm}/${l.fta}`, 'c'], ['LF%', l=>pctStr(l.ftm,l.fta), 'c'],
+    ['RO',l=>l.ro,'c'], ['RD',l=>l.rd,'c'], ['REB',l=>l.reb,'c'],
+    ['PD',l=>l.pd,'c'], ['INT',l=>l.int,'c'], ['CT',l=>l.ct,'c'],
+    ['BP',l=>l.bp,'c'], ['FP',l=>l.fa,'c'],
+    ['PTS',l=>`<b>${l.pts}</b>`, 'c strong'], ['ÉVAL',l=>l.eva,'c']
+  ];
+  function boxTable(team){
+    const rows = team.players.map(l => `<tr>${COLS.map(c=>`<td class="${c[2]}">${c[1](l)}</td>`).join('')}</tr>`).join('');
+    const t = team.totals;
+    const tot = `<tr class="fs-total">${COLS.map(c=>{
+      if(c[0]==='Joueur') return '<td class="l"><b>Total équipe</b></td>';
+      if(c[0]==='№'||c[0]==='Titu') return `<td class="${c[2]}"></td>`;
+      return `<td class="${c[2]}">${c[1](t)}</td>`;
+    }).join('')}</tr>`;
+    return `<div class="fs-card"><h3 class="fs-h3">${esc(team.name)} <span class="fs-badge">${team.score} pts</span></h3>
+      <div class="fs-scroll"><table class="fs-box"><thead><tr>${COLS.map(c=>`<th class="${c[2]}">${c[0]}</th>`).join('')}</tr></thead>
+      <tbody>${rows}${tot}</tbody></table></div></div>`;
+  }
+  function quartersTable(m,q){
+    if(!q) return '';
+    const sum = a=>a.reduce((x,y)=>x+y,0);
+    const row=(name,arr)=>`<tr><td class="fs-qt-team">${esc(name)}</td>${arr.map(v=>`<td>${v}</td>`).join('')}<td class="strong">${sum(arr)}</td></tr>`;
+    return `<div class="fs-card"><h3 class="fs-h3">Score par quart-temps</h3>
+      <div class="fs-scroll"><table class="fs-qt"><thead><tr><th></th>${q.labels.map(l=>`<th>${l}</th>`).join('')}<th>Total</th></tr></thead>
+      <tbody>${row(m.home.name,q.home)}${row(m.away.name,q.away)}</tbody></table></div></div>`;
+  }
+  function header(m){
+    return `<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/matchs/${m.id}"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>Retour au match</button>
+        <h2 class="page-title">Feuille de match</h2>
+        <div class="page-meta">${esc(m.competition)}${m.date?' · '+fmtDate(m.date):''}${m.lieu?' · '+esc(m.lieu):''}</div>
+      </div><div class="fs-actions">
+        <button class="btn btn-secondary sm" data-fs="print">Imprimer</button>
+        <button class="btn btn-secondary sm" data-fs="pdf">Exporter PDF</button>
+        <button class="btn btn-secondary sm" data-fs="csv">Exporter CSV</button>
+      </div></div>
+      <div class="fs-scoreline">
+        <span class="fs-team ${m.result==='win'?'win':(m.result==='loss'?'loss':'')}">${esc(m.home.name)}</span>
+        <span class="fs-score mono">${m.home.score==null?'–':m.home.score}<span class="fs-colon">:</span>${m.away.score==null?'–':m.away.score}</span>
+        <span class="fs-team">${esc(m.away.name)}</span>
+        <span class="fs-status s-${m.status}">${STATUS[m.status]||''}</span>
+      </div>`;
+  }
+  function toCSV(m,bs){
+    const head=['Numero','Joueur','Titulaire','Min','2pts_r','2pts_t','3pts_r','3pts_t','LF_r','LF_t','ROff','RDef','REB','PD','INT','CT','BP','FP','PTS','EVAL'];
+    const line=l=>[l.num==null?'':l.num,l.name,l.starter?'oui':'',l.min,l.p2m,l.p2a,l.p3m,l.p3a,l.ftm,l.fta,l.ro,l.rd,l.reb,l.pd,l.int,l.ct,l.bp,l.fa,l.pts,l.eva];
+    const t=bs.home.totals;
+    const rows=[head,...bs.home.players.map(line),['','Total equipe','','',t.p2m,t.p2a,t.p3m,t.p3a,t.ftm,t.fta,t.ro,t.rd,t.reb,t.pd,t.int,t.ct,t.bp,t.fa,t.pts,t.eva]];
+    return rows.map(r=>r.map(v=>{ v=String(v==null?'':v); return /[",;\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }).join(';')).join('\r\n');
+  }
+  function download(name,text){
+    const blob=new Blob(['﻿'+text],{type:'text/csv;charset=utf-8'}), url=URL.createObjectURL(blob), a=document.createElement('a');
+    a.href=url; a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },0);
+  }
+  function renderFeuille(matchId){
+    const el=document.getElementById('page-feuille'); if(!el) return;
+    const Store=window.HoopStore;
+    if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    const m=Store.getMatch(matchId);
+    if(!m){ el.innerHTML=emptyState('Match introuvable',`Aucun match ne correspond à « ${matchId} ».`,'#/matchs'); return; }
+    let html=header(m);
+    const bs=Store.getBoxScore(m.id), q=Store.getQuarters(m.id);
+    if(!bs){
+      html+=`<div class="fs-card">${emptyState(
+        m.status==='upcoming'?'Match à venir':'Feuille non disponible',
+        m.status==='upcoming'?'La feuille sera générée une fois le match joué (ou suivi en direct via le Match Live).':'Le détail de ce match n’est pas encore disponible dans la démo.',
+        '#/matchs/'+m.id,'Voir le match')}</div>`;
+    } else {
+      html+=quartersTable(m,q)+boxTable(bs.home);
+      html+=`<div class="fs-card"><h3 class="fs-h3">${esc(bs.away.name)} <span class="fs-badge">${bs.away.score} pts</span></h3>
+        <p class="fs-note">Le détail individuel de ${esc(bs.away.name)} n’est pas publié par le feed EuroLeague — seul le score par quart-temps (ci-dessus) est disponible.</p></div>`;
+      html+=`<p class="fs-note fs-foot">Valeurs calculées à partir des événements du match (modèle event-sourced) : les totaux reproduisent le score officiel. Colonnes non publiées par le feed (fautes provoquées, +/−) omises.</p>`;
+    }
+    el.innerHTML=html;
+    el.querySelectorAll('[data-fs]').forEach(b=> b.addEventListener('click', ()=>{
+      if(b.dataset.fs==='csv'){ if(bs) download(`feuille-${m.id}.csv`, toCSV(m,bs)); } else { window.print(); }
+    }));
+  }
+  routeHandlers.feuille = p => renderFeuille(p.matchId);
+  routeHandlers.match = p => {
+    const id = p.matchId || 'hapoel';
+    document.querySelectorAll('#mhActions [data-match-action]').forEach(b => b.dataset.route = '#/matchs/'+id+'/'+b.dataset.matchAction);
+  };
+})();
 
 /* ============ PAGE MATCH : liste d'actions + terrain ============ */
 const matchActions = [
