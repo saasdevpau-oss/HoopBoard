@@ -477,6 +477,30 @@ input[type="text"],input[type="email"],textarea,select{
 .fs-qt .strong{color:var(--orange);font-weight:600;}
 .fs-note{font-size:12.5px;color:var(--t3);line-height:1.5;margin:0;}
 .fs-foot{margin-top:2px;padding:0 2px;}
+
+/* ---- Détail match ---- */
+.md-vs{color:var(--t4);font-weight:400;font-size:.8em;margin:0 4px;}
+.md-tops{display:flex;flex-direction:column;gap:2px;}
+.md-top{display:flex;align-items:center;gap:12px;padding:10px 4px;border-bottom:1px solid var(--hair-soft);}
+.md-top:last-child{border-bottom:0;}
+.md-rank{width:22px;height:22px;flex:none;display:grid;place-items:center;border-radius:50%;background:var(--orange-soft);color:var(--orange);font-size:12px;font-weight:700;}
+.md-num{color:var(--t3);font-size:13px;min-width:26px;}
+.md-name{color:var(--t1);font-weight:600;font-size:14px;}
+.md-line{margin-left:auto;color:var(--t3);font-size:12.5px;}
+
+/* ---- Analyse (terrain + heatmap) ---- */
+.an-grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:18px;align-items:start;}
+.an-court{max-width:520px;margin:0 auto;}
+.an-legend{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:400;color:var(--t3);text-transform:none;letter-spacing:0;}
+.an-legend i{display:inline-block;width:12px;height:12px;border-radius:3px;}
+.an-legend .lg-cold{background:rgb(192,86,69);}
+.an-legend .lg-hot{background:rgb(127,160,95);margin-left:6px;}
+.an-sel{margin:12px 2px 0;font-size:13px;color:var(--t2);line-height:1.5;min-height:20px;}
+.an-shots{display:flex;gap:10px;flex-wrap:wrap;}
+.an-chip{font-size:13px;color:var(--t2);background:var(--surface-2);border:1px solid var(--hair);border-radius:100px;padding:7px 14px;}
+.an-chip b{color:var(--t1);}
+@media(max-width:860px){ .an-grid{grid-template-columns:1fr;} }
+
 @media print{
   .app-sidebar,.app-topbar,.scrim,.fs-actions,.fs-back,.mh-actions,.lv-bottombar,.menu-btn{display:none!important;}
   body{background:#fff!important;}

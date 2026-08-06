@@ -1301,28 +1301,28 @@
           <td style="text-align:left;"><div class="player-cell"><div class="mh-crest" style="width:27px;height:27px;border-radius:8px;font-size:9px;">RMB</div><span class="player-name" style="font-size:12.5px;">Real Madrid</span></div></td>
           <td><span class="result-pill win">V</span></td>
           <td class="mono cell-hi">87–85</td><td class="mono cell-hi">20</td><td class="mono">0</td><td class="mono">5</td><td class="mono cell-hi" style="color:var(--orange);">22</td>
-          <td><button class="btn-view" data-goto="match">Voir match <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></button></td>
+          <td><button class="btn-view" data-route="#/matchs/real-madrid">Voir match <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></button></td>
 </tr>
         <tr>
           <td style="color:var(--t3);">25 février 2026</td>
           <td style="text-align:left;"><div class="player-cell"><div class="mh-crest" style="width:27px;height:27px;border-radius:8px;font-size:9px;">OLY</div><span class="player-name" style="font-size:12.5px;">Olympiacos</span></div></td>
           <td><span class="result-pill win">V</span></td>
           <td class="mono cell-hi">99–94</td><td class="mono cell-hi">23</td><td class="mono">3</td><td class="mono">7</td><td class="mono cell-hi" style="color:var(--orange);">36</td>
-          <td><button class="btn-view" data-goto="match">Voir match <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></button></td>
+          <td><button class="btn-view" data-route="#/matchs/olympiacos">Voir match <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></button></td>
 </tr>
         <tr>
           <td style="color:var(--t3);">13 février 2026</td>
           <td style="text-align:left;"><div class="player-cell"><div class="mh-crest" style="width:27px;height:27px;border-radius:8px;font-size:9px;">HTA</div><span class="player-name" style="font-size:12.5px;">Hapoel Tel Aviv</span></div></td>
           <td><span class="result-pill win">V</span></td>
           <td class="mono cell-hi">93–82</td><td class="mono cell-hi">15</td><td class="mono">4</td><td class="mono">3</td><td class="mono cell-hi" style="color:var(--orange);">11</td>
-          <td><button class="btn-view" data-goto="match">Voir match <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></button></td>
+          <td><button class="btn-view" data-route="#/matchs/hapoel">Voir match <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></button></td>
 </tr>
         <tr>
           <td style="color:var(--t3);">11 décembre 2025</td>
           <td style="text-align:left;"><div class="player-cell"><div class="mh-crest" style="width:27px;height:27px;border-radius:8px;font-size:9px;">PBB</div><span class="player-name" style="font-size:12.5px;">Paris Basketball</span></div></td>
           <td><span class="result-pill win">V</span></td>
           <td class="mono cell-hi">108–105</td><td class="mono cell-top">26</td><td class="mono">4</td><td class="mono">5</td><td class="mono cell-hi" style="color:var(--orange);">28</td>
-          <td><button class="btn-view" data-goto="match">Voir match <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></button></td>
+          <td><button class="btn-view" data-route="#/matchs/paris">Voir match <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 6l6 6-6 6"/></svg></button></td>
 </tr>
 </tbody>
 </table>
@@ -1782,6 +1782,11 @@
 <section class="page" id="page-feuille"></section>
 
 <!-- ============================================================
+     PAGE — ANALYSE DU MATCH (terrain court.js + heatmap zones)
+============================================================ -->
+<section class="page" id="page-analyse"></section>
+
+<!-- ============================================================
      PAGE — 404 / EN CONSTRUCTION (gérée par le routeur)
 ============================================================ -->
 <section class="page" id="page-404">
@@ -1850,6 +1855,7 @@
 <script src="/lib/data.js"></script>
 <script src="/lib/match-events.js"></script>
 <script src="/assets/store.js"></script>
+<script src="/assets/court.js"></script>
 <script>
 /* ============ ROUTEUR (hash) ============
    Source unique de navigation. URLs distinctes, partageables, qui survivent
@@ -1873,10 +1879,10 @@ const ROUTES = [
   ['^/entrainements/?$',               'training']
 ];
 /* vues disposant déjà d'une section ; les autres -> placeholder « en construction » */
-const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training' };
+const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training' };
 const VIEW_TAB     = { dashboard:'dashboard', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
 const VIEW_TITLE   = { dashboard:'Dashboard', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
-const PLACEHOLDER  = { analyse:'Analyse du match', 'match-new':'Nouveau match', 'training-new':'Nouvelle séance', 'training-detail':'Séance' };
+const PLACEHOLDER  = { 'match-new':'Nouveau match', 'training-new':'Nouvelle séance', 'training-detail':'Séance' };
 /* boutons hérités data-goto -> hash (les ids réels arriveront via data-route) */
 const GOTO_HASH = { dashboard:'#/', gamecenter:'#/matchs', effectif:'#/effectif', training:'#/entrainements', live:'#/live', joueur:'#/joueurs/sylvain-francisco', match:'#/matchs/hapoel' };
 
@@ -2032,10 +2038,94 @@ document.addEventListener('click', e => {
     }));
   }
   routeHandlers.feuille = p => renderFeuille(p.matchId);
-  routeHandlers.match = p => {
-    const id = p.matchId || 'hapoel';
-    document.querySelectorAll('#mhActions [data-match-action]').forEach(b => b.dataset.route = '#/matchs/'+id+'/'+b.dataset.matchAction);
-  };
+
+  /* --- Détail d'un match (rendu depuis le store, par matchId) --- */
+  const backSvg = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M15 18l-6-6 6-6"/></svg>';
+  function scoreline(m){
+    return `<div class="fs-scoreline">
+      <span class="fs-team ${m.result==='win'?'win':(m.result==='loss'?'loss':'')}">${esc(m.home.name)}</span>
+      <span class="fs-score mono">${m.home.score==null?'–':m.home.score}<span class="fs-colon">:</span>${m.away.score==null?'–':m.away.score}</span>
+      <span class="fs-team">${esc(m.away.name)}</span>
+      <span class="fs-status s-${m.status}">${STATUS[m.status]||''}</span></div>`;
+  }
+  function actionsBar(m){
+    return `<div class="mh-actions">
+      <button class="btn btn-primary sm" data-route="#/matchs/${m.id}/feuille">Feuille de match</button>
+      <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/analyse">Analyse</button>
+      <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/live">${m.status==='upcoming'?'Démarrer le live':'Match live'}</button></div>`;
+  }
+  function topPlayers(bs){
+    const top = bs.home.players.slice().sort((a,b)=>b.pts-a.pts).slice(0,3);
+    return `<div class="fs-card"><h3 class="fs-h3">Meilleurs marqueurs — ${esc(bs.home.name)}</h3>
+      <div class="md-tops">${top.map((p,i)=>`<div class="md-top"><span class="md-rank">${i+1}</span>
+        <span class="md-num mono">${p.num==null?'':'#'+p.num}</span><span class="md-name">${esc(p.name)}</span>
+        <span class="md-line mono">${p.pts} pts · ${p.reb} reb · ${p.pd} pd · éval ${p.eva}</span></div>`).join('')}</div></div>`;
+  }
+  function renderMatchDetail(matchId){
+    const el=document.getElementById('page-match'); if(!el) return;
+    const Store=window.HoopStore;
+    const m = Store && Store.getMatch(matchId);
+    if(!m){ el.innerHTML = emptyState('Match introuvable', `Aucun match ne correspond à « ${matchId} ».`, '#/matchs'); return; }
+    let html = `<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/matchs">${backSvg}Tous les matchs</button>
+        <h2 class="page-title">${esc(m.home.name)} <span class="md-vs">vs</span> ${esc(m.away.name)}</h2>
+        <div class="page-meta">${esc(m.competition)}${m.date?' · '+fmtDate(m.date):''}${m.lieu?' · '+esc(m.lieu):''}</div>
+      </div></div>` + scoreline(m) + actionsBar(m);
+    const q = Store.getQuarters(m.id); if(q) html += quartersTable(m,q);
+    const bs = Store.getBoxScore(m.id);
+    if(bs) html += topPlayers(bs);
+    else html += `<div class="fs-card">${emptyState(
+      m.status==='upcoming'?'Match à venir':'Détail indisponible',
+      m.status==='upcoming'?'Ce match n’a pas encore été joué. Préparez-le ou lancez le Match Live le jour J.':'Le box score détaillé de ce match n’est pas disponible dans la démo (seul le score est connu).',
+      '#/matchs/'+m.id+'/feuille','Ouvrir la feuille')}</div>`;
+    el.innerHTML = html;
+  }
+
+  /* --- Analyse : terrain court.js + heatmap des zones (tendances saison) --- */
+  const ZLAB = { RAQUETTE:'Raquette', MI_DISTANCE_GAUCHE:'Mi-distance gauche', MI_DISTANCE_CENTRE:'Mi-distance centre', MI_DISTANCE_DROITE:'Mi-distance droite', CORNER_3_GAUCHE:'Corner 3 gauche', CORNER_3_DROIT:'Corner 3 droit', TOP_KEY_GAUCHE:'Aile 3 gauche', TOP_KEY_DROIT:'Aile 3 droite' };
+  const zlabel = k => ZLAB[k] || k;
+  const Z2S = { 'restricted-area-left':'RAQUETTE','restricted-area-center':'RAQUETTE','restricted-area-right':'RAQUETTE','paint-left':'RAQUETTE','paint-center':'RAQUETTE','paint-right':'RAQUETTE','short-corner-left':'MI_DISTANCE_GAUCHE','short-corner-right':'MI_DISTANCE_DROITE','midrange-baseline-left':'MI_DISTANCE_GAUCHE','midrange-wing-left':'MI_DISTANCE_GAUCHE','midrange-center':'MI_DISTANCE_CENTRE','midrange-wing-right':'MI_DISTANCE_DROITE','midrange-baseline-right':'MI_DISTANCE_DROITE','three-corner-left':'CORNER_3_GAUCHE','three-corner-right':'CORNER_3_DROIT','three-wing-left':'TOP_KEY_GAUCHE','three-top':'TOP_KEY_GAUCHE','three-wing-right':'TOP_KEY_DROIT' };
+  function seasonHeatmap(zones){
+    const pcts = Object.keys(zones).map(k=>zones[k].pct); const mn=Math.min.apply(null,pcts), mx=Math.max.apply(null,pcts);
+    const norm = p => mx>mn ? (p-mn)/(mx-mn) : 0.5; const hm = {};
+    Object.keys(Z2S).forEach(zid=>{ const s=zones[Z2S[zid]]; if(s) hm[zid]={ value:norm(s.pct), key:Z2S[zid] }; });
+    return hm;
+  }
+  function renderAnalyse(matchId){
+    const el=document.getElementById('page-analyse'); if(!el) return;
+    const Store=window.HoopStore;
+    const m = Store && Store.getMatch(matchId);
+    if(!m){ el.innerHTML = emptyState('Match introuvable', `Aucun match ne correspond à « ${matchId} ».`, '#/matchs'); return; }
+    const zones = Store.getSeasonZones(), bs = Store.getBoxScore(m.id);
+    el.innerHTML = `<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/matchs/${m.id}">${backSvg}Retour au match</button>
+        <h2 class="page-title">Analyse — ${esc(m.away.name)}</h2>
+        <div class="page-meta">${esc(m.competition)}${m.date?' · '+fmtDate(m.date):''}</div>
+      </div></div>
+      <div class="an-grid">
+        <div class="fs-card"><h3 class="fs-h3">Carte de tir par zone <span class="an-legend"><i class="lg-cold"></i>faible % <i class="lg-hot"></i>fort %</span></h3>
+          <div id="analyseCourt" class="an-court"></div>
+          <p class="an-sel" id="anSel">Touchez une zone du terrain pour voir son détail.</p></div>
+        <div class="fs-card"><h3 class="fs-h3">Réussite par zone (saison)</h3>
+          <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="l">Zone</th><th>Réussis</th><th>Tentés</th><th>%</th></tr></thead>
+            <tbody>${Object.keys(zones).map(k=>`<tr><td class="l">${zlabel(k)}</td><td>${zones[k].reussis}</td><td>${zones[k].tentes}</td><td class="strong">${zones[k].pct.toFixed(1)}</td></tr>`).join('')}</tbody></table></div></div>
+      </div>
+      ${bs?`<div class="fs-card"><h3 class="fs-h3">Tirs du match — ${esc(bs.home.name)}</h3>
+        <div class="an-shots"><span class="an-chip">2 pts <b>${bs.home.totals.p2m}/${bs.home.totals.p2a}</b> · ${pctStr(bs.home.totals.p2m,bs.home.totals.p2a)}%</span>
+          <span class="an-chip">3 pts <b>${bs.home.totals.p3m}/${bs.home.totals.p3a}</b> · ${pctStr(bs.home.totals.p3m,bs.home.totals.p3a)}%</span>
+          <span class="an-chip">LF <b>${bs.home.totals.ftm}/${bs.home.totals.fta}</b> · ${pctStr(bs.home.totals.ftm,bs.home.totals.fta)}%</span></div></div>`:''}
+      <p class="fs-note fs-foot">Le suivi spatial tir par tir (positions exactes) est enregistré pour les matchs suivis en direct via le Match Live. Ci-dessus : répartition par zone à l'échelle de la saison (tendances de l'équipe).</p>`;
+    if(window.HoopCourt){
+      const hm = seasonHeatmap(zones);
+      HoopCourt.render(document.getElementById('analyseCourt'), { mode:'analysis', heatmap:hm,
+        onZoneSelect:(z)=>{ const s=hm[z.id], sel=document.getElementById('anSel');
+          if(s){ const zn=zones[s.key]; sel.innerHTML = `<b>${esc(z.label)}</b> — zone saison « ${zlabel(s.key)} » : ${zn.reussis}/${zn.tentes} (${zn.pct.toFixed(1)}%)`; }
+          else { sel.textContent = z.label + ' — pas de données de zone.'; } } });
+    } else { document.getElementById('analyseCourt').innerHTML = '<p class="fs-note">Composant terrain indisponible.</p>'; }
+  }
+
+  routeHandlers.match = p => renderMatchDetail(p.matchId || 'hapoel');
+  routeHandlers.analyse = p => renderAnalyse(p.matchId || 'hapoel');
 })();
 
 /* ============ PAGE MATCH : liste d'actions + terrain ============ */

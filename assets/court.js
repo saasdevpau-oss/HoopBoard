@@ -264,6 +264,30 @@
     return g;
   }
 
+  // Heatmap : colore chaque zone selon une valeur 0..1 (rouge -> or -> vert).
+  function heatColor(t) {
+    t = Math.max(0, Math.min(1, t));
+    const stops = [[192, 86, 69], [201, 158, 99], [127, 160, 95]]; // loss, gold, win (charte)
+    const seg = t < 0.5 ? 0 : 1, f = t < 0.5 ? t / 0.5 : (t - 0.5) / 0.5;
+    const a = stops[seg], b = stops[seg + 1], c = (k) => Math.round(a[k] + (b[k] - a[k]) * f);
+    return `rgb(${c(0)},${c(1)},${c(2)})`;
+  }
+  function buildHeatLayer(heatmap) {
+    const step = 1.8, g = el('g', { class: 'hbc-heat', 'pointer-events': 'none' });
+    const cw = step / 100 * SVG_W, ch = step / 100 * SVG_H;
+    for (let ny = step / 2; ny < 100; ny += step) {
+      for (let nx = step / 2; nx < 100; nx += step) {
+        const z = getCourtZone({ x: nx, y: ny });
+        if (z.id === OUT_OF_BOUNDS.id) continue;
+        const h = heatmap[z.id]; if (h == null) continue;
+        const v = typeof h === 'object' ? h.value : h; if (v == null) continue;
+        const p = toSvg({ x: nx - step / 2, y: ny - step / 2 });
+        g.appendChild(el('rect', { x: p.x.toFixed(2), y: p.y.toFixed(2), width: (cw + 0.6).toFixed(2), height: (ch + 0.6).toFixed(2), fill: heatColor(v), opacity: 0.5 }));
+      }
+    }
+    return g;
+  }
+
   function buildDebugLabels() {
     const g = el('g', { class: 'hbc-debug-labels', 'pointer-events': 'none' });
     // libellé au centroïde approximatif de chaque zone (moyenne des échantillons)
@@ -327,7 +351,8 @@
       debug: !!props.debug,
       shots: props.shots || [],
       selectedZoneId: props.selectedZoneId || null,
-      highlightZones: normalizeZones(props.highlightZones)
+      highlightZones: normalizeZones(props.highlightZones),
+      heatmap: props.heatmap || null
     };
 
     container.innerHTML = '';
@@ -382,6 +407,7 @@
       if (state.debug) {
         layerZones.appendChild(buildSampleLayer({ step: 1.6, debug: true }));
       } else {
+        if (state.heatmap) layerZones.appendChild(buildHeatLayer(state.heatmap));
         const hl = state.highlightZones.slice();
         if (state.selectedZoneId) hl.push(state.selectedZoneId);
         hl.forEach(id => layerZones.appendChild(buildSampleLayer({ only: id, step: 1.6 })));
@@ -403,6 +429,7 @@
         if ('shots' in patch) state.shots = patch.shots || [];
         if ('highlightZones' in patch) state.highlightZones = normalizeZones(patch.highlightZones);
         if ('selectedZoneId' in patch) state.selectedZoneId = patch.selectedZoneId || null;
+        if ('heatmap' in patch) state.heatmap = patch.heatmap || null;
         draw();
       },
       setDebug: function (on) {

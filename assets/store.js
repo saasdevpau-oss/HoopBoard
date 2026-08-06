@@ -180,6 +180,7 @@
     getClub: () => CLUB, getTournoi: () => TOURNOI,
     getPlayers, getPlayer,
     getMatches, getMatch, getBoxScore, getQuarters,
+    getSeasonZones: () => (DATA.zonesTirSaison && DATA.zonesTirSaison.zones) || {},
     // persistance
     getSessions: () => readColl('sessions'), addSession: (s) => addToColl('sessions', s),
     getUserPlayers: () => readColl('players'), addUserPlayer: (p) => addToColl('players', p),
