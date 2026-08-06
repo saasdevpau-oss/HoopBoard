@@ -2165,6 +2165,84 @@ document.addEventListener('click', e => {
     search.addEventListener('input', apply); status.addEventListener('change', apply); apply();
   }
   routeHandlers.matchs = renderMatchsList;
+
+  /* --- Effectif (#/effectif) : liste + recherche + filtre poste + ajout --- */
+  const POSTES = ['Meneur','Arrière','Ailier','Ailier-fort','Intérieur','Pivot'];
+  function efRow(p){
+    const s = p.season;
+    return `<tr>
+      <td class="c">${p.num==null?'—':p.num}</td>
+      <td class="l"><span class="fs-pname">${esc(p.name)}</span>${p.user?' <span class="ef-tag">ajouté</span>':''}${p.status==='indispo'?' <span class="ef-tag off">indispo</span>':''}</td>
+      <td class="l">${esc(p.poste||'—')}</td><td class="c">${esc(p.taille||'—')}</td>
+      <td class="c">${s?s.mj:'—'}</td><td class="c">${s?s.min:'—'}</td><td class="c">${s?s.pts:'—'}</td>
+      <td class="c">${s?s.reb:'—'}</td><td class="c">${s?s.pd:'—'}</td><td class="c strong">${s?s.eva:'—'}</td>
+      <td class="c"><button class="btn-view" data-route="#/joueurs/${p.id}">Fiche</button></td></tr>`;
+  }
+  function renderEffectif(){
+    const el=document.getElementById('page-effectif'); if(!el) return;
+    const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    function allPlayers(){
+      const users=Store.getUserPlayers().map(u=>({id:u.id,num:(u.num!=null&&u.num!=='')?+u.num:null,name:((u.prenom?u.prenom+' ':'')+(u.nom||'')).trim()||'Sans nom',poste:u.poste,taille:u.taille,status:u.status||'actif',season:null,user:true}));
+      return Store.getPlayers().concat(users);
+    }
+    el.innerHTML = `<div class="page-head"><div><h2 class="page-title">Effectif</h2>
+        <div class="page-meta">${esc(Store.getClub().nom)} · EuroLeague 2025–26</div></div>
+        <button class="btn btn-primary" id="efAdd">+ Ajouter un joueur</button></div>
+      <form class="ef-form" id="efForm" hidden><div class="ef-grid">
+        <label>Prénom<input name="prenom" class="mc-input" required></label>
+        <label>Nom<input name="nom" class="mc-input" required></label>
+        <label>Numéro<input name="num" class="mc-input" type="number" min="0" max="99"></label>
+        <label>Poste<select name="poste" class="mc-input">${POSTES.map(p=>`<option>${p}</option>`).join('')}</select></label>
+        <label>Taille<input name="taille" class="mc-input" placeholder="1m95"></label>
+        <label>Statut<select name="status" class="mc-input"><option value="actif">Actif</option><option value="indispo">Indisponible</option></select></label>
+        <label class="ef-full">Notes<input name="notes" class="mc-input" placeholder="facultatif"></label>
+      </div><div class="ef-form-actions"><button type="submit" class="btn btn-primary sm">Enregistrer</button><button type="button" class="btn btn-secondary sm" id="efCancel">Annuler</button></div></form>
+      <div class="mc-filters"><input type="search" id="efSearch" class="mc-input" placeholder="Rechercher un joueur…" aria-label="Rechercher un joueur">
+        <select id="efPoste" class="mc-input" aria-label="Filtrer par poste"><option value="">Tous les postes</option>${POSTES.map(p=>`<option>${p}</option>`).join('')}</select></div>
+      <div class="table-card card-elevated"><div class="fs-scroll"><table class="fs-box">
+        <thead><tr><th class="c">№</th><th class="l">Joueur</th><th class="l">Poste</th><th class="c">Taille</th><th class="c">MJ</th><th class="c">Min</th><th class="c">Pts</th><th class="c">Reb</th><th class="c">PD</th><th class="c">Éval</th><th class="c"></th></tr></thead>
+        <tbody id="efBody"></tbody></table></div></div>`;
+    const body=el.querySelector('#efBody'), search=el.querySelector('#efSearch'), poste=el.querySelector('#efPoste');
+    function apply(){
+      const q=(search.value||'').toLowerCase().trim(), ps=poste.value;
+      const list=allPlayers().filter(p=>(!ps||p.poste===ps)&&(!q||p.name.toLowerCase().indexOf(q)!==-1));
+      body.innerHTML = list.length ? list.map(efRow).join('') : `<tr><td colspan="11" style="padding:22px;color:var(--t3);text-align:center;">Aucun joueur ne correspond à ces critères.</td></tr>`;
+    }
+    search.addEventListener('input',apply); poste.addEventListener('change',apply); apply();
+    const form=el.querySelector('#efForm');
+    el.querySelector('#efAdd').addEventListener('click',()=>{ form.hidden=!form.hidden; if(!form.hidden) form.querySelector('[name=prenom]').focus(); });
+    el.querySelector('#efCancel').addEventListener('click',()=>{ form.hidden=true; form.reset(); });
+    form.addEventListener('submit',e=>{ e.preventDefault(); const o={}; new FormData(form).forEach((v,k)=>o[k]=v); Store.addUserPlayer(o); form.reset(); form.hidden=true; apply(); });
+  }
+
+  /* --- Fiche joueur (#/joueurs/:id) --- */
+  const statTile=(label,val)=>`<div class="pf-tile"><span class="pf-tv mono">${val==null?'—':val}</span><span class="pf-tl">${esc(label)}</span></div>`;
+  function renderFiche(playerId){
+    const el=document.getElementById('page-joueur'); if(!el) return;
+    const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    let p=Store.getPlayer(playerId);
+    if(!p){ const u=Store.getUserPlayers().find(x=>x.id===playerId); if(u) p={id:u.id,num:(u.num!=null&&u.num!=='')?+u.num:null,name:((u.prenom?u.prenom+' ':'')+(u.nom||'')).trim(),poste:u.poste,taille:u.taille,status:u.status,season:null}; }
+    if(!p){ el.innerHTML=emptyState('Joueur introuvable',`Aucun joueur ne correspond à « ${playerId} ».`,'#/effectif','Retour à l’effectif'); return; }
+    const s=p.season, hist=Store.getPlayerHistory(p.id);
+    let html=`<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/effectif">${backSvg}Effectif</button>
+        <h2 class="page-title">${p.num!=null?'#'+p.num+' ':''}${esc(p.name)}</h2>
+        <div class="page-meta">${esc(p.poste||'—')}${p.taille?' · '+esc(p.taille):''}${p.status==='indispo'?' · indisponible':''} · ${esc(Store.getClub().nom)}</div>
+      </div></div>`;
+    if(s) html+=`<div class="pf-tiles">${statTile('Pts',s.pts)}${statTile('Reb',s.reb)}${statTile('Passes',s.pd)}${statTile('Éval',s.eva)}${statTile('Min',s.min)}${statTile('Matchs',s.mj)}${statTile('Interc.',s.int)}${statTile('% Tirs',s.tirsPct)}</div>`;
+    else html+=`<div class="fs-card">${emptyState('Nouveau joueur','Ce joueur vient d’être ajouté : aucune statistique enregistrée pour l’instant.','#/effectif','Retour à l’effectif')}</div>`;
+    if(s && window.HoopCourt) html+=`<div class="fs-card"><h3 class="fs-h3">Carte de tir <span class="an-legend"><i class="lg-cold"></i>faible % <i class="lg-hot"></i>fort %</span></h3>
+      <div id="ficheCourt" class="an-court"></div>
+      <p class="fs-note">Répartition par zone à l'échelle de l'équipe (référence saison). Le suivi tir par tir individuel sera alimenté par le Match Live.</p></div>`;
+    if(hist.length) html+=`<div class="fs-card"><h3 class="fs-h3">Historique des matchs</h3>
+      <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="l">Adversaire</th><th class="c">Pts</th><th class="c">Reb</th><th class="c">PD</th><th class="c">Éval</th><th class="c"></th></tr></thead>
+      <tbody>${hist.map(h=>`<tr><td class="l">${esc(h.opponent)}</td><td class="c">${h.pts}</td><td class="c">${h.reb}</td><td class="c">${h.pd}</td><td class="c strong">${h.eva}</td><td class="c"><button class="btn-view" data-route="#/matchs/${h.matchId}">Voir match</button></td></tr>`).join('')}</tbody></table></div></div>`;
+    el.innerHTML=html;
+    if(s && window.HoopCourt){ const c=document.getElementById('ficheCourt'); if(c) HoopCourt.render(c,{mode:'readonly', heatmap:seasonHeatmap(Store.getSeasonZones())}); }
+  }
+
+  routeHandlers.effectif = renderEffectif;
+  routeHandlers.joueur = p => renderFiche(p.playerId || 'sylvain-francisco');
 })();
 
 /* ============ PAGE MATCH : liste d'actions + terrain ============ */
@@ -2811,8 +2889,9 @@ async function hydrateFromAPI(){
     if(pills[0]) pills[0].textContent = roster.length;
     if(pills[1]) pills[1].textContent = tournoi.resultats.length;
 
-    // effectif : tbody reconstruit depuis l'API
-    const tbody = document.querySelector('#page-effectif tbody');
+    // effectif : désormais rendu par routeHandlers.effectif depuis le store
+    // (mêmes données que l'API) — on neutralise l'ancienne reconstruction ici.
+    const tbody = null;
     if(tbody){
       const maxPts = Math.max(...roster.map(p => p.pts));
       const maxReb = Math.max(...roster.map(p => p.reb));

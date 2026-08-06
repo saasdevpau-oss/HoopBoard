@@ -181,6 +181,14 @@
     getPlayers, getPlayer,
     getMatches, getMatch, getBoxScore, getQuarters,
     getSeasonZones: () => (DATA.zonesTirSaison && DATA.zonesTirSaison.zones) || {},
+    getPlayerHistory: function (id) {
+      const out = [];
+      const bs = getBoxScore('hapoel');
+      if (bs) { const line = bs.home.players.find((p) => p.id === id); if (line) out.push({ matchId: 'hapoel', opponent: 'Hapoel Tel Aviv', pts: line.pts, reb: line.reb, pd: line.pd, eva: line.eva }); }
+      const V = TOURNOI ? DATA.joueurVedette : null;
+      if (V && slug(V.nom) === id) { (V.matchs || []).forEach((mm) => { const mid = matchIdFor(mm.adversaire); if (mid !== 'hapoel') out.push({ matchId: mid, opponent: mm.adversaire, pts: mm.pts, reb: mm.reb, pd: mm.pd, eva: mm.eva }); }); }
+      return out;
+    },
     // persistance
     getSessions: () => readColl('sessions'), addSession: (s) => addToColl('sessions', s),
     getUserPlayers: () => readColl('players'), addUserPlayer: (p) => addToColl('players', p),

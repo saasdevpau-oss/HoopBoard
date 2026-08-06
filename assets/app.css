@@ -519,6 +519,22 @@ input[type="text"],input[type="email"],textarea,select{
 .mc-actions{display:flex;gap:7px;flex-wrap:wrap;}
 .mc-actions .btn{flex:1;min-width:0;}
 
+/* ---- Effectif : formulaire d'ajout + tags ---- */
+.ef-form{background:var(--surface-1);border:1px solid var(--hair);border-radius:var(--card-radius);padding:18px 20px;margin-bottom:18px;}
+.ef-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}
+.ef-grid label{display:flex;flex-direction:column;gap:5px;font-size:12px;color:var(--t3);}
+.ef-grid .mc-input{width:100%;}
+.ef-full{grid-column:1/-1;}
+.ef-form-actions{display:flex;gap:8px;margin-top:14px;}
+.ef-tag{display:inline-block;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:100px;background:var(--orange-soft);color:var(--orange);vertical-align:middle;}
+.ef-tag.off{background:var(--loss-soft);color:var(--loss);}
+
+/* ---- Fiche joueur : tuiles de stats ---- */
+.pf-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:12px;margin-bottom:18px;}
+.pf-tile{background:var(--surface-1);border:1px solid var(--hair);border-radius:var(--card-radius);padding:16px 12px;text-align:center;display:flex;flex-direction:column;gap:4px;}
+.pf-tv{font-size:24px;font-weight:700;color:var(--t1);}
+.pf-tl{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.03em;}
+
 @media print{
   .app-sidebar,.app-topbar,.scrim,.fs-actions,.fs-back,.mh-actions,.lv-bottombar,.menu-btn{display:none!important;}
   body{background:#fff!important;}
