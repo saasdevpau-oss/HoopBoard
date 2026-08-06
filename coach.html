@@ -1786,6 +1786,10 @@
 ============================================================ -->
 <section class="page" id="page-analyse"></section>
 
+<!-- Entraînements : formulaire nouvelle séance + détail d'une séance -->
+<section class="page" id="page-training-new"></section>
+<section class="page" id="page-training-detail"></section>
+
 <!-- ============================================================
      PAGE — 404 / EN CONSTRUCTION (gérée par le routeur)
 ============================================================ -->
@@ -1879,10 +1883,10 @@ const ROUTES = [
   ['^/entrainements/?$',               'training']
 ];
 /* vues disposant déjà d'une section ; les autres -> placeholder « en construction » */
-const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training' };
+const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail' };
 const VIEW_TAB     = { dashboard:'dashboard', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
 const VIEW_TITLE   = { dashboard:'Dashboard', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
-const PLACEHOLDER  = { 'match-new':'Nouveau match', 'training-new':'Nouvelle séance', 'training-detail':'Séance' };
+const PLACEHOLDER  = { 'match-new':'Nouveau match' };
 /* boutons hérités data-goto -> hash (les ids réels arriveront via data-route) */
 const GOTO_HASH = { dashboard:'#/', gamecenter:'#/matchs', effectif:'#/effectif', training:'#/entrainements', live:'#/live', joueur:'#/joueurs/sylvain-francisco', match:'#/matchs/hapoel' };
 
@@ -2243,6 +2247,85 @@ document.addEventListener('click', e => {
 
   routeHandlers.effectif = renderEffectif;
   routeHandlers.joueur = p => renderFiche(p.playerId || 'sylvain-francisco');
+
+  /* --- Entraînements (#/entrainements) --- */
+  function sessionCard(s){
+    return `<div class="mc-card" data-route="#/entrainements/${s.id}">
+      <div class="mc-top"><span class="mc-date">${s.date?fmtDate(s.date):'Date à définir'}${s.heure?' · '+esc(s.heure):''}</span>${s.type?`<span class="ef-tag">${esc(s.type)}</span>`:''}</div>
+      <div class="tr-title">${esc(s.titre||'Séance')}</div>
+      <div class="mc-comp">${s.objectif?esc(s.objectif):'Sans objectif défini'}</div>
+      <div class="tr-meta">${(s.convoques||[]).length} convoqués${(s.zones&&s.zones.length)?` · ${s.zones.length} zone(s) de tir`:''}${s.lieu?' · '+esc(s.lieu):''}</div></div>`;
+  }
+  function renderTraining(){
+    const el=document.getElementById('page-training'); if(!el) return;
+    const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    const sessions=Store.getSessions();
+    let html=`<div class="page-head"><div><h2 class="page-title">Entraînement</h2>
+        <div class="page-meta">${esc(Store.getClub().nom)} · préparation EuroLeague</div></div>
+        <button class="btn btn-primary" data-route="#/entrainements/nouveau">+ Nouvelle séance</button></div>`;
+    html += sessions.length
+      ? `<div class="section-label">Séances planifiées (${sessions.length})</div><div class="mc-grid">${sessions.map(sessionCard).join('')}</div>`
+      : `<div class="fs-card">${emptyState('Aucune séance','Aucune séance planifiée. Créez votre première séance d’entraînement.','#/entrainements/nouveau','+ Nouvelle séance')}</div>`;
+    el.innerHTML=html;
+  }
+  /* --- Nouvelle séance : formulaire + sélecteur de zones court.js --- */
+  function renderNewSession(){
+    const el=document.getElementById('page-training-new'); if(!el) return;
+    const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Modèle non chargé.','#/'); return; }
+    const roster=Store.getPlayers();
+    el.innerHTML=`<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/entrainements">${backSvg}Entraînements</button>
+        <h2 class="page-title">Nouvelle séance</h2></div></div>
+      <form id="tnForm">
+        <div class="fs-card"><h3 class="fs-h3">Informations</h3><div class="ef-grid">
+          <label class="ef-full">Titre<input name="titre" class="mc-input" required placeholder="Ex. Séance tir extérieur"></label>
+          <label>Date<input name="date" class="mc-input" type="date"></label>
+          <label>Heure<input name="heure" class="mc-input" type="time"></label>
+          <label>Durée (min)<input name="duree" class="mc-input" type="number" min="0" value="90"></label>
+          <label>Lieu<input name="lieu" class="mc-input" placeholder="Žalgiris Arena"></label>
+          <label>Type<select name="type" class="mc-input"><option>Tir</option><option>Physique</option><option>Tactique</option><option>Défense</option><option>Récupération</option></select></label>
+          <label>Intensité<select name="intensite" class="mc-input"><option>Légère</option><option selected>Modérée</option><option>Élevée</option></select></label>
+          <label class="ef-full">Objectif principal<input name="objectif" class="mc-input" placeholder="Ex. améliorer le corner 3"></label>
+          <label class="ef-full">Notes<input name="notes" class="mc-input" placeholder="facultatif"></label>
+        </div></div>
+        <div class="fs-card"><h3 class="fs-h3">Joueurs convoqués</h3><div class="tn-roster">${roster.map(p=>`<label class="tn-chk"><input type="checkbox" name="conv" value="${p.id}"><span>${p.num!=null?'#'+p.num+' ':''}${esc(p.name)}</span></label>`).join('')}</div></div>
+        <div class="fs-card"><h3 class="fs-h3">Atelier de tir — zones ciblées</h3>
+          <p class="fs-note" style="margin-bottom:12px;">Touchez les zones du terrain à travailler (le même terrain que l'analyse).</p>
+          <div class="an-court" id="tnCourt"></div><div class="tn-zones" id="tnZones"><span class="fs-note">Aucune zone sélectionnée.</span></div></div>
+        <div class="ef-form-actions"><button type="submit" class="btn btn-primary">Enregistrer la séance</button>
+          <button type="button" class="btn btn-secondary" data-route="#/entrainements">Annuler</button></div></form>`;
+    const picked=new Set(), zonesBox=el.querySelector('#tnZones'); let court=null;
+    function refresh(){ const arr=[...picked];
+      zonesBox.innerHTML = arr.length ? arr.map(id=>`<span class="an-chip">${esc(window.HoopCourt&&HoopCourt.ZONES[id]?HoopCourt.ZONES[id].label:id)}</span>`).join('') : '<span class="fs-note">Aucune zone sélectionnée.</span>';
+      if(court) court.update({highlightZones:arr}); }
+    if(window.HoopCourt) court=HoopCourt.render(el.querySelector('#tnCourt'),{mode:'training', onZoneSelect:(z)=>{ if(z.id==='out-of-bounds')return; picked.has(z.id)?picked.delete(z.id):picked.add(z.id); refresh(); }});
+    el.querySelector('#tnForm').addEventListener('submit',e=>{ e.preventDefault(); const f=e.target, o={};
+      new FormData(f).forEach((v,k)=>{ if(k!=='conv') o[k]=v; });
+      o.convoques=[...f.querySelectorAll('[name=conv]:checked')].map(c=>c.value); o.zones=[...picked];
+      const saved=Store.addSession(o); navigate('#/entrainements/'+saved.id); });
+  }
+  /* --- Détail d'une séance --- */
+  function renderSessionDetail(id){
+    const el=document.getElementById('page-training-detail'); if(!el) return;
+    const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Modèle non chargé.','#/'); return; }
+    const s=Store.getSessions().find(x=>x.id===id);
+    if(!s){ el.innerHTML=emptyState('Séance introuvable','Cette séance n’existe pas ou a été supprimée.','#/entrainements','Retour aux entraînements'); return; }
+    const roster=Store.getPlayers(), conv=(s.convoques||[]).map(cid=>{ const p=roster.find(x=>x.id===cid); return p?(p.num!=null?'#'+p.num+' ':'')+p.name:cid; });
+    let html=`<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/entrainements">${backSvg}Entraînements</button>
+        <h2 class="page-title">${esc(s.titre||'Séance')}</h2>
+        <div class="page-meta">${s.date?fmtDate(s.date):'Date à définir'}${s.heure?' · '+esc(s.heure):''}${s.duree?' · '+esc(s.duree)+' min':''}${s.lieu?' · '+esc(s.lieu):''}</div></div></div>
+      <div class="fs-card"><h3 class="fs-h3">Détails</h3><div class="tr-detail">
+        <span><b>Type</b>${esc(s.type||'—')}</span><span><b>Intensité</b>${esc(s.intensite||'—')}</span>
+        <span><b>Objectif</b>${esc(s.objectif||'—')}</span>${s.notes?`<span><b>Notes</b>${esc(s.notes)}</span>`:''}</div></div>
+      <div class="fs-card"><h3 class="fs-h3">Joueurs convoqués (${conv.length})</h3>${conv.length?`<div class="tn-zones">${conv.map(n=>`<span class="an-chip">${esc(n)}</span>`).join('')}</div>`:'<p class="fs-note">Aucun joueur convoqué.</p>'}</div>`;
+    if(s.zones&&s.zones.length&&window.HoopCourt) html+=`<div class="fs-card"><h3 class="fs-h3">Zones de tir travaillées</h3><div class="an-court" id="tdCourt"></div></div>`;
+    el.innerHTML=html;
+    if(s.zones&&s.zones.length&&window.HoopCourt){ const c=el.querySelector('#tdCourt'); if(c) HoopCourt.render(c,{mode:'readonly', highlightZones:s.zones}); }
+  }
+  routeHandlers.training = renderTraining;
+  routeHandlers['training-new'] = renderNewSession;
+  routeHandlers['training-detail'] = p => renderSessionDetail(p.trainingId);
 })();
 
 /* ============ PAGE MATCH : liste d'actions + terrain ============ */

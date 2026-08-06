@@ -535,6 +535,17 @@ input[type="text"],input[type="email"],textarea,select{
 .pf-tv{font-size:24px;font-weight:700;color:var(--t1);}
 .pf-tl{font-size:11px;color:var(--t3);text-transform:uppercase;letter-spacing:.03em;}
 
+/* ---- Entraînements : cartes séance + formulaire ---- */
+.tr-title{font-size:15px;font-weight:600;color:var(--t1);margin-bottom:6px;}
+.tr-meta{font-size:12px;color:var(--t3);margin-top:8px;}
+.tn-roster{display:flex;flex-wrap:wrap;gap:8px;}
+.tn-chk{display:inline-flex;align-items:center;gap:7px;background:var(--field-bg);border:1px solid var(--hair);border-radius:100px;padding:7px 13px;font-size:13px;color:var(--t2);cursor:pointer;}
+.tn-chk input{accent-color:var(--orange);}
+.tn-zones{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;}
+.tr-detail{display:flex;flex-direction:column;gap:10px;font-size:14px;color:var(--t1);}
+.tr-detail b{color:var(--t3);font-weight:600;margin-right:8px;font-size:11px;text-transform:uppercase;letter-spacing:.03em;}
+#tnCourt,#tdCourt{max-width:480px;}
+
 @media print{
   .app-sidebar,.app-topbar,.scrim,.fs-actions,.fs-back,.mh-actions,.lv-bottombar,.menu-btn{display:none!important;}
   body{background:#fff!important;}
