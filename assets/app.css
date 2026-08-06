@@ -501,6 +501,24 @@ input[type="text"],input[type="email"],textarea,select{
 .an-chip b{color:var(--t1);}
 @media(max-width:860px){ .an-grid{grid-template-columns:1fr;} }
 
+/* ---- Liste des matchs ---- */
+.mc-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
+.mc-input{background:var(--field-bg);border:1px solid var(--hair);border-radius:var(--radius);color:var(--t1);font-size:14px;padding:9px 13px;min-height:var(--field-h);}
+.mc-input:focus{outline:none;border-color:var(--orange);}
+#mcSearch{flex:1;min-width:200px;}
+.mc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-bottom:22px;}
+.mc-card{background:var(--surface-1);border:1px solid var(--hair);border-radius:var(--card-radius);padding:16px;cursor:pointer;transition:border-color .15s,transform .15s;}
+.mc-card:hover{border-color:var(--orange);transform:translateY(-2px);}
+.mc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+.mc-date{font-size:12px;color:var(--t3);}
+.mc-teams{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.mc-team{font-size:14px;font-weight:600;color:var(--t1);flex:1;}
+.mc-team.away{text-align:right;}
+.mc-score{font-size:18px;font-weight:700;color:var(--t1);}
+.mc-comp{font-size:12px;color:var(--t3);margin-bottom:14px;}
+.mc-actions{display:flex;gap:7px;flex-wrap:wrap;}
+.mc-actions .btn{flex:1;min-width:0;}
+
 @media print{
   .app-sidebar,.app-topbar,.scrim,.fs-actions,.fs-back,.mh-actions,.lv-bottombar,.menu-btn{display:none!important;}
   body{background:#fff!important;}

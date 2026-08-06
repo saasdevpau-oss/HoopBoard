@@ -2126,6 +2126,45 @@ document.addEventListener('click', e => {
 
   routeHandlers.match = p => renderMatchDetail(p.matchId || 'hapoel');
   routeHandlers.analyse = p => renderAnalyse(p.matchId || 'hapoel');
+
+  /* --- Liste des matchs (#/matchs) rendue depuis le store --- */
+  function matchCard(m){
+    const rc = m.result==='win'?'win':(m.result==='loss'?'loss':'');
+    const score = m.status==='upcoming' ? '—' : `${m.home.score}–${m.away.score}`;
+    const actions = m.status==='upcoming'
+      ? `<button class="btn btn-primary sm" data-route="#/matchs/${m.id}/live">Démarrer le live</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}">Préparer</button>`
+      : `<button class="btn btn-secondary sm" data-route="#/matchs/${m.id}">Voir</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/feuille">Feuille</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/analyse">Analyse</button>`;
+    return `<div class="mc-card" data-route="#/matchs/${m.id}">
+      <div class="mc-top"><span class="mc-date">${m.date?fmtDate(m.date):(m.lieu?esc(m.lieu):'Date à venir')}</span>
+        ${m.result?`<span class="result-pill ${rc}">${m.result==='win'?'V':'D'}</span>`:`<span class="fs-status s-${m.status}">${STATUS[m.status]}</span>`}</div>
+      <div class="mc-teams"><span class="mc-team">${esc(m.home.name)}</span><span class="mc-score mono">${score}</span><span class="mc-team away">${esc(m.away.name)}</span></div>
+      <div class="mc-comp">${esc(m.competition)}</div>
+      <div class="mc-actions">${actions}</div></div>`;
+  }
+  function renderMatchsList(){
+    const el = document.getElementById('page-gamecenter'); if(!el) return;
+    const Store = window.HoopStore;
+    if(!Store){ el.innerHTML = emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    const all = Store.getMatches();
+    el.innerHTML = `<div class="page-head"><div><h2 class="page-title">Matchs</h2>
+        <div class="page-meta">${all.length} matchs · ${esc(Store.getTournoi().nom)}</div></div></div>
+      <div class="mc-filters">
+        <input type="search" id="mcSearch" class="mc-input" placeholder="Rechercher un adversaire…" aria-label="Rechercher un adversaire">
+        <select id="mcStatus" class="mc-input" aria-label="Filtrer par statut"><option value="">Tous les statuts</option><option value="upcoming">À venir</option><option value="final">Terminés</option></select>
+      </div><div id="mcResults"></div>`;
+    const results = el.querySelector('#mcResults'), search = el.querySelector('#mcSearch'), status = el.querySelector('#mcStatus');
+    function apply(){
+      const q = (search.value||'').toLowerCase().trim(), st = status.value;
+      const list = all.filter(m => (!st || m.status===st) && (!q || m.away.name.toLowerCase().indexOf(q)!==-1));
+      const up = list.filter(m=>m.status==='upcoming'), fin = list.filter(m=>m.status==='final');
+      let html = '';
+      if(up.length)  html += `<div class="section-label">Prochain match</div><div class="mc-grid">${up.map(matchCard).join('')}</div>`;
+      if(fin.length) html += `<div class="section-label">Matchs terminés</div><div class="mc-grid">${fin.map(matchCard).join('')}</div>`;
+      results.innerHTML = list.length ? html : emptyState('Aucun match','Aucun match ne correspond à ces critères.','#/matchs','Réinitialiser les filtres');
+    }
+    search.addEventListener('input', apply); status.addEventListener('change', apply); apply();
+  }
+  routeHandlers.matchs = renderMatchsList;
 })();
 
 /* ============ PAGE MATCH : liste d'actions + terrain ============ */
@@ -2621,7 +2660,9 @@ selectAction(0);
 const cdState = {d:2, h:7, m:42, s:18};
 const pad2 = n => String(n).padStart(2,'0');
 function renderCd(){
-  document.getElementById('cdJ').textContent = pad2(cdState.d);
+  const j = document.getElementById('cdJ');
+  if(!j) return;   // Game Center remplacé par la liste des matchs : décompte absent
+  j.textContent = pad2(cdState.d);
   document.getElementById('cdH').textContent = pad2(cdState.h);
   document.getElementById('cdM').textContent = pad2(cdState.m);
   document.getElementById('cdS').textContent = pad2(cdState.s);
