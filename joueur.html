@@ -362,6 +362,276 @@ h2.view-title .serif{color:var(--orange);}
   .scene-score{font-size:34px;}
   .post-media{aspect-ratio:16/10;}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   REFONTE ESPACE JOUEUR — composants ajoutés (Dashboard, Entraînements,
+   Game Center, Profil). Le feed & la charte vivent déjà plus haut / app.css.
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ---------- Sous-onglets (Collectif/Tirs · Saison/Matchs) ---------- */
+.subtabs{display:inline-flex; gap:4px; padding:4px; background:var(--surface-1); border:1px solid var(--hair); border-radius:8px; margin-bottom:22px;}
+.subtab{padding:8px 16px; border-radius:6px; font-size:13px; font-weight:600; color:var(--t3); transition:.15s;}
+.subtab:hover{color:var(--t1);}
+.subtab.active{background:var(--orange); color:#fff;}
+.subpane{display:none;} .subpane.active{display:block; animation:riseIn .3s ease;}
+
+/* ---------- Grille de gros chiffres (stat tiles) ---------- */
+.tiles{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+.tile{background:var(--surface-2); border:1px solid var(--hair); border-radius:10px; padding:16px 16px 15px; position:relative; overflow:hidden;}
+.tile::after{content:""; position:absolute; right:-18px; top:-18px; width:60px; height:60px; border-radius:50%; background:radial-gradient(circle,var(--orange-soft),transparent 70%); opacity:.8;}
+.tile-val{font-family:var(--mono); font-size:30px; font-weight:600; color:var(--t1); line-height:1; letter-spacing:-.02em;}
+.tile-lab{font-size:11px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.06em; margin-top:8px;}
+.tile-sub{font-size:11px; color:var(--t4); margin-top:3px;}
+.tile-delta{display:inline-flex; align-items:center; gap:3px; font-family:var(--mono); font-size:11px; font-weight:600; margin-top:6px;}
+.tile-delta.up{color:var(--win);} .tile-delta.down{color:var(--loss);} .tile-delta.flat{color:var(--t4);}
+.tile.accent{background:linear-gradient(150deg,rgba(228,104,42,0.16),var(--surface-2) 60%); border-color:rgba(228,104,42,0.35);}
+.tile.accent .tile-val{color:var(--orange-vif);}
+
+/* ---------- Rangée de pourcentages de tir ---------- */
+.pcts{display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+.pct-cell{background:var(--surface-1); border:1px solid var(--hair); border-radius:10px; padding:15px 14px; text-align:center;}
+.pct-ring{position:relative; width:64px; height:64px; margin:0 auto 8px;}
+.pct-ring svg{transform:rotate(-90deg);}
+.pct-ring .pv{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-size:15px; font-weight:600; color:var(--t1);}
+.pct-cell .pct-lab{font-size:11px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.05em;}
+.pct-cell .pct-fr{font-size:10.5px; color:var(--t4); margin-top:2px; font-family:var(--mono);}
+
+/* ---------- Cartes & panneaux génériques ---------- */
+.card-pad{padding:18px;}
+.panel-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:14px;}
+.panel-head .panel-title{margin:0;}
+.grid-2{display:grid; grid-template-columns:1fr 1fr; gap:16px;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px;}
+.stack-16{display:flex; flex-direction:column; gap:16px;}
+.dash-grid{display:grid; grid-template-columns:1.5fr 1fr; gap:16px; align-items:start;}
+
+/* ---------- Toggle de plage (7j / 30j / saison) ---------- */
+.range-toggle{display:inline-flex; gap:2px; padding:3px; background:var(--surface-1); border:1px solid var(--hair); border-radius:7px;}
+.range-toggle button{padding:5px 12px; border-radius:5px; font-size:12px; font-weight:600; color:var(--t3); transition:.15s;}
+.range-toggle button.active{background:var(--surface-2); color:var(--orange); box-shadow:inset 0 0 0 1px var(--hair);}
+
+/* ---------- Graphiques SVG ---------- */
+.chart{width:100%; height:auto; display:block; overflow:visible;}
+.chart .grid-ln{stroke:var(--hair-soft); stroke-width:1;}
+.chart .axis-lab{fill:var(--t4); font-size:10px; font-family:var(--mono);}
+.chart .area{fill:url(#areaGrad);}
+.chart .line{fill:none; stroke:var(--orange); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;}
+.chart .dot{fill:var(--surface-2); stroke:var(--orange); stroke-width:2;}
+.chart .dot.hi{fill:var(--orange);}
+.chart .bar{fill:var(--orange); }
+.chart .bar.loss{fill:var(--loss);}
+.chart .bar.win{fill:var(--win);}
+.chart .val-lab{fill:var(--t2); font-size:10px; font-family:var(--mono); text-anchor:middle;}
+.spark{width:100%; height:34px; display:block;}
+.spark path{fill:none; stroke:var(--orange); stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
+
+/* ---------- Accès rapide (dernier match / séance / feed) ---------- */
+.qa-card{background:var(--surface-1); border:1px solid var(--hair); border-radius:10px; padding:15px 16px; display:flex; flex-direction:column; gap:9px; transition:border-color .15s, transform .15s; cursor:pointer;}
+.qa-card:hover{border-color:rgba(228,104,42,0.4); transform:translateY(-2px);}
+.qa-eyebrow{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--orange); display:flex; align-items:center; gap:6px;}
+.qa-title{font-size:14px; font-weight:600; color:var(--t1);}
+.qa-meta{font-size:12px; color:var(--t3);}
+.qa-stats{display:flex; gap:14px; margin-top:2px;}
+.qa-stat{display:flex; flex-direction:column;}
+.qa-stat b{font-family:var(--mono); font-size:16px; color:var(--t1); font-weight:600;}
+.qa-stat span{font-size:10px; color:var(--t4); text-transform:uppercase; letter-spacing:.04em;}
+
+/* ---------- Séances collectives ---------- */
+.sess-list{display:flex; flex-direction:column; gap:12px;}
+.sess-card{background:var(--surface-1); border:1px solid var(--hair); border-radius:10px; padding:16px; transition:border-color .15s; cursor:pointer;}
+.sess-card:hover{border-color:rgba(228,104,42,0.4);}
+.sess-top{display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px;}
+.sess-date{font-size:13px; font-weight:600; color:var(--t1);}
+.sess-meta{font-size:11.5px; color:var(--t4); font-family:var(--mono);}
+.sess-note-badge{font-family:var(--mono); font-weight:600; font-size:13px; padding:3px 9px; border-radius:20px;}
+.crit-rows{display:flex; flex-direction:column; gap:7px;}
+.crit-row{display:grid; grid-template-columns:130px 1fr 30px; align-items:center; gap:10px;}
+.crit-lab{font-size:12px; color:var(--t3);}
+.crit-track{height:6px; border-radius:3px; background:var(--hair-soft); overflow:hidden;}
+.crit-fill{height:100%; border-radius:3px; background:linear-gradient(90deg,var(--gold),var(--orange)); transition:width .6s ease;}
+.crit-val{font-family:var(--mono); font-size:12px; font-weight:600; color:var(--t2); text-align:right;}
+.coach-quote{margin-top:13px; padding:11px 13px; border-left:2px solid var(--orange); background:var(--orange-soft); border-radius:0 6px 6px 0; font-size:12.5px; color:var(--t2); font-style:italic;}
+
+/* ---------- Shot chart (terrain HoopCourt) ---------- */
+.shot-wrap{display:grid; grid-template-columns:1.1fr 1fr; gap:20px; align-items:start;}
+.court-hold{position:relative; max-width:440px; margin:0 auto; width:100%;}
+.zone-legend{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-top:12px; font-size:11px; color:var(--t3);}
+.zone-legend .lg{display:inline-flex; align-items:center; gap:6px;}
+.zone-legend .sw{width:14px; height:9px; border-radius:2px;}
+.zone-detail{background:var(--surface-1); border:1px solid var(--hair); border-radius:10px; padding:18px; min-height:200px;}
+.zone-detail h4{font-size:15px; color:var(--t1); margin-bottom:4px;}
+.zone-detail .zd-hint{font-size:12px; color:var(--t4); margin-bottom:16px;}
+.zd-stats{display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:16px;}
+.zd-stat{text-align:center; background:var(--surface-2); border-radius:8px; padding:12px 6px;}
+.zd-stat b{display:block; font-family:var(--mono); font-size:22px; font-weight:600; color:var(--t1);}
+.zd-stat span{font-size:10px; color:var(--t4); text-transform:uppercase; letter-spacing:.04em;}
+.zone-tags{position:absolute; inset:0; pointer-events:none;}
+.zone-tag{position:absolute; transform:translate(-50%,-50%); font-family:var(--mono); font-size:11px; font-weight:700; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.8); background:rgba(20,17,16,0.55); padding:1px 5px; border-radius:4px; white-space:nowrap;}
+
+/* ---------- Records ---------- */
+.rec-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:12px;}
+.rec-card{background:var(--surface-1); border:1px solid var(--hair); border-radius:10px; padding:15px; position:relative; overflow:hidden;}
+.rec-card::before{content:""; position:absolute; left:0; top:0; bottom:0; width:3px; background:linear-gradient(var(--gold),var(--orange));}
+.rec-val{font-family:var(--mono); font-size:28px; font-weight:600; color:var(--orange-vif); line-height:1;}
+.rec-lab{font-size:12px; font-weight:600; color:var(--t2); margin-top:6px;}
+.rec-ctx{font-size:11px; color:var(--t4); margin-top:3px;}
+
+/* ---------- Liste de matchs ---------- */
+.match-list{display:flex; flex-direction:column; gap:8px;}
+.match-row{display:grid; grid-template-columns:44px 1fr auto; align-items:center; gap:14px; background:var(--surface-1); border:1px solid var(--hair); border-radius:10px; padding:12px 15px; cursor:pointer; transition:border-color .15s, background .15s;}
+.match-row:hover{border-color:rgba(228,104,42,0.4); background:var(--surface-2);}
+.mr-res{width:44px; height:44px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:15px;}
+.mr-res.win{background:var(--win-soft); color:var(--win);}
+.mr-res.loss{background:var(--loss-soft); color:var(--loss);}
+.mr-opp{font-size:14px; font-weight:600; color:var(--t1);}
+.mr-meta{font-size:11.5px; color:var(--t4); font-family:var(--mono); margin-top:2px;}
+.mr-score{font-family:var(--mono); font-size:14px; color:var(--t2);}
+.mr-line{display:flex; gap:12px; margin-top:3px;}
+.mr-line span{font-family:var(--mono); font-size:11px; color:var(--t3);}
+.mr-line b{color:var(--orange);}
+.mr-chev{color:var(--t4); flex-shrink:0;}
+
+/* ---------- Filtres à puces ---------- */
+.chips-filter{display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px;}
+.chipf{padding:6px 13px; border-radius:20px; border:1px solid var(--hair); font-size:12px; font-weight:600; color:var(--t3); transition:.15s;}
+.chipf:hover{color:var(--t1); border-color:var(--t3);}
+.chipf.active{background:var(--orange); color:#fff; border-color:var(--orange);}
+
+/* ---------- Modal de détail match ---------- */
+.sheet-overlay{position:fixed; inset:0; z-index:120; background:rgba(8,6,5,0.72); backdrop-filter:blur(3px); display:none; align-items:flex-start; justify-content:center; padding:30px 16px; overflow-y:auto;}
+.sheet-overlay.open{display:flex;}
+.sheet{width:min(760px,100%); background:var(--surface-2); border:1px solid var(--hair); border-radius:14px; overflow:hidden; animation:riseIn .3s ease; margin:auto;}
+.sheet-head{padding:20px 22px; border-bottom:1px solid var(--hair); position:relative;}
+.sheet-eyebrow{font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--orange);}
+.sheet-score{font-family:var(--mono); font-size:34px; font-weight:600; color:var(--t1); margin-top:6px; letter-spacing:-.01em;}
+.sheet-score .sep{color:var(--t4); margin:0 8px;}
+.sheet-close{position:absolute; top:16px; right:16px; width:32px; height:32px; border-radius:8px; display:flex; align-items:center; justify-content:center; color:var(--t3); background:var(--surface-1);}
+.sheet-close:hover{color:var(--t1);}
+.sheet-tabs{display:flex; gap:2px; padding:0 22px; border-bottom:1px solid var(--hair); background:var(--surface-1);}
+.sheet-tab{padding:13px 16px; font-size:13px; font-weight:600; color:var(--t3); border-bottom:2px solid transparent; transition:.15s;}
+.sheet-tab.active{color:var(--orange); border-bottom-color:var(--orange);}
+.sheet-body{padding:22px; max-height:none;}
+.sheet-pane{display:none;} .sheet-pane.active{display:block; animation:riseIn .25s ease;}
+
+/* comparaison vs moyennes */
+.cmp-row{display:grid; grid-template-columns:120px 1fr 1fr; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--hair-soft);}
+.cmp-lab{font-size:12px; color:var(--t3);}
+.cmp-bars{display:flex; flex-direction:column; gap:4px;}
+.cmp-bar-track{height:7px; background:var(--hair-soft); border-radius:4px; overflow:hidden;}
+.cmp-bar{height:100%; border-radius:4px;}
+.cmp-bar.match{background:var(--orange);}
+.cmp-bar.season{background:var(--t4);}
+.cmp-vals{display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px;}
+.cmp-vals .m{color:var(--orange);} .cmp-vals .s{color:var(--t4);}
+
+/* play-by-play */
+.pbp-filters{display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin-bottom:16px;}
+.pbp-quarters{display:inline-flex; gap:2px; padding:3px; background:var(--surface-1); border:1px solid var(--hair); border-radius:7px;}
+.pbp-quarters button{padding:6px 13px; border-radius:5px; font-size:12px; font-weight:600; color:var(--t3); font-family:var(--mono);}
+.pbp-quarters button.active{background:var(--orange); color:#fff;}
+.pbp-list{display:flex; flex-direction:column;}
+.pbp-item{display:grid; grid-template-columns:52px 26px 1fr auto; align-items:center; gap:12px; padding:10px 4px; border-bottom:1px solid var(--hair-soft);}
+.pbp-item.hidden{display:none;}
+.pbp-clock{font-family:var(--mono); font-size:12px; color:var(--t4);}
+.pbp-ico{width:26px; height:26px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.pbp-ico.score{background:var(--orange-soft); color:var(--orange);}
+.pbp-ico.miss{background:var(--loss-soft); color:var(--loss);}
+.pbp-ico.def{background:var(--win-soft); color:var(--win);}
+.pbp-ico.play{background:var(--gold-soft); color:var(--gold);}
+.pbp-ico.neutral{background:var(--hair-soft); color:var(--t4);}
+.pbp-desc{font-size:13px; color:var(--t1);}
+.pbp-sub{font-size:11px; color:var(--t4);}
+.pbp-score{font-family:var(--mono); font-size:13px; font-weight:600; color:var(--t2); white-space:nowrap;}
+.pbp-score.lead{color:var(--win);} .pbp-score.trail{color:var(--loss);}
+
+/* ---------- Profil : table par saison + badges ---------- */
+.season-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+.season-table th{text-align:right; padding:9px 10px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--t4); border-bottom:1px solid var(--hair);}
+.season-table th:first-child{text-align:left;}
+.season-table td{text-align:right; padding:10px; font-family:var(--mono); color:var(--t2); border-bottom:1px solid var(--hair-soft);}
+.season-table td:first-child{text-align:left; font-family:var(--sans); color:var(--t1); font-weight:600;}
+.season-table tr.cur td{color:var(--t1);} .season-table tr.cur{background:var(--orange-soft);}
+.season-table .table-scroll{overflow-x:auto;}
+
+.badges{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
+.badge{background:var(--surface-1); border:1px solid var(--hair); border-radius:10px; padding:15px; display:flex; align-items:center; gap:12px; transition:.15s;}
+.badge.locked{opacity:.42;}
+.badge.earned{border-color:rgba(201,158,99,0.4);}
+.badge-ico{width:42px; height:42px; border-radius:11px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:linear-gradient(150deg,var(--gold-soft),transparent); color:var(--gold);}
+.badge.earned .badge-ico{background:linear-gradient(150deg,rgba(228,104,42,0.22),rgba(201,158,99,0.12)); color:var(--orange-vif);}
+.badge-name{font-size:13px; font-weight:600; color:var(--t1);}
+.badge-desc{font-size:11px; color:var(--t4); margin-top:2px;}
+.badge-count{font-family:var(--mono); font-size:11px; color:var(--gold); margin-top:3px;}
+
+/* ---------- Info joueur (profil) ---------- */
+.info-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:1px; background:var(--hair); border:1px solid var(--hair); border-radius:10px; overflow:hidden;}
+.info-cell{background:var(--surface-1); padding:13px 15px;}
+.info-cell .k{font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--t4);}
+.info-cell .v{font-size:14px; font-weight:600; color:var(--t1); margin-top:3px;}
+
+/* ---------- Hero identité (dashboard + profil) ---------- */
+.id-hero{display:flex; align-items:center; gap:20px; background:linear-gradient(120deg,rgba(228,104,42,0.14),var(--surface-2) 55%); border:1px solid rgba(228,104,42,0.28); border-radius:14px; padding:22px 24px; flex-wrap:wrap;}
+.id-photo{width:82px; height:82px; border-radius:16px; background:linear-gradient(150deg,var(--orange),var(--gold)); display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative;}
+.id-photo .init{font-family:var(--cond); font-weight:700; font-size:34px; color:#fff;}
+.id-photo .num{position:absolute; bottom:-6px; right:-6px; width:30px; height:30px; border-radius:9px; background:var(--void,#141110); border:2px solid var(--surface-2); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:13px; color:var(--orange-vif);}
+.id-meta{flex:1; min-width:180px;}
+.id-name{font-size:24px; font-weight:700; color:var(--t1); letter-spacing:-.02em;}
+.id-role{font-size:13px; color:var(--t3); margin-top:3px;}
+.id-tags{display:flex; gap:7px; margin-top:10px; flex-wrap:wrap;}
+.id-tag{font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; background:var(--surface-1); border:1px solid var(--hair); color:var(--t2);}
+.id-tag.hot{background:var(--orange-soft); border-color:rgba(228,104,42,0.4); color:var(--orange-vif);}
+
+/* ---------- Bandeau prochain rendez-vous compact ---------- */
+.next-strip{display:flex; align-items:center; gap:14px; background:var(--surface-1); border:1px solid var(--hair); border-left:3px solid var(--orange); border-radius:10px; padding:14px 16px;}
+.next-strip .ns-ico{width:40px; height:40px; border-radius:10px; background:var(--orange-soft); color:var(--orange); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.next-strip .ns-eyebrow{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--orange);}
+.next-strip .ns-title{font-size:14px; font-weight:600; color:var(--t1); margin-top:2px;}
+.next-strip .ns-meta{font-size:12px; color:var(--t3);}
+.next-strip .ns-when{margin-left:auto; text-align:right; font-family:var(--mono);}
+.next-strip .ns-when b{font-size:15px; color:var(--orange-vif);} .next-strip .ns-when span{display:block; font-size:10px; color:var(--t4); text-transform:uppercase;}
+
+/* ---------- Section label + lien ---------- */
+.sec-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:26px 0 14px;}
+.sec-head:first-child{margin-top:0;}
+.sec-title{font-size:15px; font-weight:600; color:var(--t1);}
+.sec-link{font-size:12px; font-weight:600; color:var(--orange);}
+
+/* ---------- Bottom navigation (mobile) ---------- */
+.bottom-nav{display:none;}
+@media(max-width:860px){
+  .bottom-nav{
+    display:flex; position:fixed; left:0; right:0; bottom:0; z-index:90;
+    background:rgba(23,19,16,0.94); backdrop-filter:blur(14px);
+    border-top:1px solid var(--hair); padding:6px 4px calc(6px + env(safe-area-inset-bottom,0));
+  }
+  .bn-item{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 2px; color:var(--t4); transition:color .15s;}
+  .bn-item .bn-ico{width:22px; height:22px; display:flex; align-items:center; justify-content:center;}
+  .bn-item .bn-lab{font-size:9.5px; font-weight:600; letter-spacing:.01em;}
+  .bn-item.active{color:var(--orange);}
+  main{padding-bottom:78px !important;}
+}
+
+/* ---------- Ajustements responsive des nouveaux composants ---------- */
+@media(max-width:960px){
+  .dash-grid{grid-template-columns:1fr;}
+  .shot-wrap{grid-template-columns:1fr;}
+  .grid-2{grid-template-columns:1fr;}
+}
+@media(max-width:720px){
+  .tiles{grid-template-columns:repeat(2,1fr);}
+  .pcts{grid-template-columns:repeat(2,1fr);}
+  .grid-3{grid-template-columns:1fr 1fr;}
+  .id-name{font-size:21px;}
+  .sheet-score{font-size:28px;}
+  .cmp-row{grid-template-columns:92px 1fr; grid-template-rows:auto auto;}
+  .cmp-row .cmp-vals{grid-column:2;}
+  .crit-row{grid-template-columns:104px 1fr 28px;}
+  .match-row{grid-template-columns:40px 1fr auto;}
+}
+@media(max-width:440px){
+  .tiles{grid-template-columns:repeat(2,1fr);}
+  .rec-grid{grid-template-columns:1fr 1fr;}
+}
 </style>
 
 <!-- ============ SPRITE LOGO ============ -->
@@ -405,9 +675,13 @@ h2.view-title .serif{color:var(--orange);}
   </div>
   <nav class="sb-nav ptabs" aria-label="Espace joueur">
     <div class="sb-group">Mon espace</div>
-    <button class="ptab active" data-view="training">
+    <button class="ptab active" data-view="dashboard">
+      <span class="ptab-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
+      <span class="ptab-label"><span>Dashboard</span><span class="ptab-sub">Ma saison</span></span>
+    </button>
+    <button class="ptab" data-view="training">
       <span class="ptab-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6.5 6.5l11 11M4 10l2.5-2.5M10 4L7.5 6.5M20 14l-2.5 2.5M14 20l2.5-2.5"/><circle cx="12" cy="12" r="9.5"/></svg></span>
-      <span class="ptab-label"><span>Training Hub</span><span class="ptab-sub">Entraînement</span></span>
+      <span class="ptab-label"><span>Entraînements</span><span class="ptab-sub">Collectif · Tirs</span></span>
     </button>
     <button class="ptab" data-view="games">
       <span class="ptab-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>
@@ -416,6 +690,10 @@ h2.view-title .serif{color:var(--orange);}
     <button class="ptab" data-view="feed">
       <span class="ptab-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l14-5v12L3 13z"/><path d="M8 13.5V18a2 2 0 004 0v-2.5"/></svg></span>
       <span class="ptab-label"><span>HoopFeed</span><span class="ptab-sub">Équipe</span></span>
+    </button>
+    <button class="ptab" data-view="profile">
+      <span class="ptab-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg></span>
+      <span class="ptab-label"><span>Profil</span><span class="ptab-sub">Sylvain Francisco</span></span>
     </button>
   </nav>
   <div class="sb-foot">
@@ -434,765 +712,40 @@ h2.view-title .serif{color:var(--orange);}
   <button class="menu-btn" id="menuBtn" aria-label="Ouvrir la navigation" aria-expanded="false">
     <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
   </button>
-  <span class="tb-title" id="tbTitle">Training Hub</span>
+  <span class="tb-title" id="tbTitle">Dashboard</span>
   <span class="tb-context">SAISON <b>EUROLEAGUE 2025–26</b></span>
 </header>
 
 <main>
- <!-- ============================================================
- VUE 1 — TRAINING HUB
- ============================================================ -->
- <section class="pview active enter-right" id="view-training">
- <div class="view-head">
- <h2 class="view-title">Training <em class="serif">Hub</em></h2>
- <div class="view-sub">Préparation Playoffs EuroLeague — programme du staff Žalgiris</div>
-</div>
-
- <div class="training-grid stagger">
- <div class="iso-panel card-elevated">
- <div class="panel-title"><span class="dot"></span>Mon terrain</div>
- <div class="panel-sub">Touchez une zone pour afficher vos exercices — les points lumineux sont vos zones à travailler</div>
- <div class="iso-stage">
- <div class="iso-court">
- <svg width="100%" viewBox="0 0 300 320">
- <use href="#iso-court-svg"/>
- <rect class="izone" data-zone="raquette" x="110" y="4" width="80" height="118" rx="4"/>
- <path class="izone" data-zone="md-gauche" d="M8 8 H106 V150 L8 188 Z"/>
- <path class="izone" data-zone="md-droite" d="M292 8 H194 V150 L292 188 Z"/>
- <path class="izone" data-zone="corner-gauche" d="M8 192 L8 298 H70 L20 100 Z"/>
- <path class="izone" data-zone="corner-droit" d="M292 192 L292 298 H230 L280 100 Z"/>
- <path class="izone" data-zone="top-cle" d="M72 298 H228 L280 100 A132 132 0 0 1 20 100 Z"/>
- <g class="hotspot">
- <circle cx="150" cy="60" r="7" fill="rgba(228,104,42,0.55)"/>
- <circle cx="40" cy="240" r="9" fill="rgba(228,104,42,0.7)"/>
- <circle cx="215" cy="200" r="5" fill="rgba(228,104,42,0.4)"/>
-</g>
-</svg>
-</div>
-</div>
- <div class="iso-caption">Intensité des points chauds = priorité de travail détectée sur vos 5 derniers matchs</div>
-</div>
-
- <div class="drills-panel card-elevated">
- <div class="panel-title"><span class="dot"></span>Exercices de la zone</div>
- <div class="zone-name" id="zoneName">Raquette</div>
- <div class="zone-focus" id="zoneFocus">
- <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2L4 14h6l-1 8 9-12h-6z"/></svg>
- Point chaud — priorité haute
-</div>
- <div id="drillsList"></div>
-</div>
-</div>
-
- <div class="goals-panel card-elevated">
- <div class="panel-title"><span class="dot"></span>Objectifs de la semaine</div>
- <div class="goals-grid">
- <div class="goal">
- <div class="goal-top"><span class="goal-name">Tirs à 3 points réussis</span><span class="goal-value mono" data-target="68">340 / 500</span></div>
- <div class="goal-track"><div class="goal-fill" data-w="68"></div></div>
-</div>
- <div class="goal">
- <div class="goal-top"><span class="goal-name">Lancers francs</span><span class="goal-value mono" data-target="82">82% · obj. 85%</span></div>
- <div class="goal-track"><div class="goal-fill" data-w="82"></div></div>
-</div>
- <div class="goal">
- <div class="goal-top"><span class="goal-name">Séances cardio</span><span class="goal-value mono" data-target="75">3 / 4</span></div>
- <div class="goal-track"><div class="goal-fill" data-w="75"></div></div>
-</div>
- <div class="goal">
- <div class="goal-top"><span class="goal-name">Ateliers dribble</span><span class="goal-value mono" data-target="66">2 / 3</span></div>
- <div class="goal-track"><div class="goal-fill" data-w="66"></div></div>
-</div>
-</div>
- <div class="streak-strip">
- <span class="streak-label">SÉRIE D'ENTRAÎNEMENT</span>
- <span class="streak-val">5 jours consécutifs</span>
-</div>
-</div>
-</section>
-
- <!-- ============================================================
- VUE 2 — GAME CENTER
- ============================================================ -->
- <section class="pview" id="view-games">
- <div class="view-head">
- <h2 class="view-title">Game <em class="serif">Center</em></h2>
- <div class="view-sub">Ton prochain rendez-vous et ton historique — EuroLeague · Žalgiris Kaunas</div>
-</div>
-
- <div class="pro-compact card-elevated">
- <div class="avatar"><span class="init">SF</span></div>
- <div>
- <div class="pc-name">Sylvain Francisco</div>
- <div class="pc-sub">Meneur · 1m85 · Žalgiris Kaunas</div>
- <span class="pc-mvp">Meilleur marqueur · EuroLeague</span>
-</div>
- <div class="pro-strip">
- <div class="pro-stats">
- <div class="pro-stat"><span class="ps-val mono">16.7</span><span class="ps-lab">Pts</span></div>
- <div class="pro-stat"><span class="ps-val mono">2.8</span><span class="ps-lab">Reb</span></div>
- <div class="pro-stat"><span class="ps-val mono">6.4</span><span class="ps-lab">Ast</span></div>
- <div class="pro-stat"><span class="ps-val mono">19.5</span><span class="ps-lab">Éva</span></div>
-</div>
-</div>
-</div>
-
- <div class="stagger">
- <div class="next-hero card-elevated">
- <div class="nh-eyebrow">Prochain match · Playoffs EuroLeague · J-2</div>
- <div class="nh-row">
- <div class="nh-duel">
- <div class="nh-team">
- <div class="nh-crest home mono">ZAL</div>
- <div class="nh-tname">Žalgiris</div>
- <div class="nh-tsub">5e — saison régulière</div>
-</div>
- <div class="nh-vs serif">vs</div>
- <div class="nh-team">
- <div class="nh-crest mono">FEN</div>
- <div class="nh-tname">Fenerbahçe Beko</div>
- <div class="nh-tsub">Playoffs EuroLeague</div>
-</div>
-</div>
- <div class="countdown mono" aria-label="Compte à rebours avant le match">
- <div class="cd-cell"><div class="cd-num" id="nhD">02</div><div class="cd-unit">Jours</div></div>
- <div class="cd-cell"><div class="cd-num" id="nhH">07</div><div class="cd-unit">Heures</div></div>
- <div class="cd-cell"><div class="cd-num" id="nhM">42</div><div class="cd-unit">Min</div></div>
- <div class="cd-cell"><div class="cd-num" id="nhS">18</div><div class="cd-unit">Sec</div></div>
-</div>
-</div>
- <div class="nh-meta">
- <span class="nh-chip"> Ülker Arena — Istanbul</span>
- <span class="nh-chip"> Playoffs EuroLeague 2026</span>
- <span class="nh-chip"> 18:00</span>
-</div>
-</div>
-
- <div class="section-label" style="margin-top:28px;">Match History — EuroLeague 2025–26</div>
- <div class="mh-grid" id="matchGrid"></div>
-</div>
-</section>
-
- <!-- ============================================================
- VUE 3 — HOOPFEED
- ============================================================ -->
- <section class="pview" id="view-feed">
- <div class="feed-col stagger">
-
- <!-- PROFIL -->
- <div class="profile-card card-elevated">
- <div class="profile-row">
- <div class="pf-avatar"><span class="init">SF</span></div>
- <div>
- <div class="pf-handle">@sylvainfrancisco</div>
- <div class="pf-name">Sylvain Francisco — Žalgiris Kaunas · EuroLeague</div>
- <div class="pf-badges">
- <span class="pf-badge">Meneur</span>
- <span class="pf-badge alt">1m85</span>
- <span class="pf-badge alt">Lituanie</span>
- <span class="pf-badge">Top scorer</span>
-</div>
-</div>
- <div class="pf-counts">
- <div class="pf-count"><div class="pfc-val mono">12</div><div class="pfc-label">Posts</div></div>
- <div class="pf-count"><div class="pfc-val mono">15,3k</div><div class="pfc-label">Abonnés</div></div>
- <div class="pf-count"><div class="pfc-val mono">183</div><div class="pfc-label">Suivis</div></div>
-</div>
-</div>
- <div class="pro-strip">
- <div class="pro-stats">
- <div class="pro-stat"><span class="ps-val mono">16.7</span><span class="ps-lab">Pts / match</span></div>
- <div class="pro-stat"><span class="ps-val mono">2.8</span><span class="ps-lab">Rebonds</span></div>
- <div class="pro-stat"><span class="ps-val mono">6.4</span><span class="ps-lab">Passes</span></div>
- <div class="pro-stat"><span class="ps-val mono">19.5</span><span class="ps-lab">Éva</span></div>
-</div>
- <div class="pro-gauges">
- <div class="pg"><svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="4.5"/><circle class="pg-fill" cx="26" cy="26" r="21" fill="none" stroke="#E4682A" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="0 131.9" data-pct="0.33" transform="rotate(-90 26 26)" style="filter:drop-shadow(0 0 5px rgba(228,104,42,0.6));"/></svg><div class="pg-val"><span class="pg-num mono">33%</span><span class="pg-lab">TIRS</span></div></div>
- <div class="pg"><svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="4.5"/><circle class="pg-fill" cx="26" cy="26" r="21" fill="none" stroke="#E4682A" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="0 131.9" data-pct="0.67" transform="rotate(-90 26 26)" style="filter:drop-shadow(0 0 5px rgba(228,104,42,0.6));"/></svg><div class="pg-val"><span class="pg-num mono">67%</span><span class="pg-lab">LF</span></div></div>
- <div class="pg"><svg width="52" height="52" viewBox="0 0 52 52"><circle cx="26" cy="26" r="21" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="4.5"/><circle class="pg-fill" cx="26" cy="26" r="21" fill="none" stroke="#C99E63" stroke-width="4.5" stroke-linecap="round" stroke-dasharray="0 131.9" data-pct="0.34" transform="rotate(-90 26 26)" style="filter:drop-shadow(0 0 5px rgba(201,158,99,0.5));"/></svg><div class="pg-val"><span class="pg-num mono">11</span><span class="pg-lab">ÉVA</span></div></div>
-</div>
- <div class="pro-context">Moyennes <b>EuroLeague 2025–26</b> — jauges : efficacité vs Hapoel Tel Aviv (5/15 aux tirs, 2/3 aux lancers) · source officielle EuroLeague</div>
-</div>
- <div class="pf-actions">
- <button class="btn-follow" id="btnFollow">Suivre</button>
- <button class="btn-msg">Message</button>
-</div>
-</div>
-
- <!-- HIGHLIGHTS -->
- <div class="highlights">
- <div class="hl"><div class="hl-ring"><div class="hl-inner"><span class="init" style="font-size:13px;">3P</span></div></div><div class="hl-label">3 Points</div></div>
- <div class="hl"><div class="hl-ring"><div class="hl-inner"><span class="init" style="font-size:13px;">PD</span></div></div><div class="hl-label">Passes</div></div>
- <div class="hl"><div class="hl-ring"><div class="hl-inner"><span class="init" style="font-size:13px;">CA</span></div></div><div class="hl-label">Contre-attaque</div></div>
- <div class="hl"><div class="hl-ring"><div class="hl-inner"><span class="init" style="font-size:13px;">TI</span></div></div><div class="hl-label">Titres</div></div>
- <div class="hl"><div class="hl-ring"><div class="hl-inner"><span class="init" style="font-size:13px;">TR</span></div></div><div class="hl-label">Training</div></div>
-</div>
-
- <!-- POST 1 -->
- <article class="post card-elevated">
- <div class="post-head">
- <div class="post-avatar"><div class="post-avatar-inner">
- <span class="init">SF</span>
-</div></div>
- <div>
- <div class="post-user">@sylvainfrancisco</div>
- <div class="post-ctx">EuroLeague · vs Olympiacos · 25 février</div>
-</div>
- <span class="post-flag win">VICTOIRE</span>
-</div>
- <div class="post-media" data-media>
- <div class="scene scene-1">
- <svg class="scene-court" viewBox="0 0 300 320" fill="none">
- <path d="M18 4 V96 A132 132 0 0 0 282 96 V4" stroke="rgba(201,158,99,0.35)" stroke-width="2"/>
- <rect x="110" y="4" width="80" height="118" stroke="rgba(201,158,99,0.28)" stroke-width="2"/>
- <circle cx="150" cy="24" r="6" stroke="rgba(244,150,88,0.7)" stroke-width="2"/>
-</svg>
- <div class="scene-eyebrow">Meilleur match de la saison · 36 d'évaluation</div>
- <div class="scene-score mono">99<small> –</small>94</div>
- <div class="scene-tag">Masterclass</div>
-</div>
- <div class="burst"><div class="heart-big">
- <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg>
-</div></div>
-</div>
- <div class="stats-carousel card">
- <div class="stat-chip"><span class="sc-val mono">23 PTS</span><span class="sc-label">Points</span></div>
- <div class="stat-chip"><span class="sc-val mono">7 AST</span><span class="sc-label">Passes déc.</span></div>
- <div class="stat-chip"><span class="sc-val plain mono">3 REB</span><span class="sc-label">Rebonds</span></div>
- <div class="stat-chip"><span class="sc-val mono">+36 ÉVA</span><span class="sc-label">Évaluation</span></div>
-</div>
- <div class="post-actions">
- <button class="pa-btn" data-like data-count="214">
- <span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg></span>
- <span class="like-count mono">214</span>
-</button>
- <button class="pa-btn" data-comment-focus>
- <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8z"/></svg></span>
- <span class="mono">18</span>
-</button>
- <button class="pa-btn pa-share">
- <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></span>
-</button>
-</div>
- <div class="post-caption"><b>@sylvainfrancisco</b> 36 d'évaluation face à Olympiacos, victoire au bout de la prolongation. Fier du groupe <span style="color:var(--tq);">#Zalgiris #EuroLeague</span></div>
- <div class="post-comments" data-comments>
- <div class="comment"><b>staff.zalgiris</b> Match référence. Le travail paie, Sylvain</div>
- <div class="comment"><b>m.wright7</b> Gros match frérot !!</div>
-</div>
- <div class="comment-box card">
- <input type="text" placeholder="Ajouter un commentaire…" data-input>
- <button class="btn-send" data-send>Publier</button>
-</div>
-</article>
-
- <!-- POST 2 -->
- <article class="post card-elevated">
- <div class="post-head">
- <div class="post-avatar"><div class="post-avatar-inner">
- <span class="init">SF</span>
-</div></div>
- <div>
- <div class="post-user">@sylvainfrancisco</div>
- <div class="post-ctx">EuroLeague · vs Paris Basketball · 11 décembre</div>
-</div>
- <span class="post-flag win">VICTOIRE</span>
-</div>
- <div class="post-media" data-media>
- <div class="scene scene-2">
- <svg class="scene-court" viewBox="0 0 300 320" fill="none">
- <circle cx="150" cy="122" r="30" stroke="rgba(201,158,99,0.3)" stroke-width="2"/>
- <path d="M18 4 V96 A132 132 0 0 0 282 96 V4" stroke="rgba(201,158,99,0.35)" stroke-width="2"/>
-</svg>
- <div class="scene-eyebrow">Carton offensif · 26 points, +28 d'évaluation</div>
- <div class="scene-score mono">108<small> –</small>105</div>
- <div class="scene-tag">Statement Game</div>
-</div>
- <div class="burst"><div class="heart-big">
- <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg>
-</div></div>
-</div>
- <div class="stats-carousel card">
- <div class="stat-chip"><span class="sc-val mono">26 PTS</span><span class="sc-label">Points</span></div>
- <div class="stat-chip"><span class="sc-val mono">5 AST</span><span class="sc-label">Passes déc.</span></div>
- <div class="stat-chip"><span class="sc-val plain mono">4 REB</span><span class="sc-label">Rebonds</span></div>
- <div class="stat-chip"><span class="sc-val mono">+28 ÉVA</span><span class="sc-label">Évaluation</span></div>
-</div>
- <div class="post-actions">
- <button class="pa-btn" data-like data-count="168">
- <span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg></span>
- <span class="like-count mono">168</span>
-</button>
- <button class="pa-btn" data-comment-focus>
- <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8z"/></svg></span>
- <span class="mono">11</span>
-</button>
- <button class="pa-btn pa-share">
- <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></span>
-</button>
-</div>
- <div class="post-caption"><b>@sylvainfrancisco</b> 108 points et une victoire à Paris au bout du suspense, le collectif avant tout <span style="color:var(--tq);">#Zalgiris #TeamFirst</span></div>
- <div class="post-comments" data-comments>
- <div class="comment"><b>n.williamsgoss1</b> Clutch dans le money time</div>
-</div>
- <div class="comment-box card">
- <input type="text" placeholder="Ajouter un commentaire…" data-input>
- <button class="btn-send" data-send>Publier</button>
-</div>
-</article>
-
- <!-- POST 3 -->
- <article class="post card-elevated">
- <div class="post-head">
- <div class="post-avatar"><div class="post-avatar-inner">
- <span class="init">SF</span>
-</div></div>
- <div>
- <div class="post-user">@sylvainfrancisco</div>
- <div class="post-ctx">EuroLeague · vs Hapoel Tel Aviv · 13 février</div>
-</div>
- <span class="post-flag win">VICTOIRE</span>
-</div>
- <div class="post-media" data-media>
- <div class="scene scene-3">
- <svg class="scene-court" viewBox="0 0 300 320" fill="none">
- <rect x="110" y="4" width="80" height="118" stroke="rgba(192,118,107,0.3)" stroke-width="2"/>
- <path d="M18 4 V96 A132 132 0 0 0 282 96 V4" stroke="rgba(192,118,107,0.32)" stroke-width="2"/>
-</svg>
- <div class="scene-eyebrow">15 pts · 3 passes · victoire à domicile</div>
- <div class="scene-score mono">93<small> –</small>82</div>
- <div class="scene-tag">Money Time</div>
-</div>
- <div class="burst"><div class="heart-big">
- <svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg>
-</div></div>
-</div>
- <div class="stats-carousel card">
- <div class="stat-chip"><span class="sc-val mono">15 PTS</span><span class="sc-label">Points</span></div>
- <div class="stat-chip"><span class="sc-val plain mono">3 AST</span><span class="sc-label">Passes déc.</span></div>
- <div class="stat-chip"><span class="sc-val plain mono">4 REB</span><span class="sc-label">Rebonds</span></div>
- <div class="stat-chip"><span class="sc-val plain mono">+11 ÉVA</span><span class="sc-label">Évaluation</span></div>
-</div>
- <div class="post-actions">
- <button class="pa-btn" data-like data-count="96">
- <span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg></span>
- <span class="like-count mono">96</span>
-</button>
- <button class="pa-btn" data-comment-focus>
- <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8z"/></svg></span>
- <span class="mono">7</span>
-</button>
- <button class="pa-btn pa-share">
- <span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></span>
-</button>
-</div>
- <div class="post-caption"><b>@sylvainfrancisco</b> Victoire solide face à Hapoel et un gros money time collectif <span style="color:var(--tq);">#Zalgiris #Efficacité</span></div>
- <div class="post-comments" data-comments>
- <div class="comment"><b>staff.zalgiris</b> 3 paniers primés et le money time maîtrisé. Solide, Sylvain</div>
-</div>
- <div class="comment-box card">
- <input type="text" placeholder="Ajouter un commentaire…" data-input>
- <button class="btn-send" data-send>Publier</button>
-</div>
-</article>
-
-</div>
-</section>
-
+ <section class="pview active enter-right" id="view-dashboard"><div class="view-render" id="pane-dashboard"></div></section>
+ <section class="pview" id="view-training"><div class="view-render" id="pane-training"></div></section>
+ <section class="pview" id="view-games"><div class="view-render" id="pane-games"></div></section>
+ <section class="pview" id="view-feed"><div class="view-render" id="pane-feed"></div></section>
+ <section class="pview" id="view-profile"><div class="view-render" id="pane-profile"></div></section>
 </main>
 </div>
 </div>
 <div class="scrim" id="appScrim"></div>
 
-<!-- ============ MODAL RÉCAP INTERACTIF ============ -->
-<div class="recap-overlay" id="recapOverlay">
- <div class="recap-box card-elevated">
- <div class="recap-head">
- <div>
- <div class="recap-title">Récap interactif — <span id="recapMatch" style="color:var(--tq);">vs Hapoel Tel Aviv</span></div>
- <div class="recap-sub">Les cercles lumineux montrent d'où Sylvain a marqué ses paniers</div>
-</div>
- <button class="recap-close" id="recapClose" aria-label="Fermer">
- <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 6l12 12M18 6L6 18"/></svg>
-</button>
-</div>
- <div class="recap-stage">
- <div class="recap-court" id="recapCourt">
- <svg width="100%" viewBox="0 0 300 320"><use href="#iso-court-svg"/></svg>
- <div id="spotLayer"></div>
-</div>
-</div>
- <div class="recap-caption">
- <div>
- <div class="rc-label" id="rcLabel">COUP D'ENVOI</div>
- <div class="rc-detail" id="rcDetail">Lancement du récap…</div>
-</div>
- <div class="rc-time mono" id="rcTime">--:--</div>
-</div>
- <div class="recap-dots" id="recapDots"></div>
- <div class="recap-actions">
- <button class="btn-recap" id="recapReplay">
- <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M3 12a9 9 0 109-9"/><path d="M3 3v6h6"/></svg>
- Rejouer
-</button>
-</div>
-</div>
+<!-- ============ BOTTOM NAV (mobile) ============ -->
+<nav class="bottom-nav" aria-label="Navigation">
+  <button class="bn-item active" data-view="dashboard"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span class="bn-lab">Dashboard</span></button>
+  <button class="bn-item" data-view="training"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6.5 6.5l11 11M4 10l2.5-2.5M10 4L7.5 6.5M20 14l-2.5 2.5M14 20l2.5-2.5"/><circle cx="12" cy="12" r="9.5"/></svg></span><span class="bn-lab">Entraîn.</span></button>
+  <button class="bn-item" data-view="games"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span><span class="bn-lab">Matchs</span></button>
+  <button class="bn-item" data-view="feed"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l14-5v12L3 13z"/><path d="M8 13.5V18a2 2 0 004 0v-2.5"/></svg></span><span class="bn-lab">HoopFeed</span></button>
+  <button class="bn-item" data-view="profile"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg></span><span class="bn-lab">Profil</span></button>
+</nav>
+
+<!-- ============ MODAL DÉTAIL MATCH (rempli par player.js) ============ -->
+<div class="sheet-overlay" id="sheetOverlay" role="dialog" aria-modal="true" aria-label="Détail du match">
+  <div class="sheet" id="sheetBox"></div>
 </div>
 
-<script>
-/* ============ ONGLETS avec direction ============ */
-const order = ['training','games','feed'];
-let current = 0;
-document.querySelectorAll('.ptab').forEach(tab => {
- tab.addEventListener('click', () => {
- const idx = order.indexOf(tab.dataset.view);
- if(idx === current) return;
- const dir = idx > current ? 'enter-right' : 'enter-left';
- current = idx;
- document.querySelectorAll('.ptab').forEach(t => t.classList.toggle('active', t === tab));
- document.querySelectorAll('.pview').forEach(v => {
- v.classList.remove('active','enter-right','enter-left');
- });
- const view = document.getElementById('view-' + tab.dataset.view);
- view.classList.add('active', dir);
- window.scrollTo({top:0, behavior:'instant'});
- if(tab.dataset.view === 'training') animateGoals();
- if(tab.dataset.view === 'games'){ animateGauges(); animateProGauges(); }
- if(tab.dataset.view === 'feed') animateProGauges();
- });
-});
-
-/* ============ TRAINING HUB ============ */
-const zones = {
- 'raquette': {name:'Raquette', hot:'Point chaud — priorité haute', drills:[
- {name:'Lay-ups main faible', detail:'3 séries × 10 — finir des deux côtés', score:'8/10', done:true},
- {name:'Finitions contact', detail:'2 séries × 8 avec défenseur passif', score:'6/8', done:true},
- {name:'Power moves ligne de fond', detail:'3 séries × 6 — départ poste bas', score:'', done:false},
- {name:'Floater dans la raquette', detail:'2 séries × 12 — hors planche', score:'', done:false},
- ]},
- 'md-gauche': {name:'Mi-distance gauche', hot:'Zone stable — entretien', drills:[
- {name:'Pull-up jumper', detail:'3 séries × 10 sortie de dribble', score:'7/10', done:true},
- {name:'Catch & shoot 45°', detail:'2 séries × 15 réceptions', score:'', done:false},
- ]},
- 'md-droite': {name:'Mi-distance droite', hot:'Zone stable — entretien', drills:[
- {name:'Step-back mi-distance', detail:'3 séries × 8 — après drive', score:'5/8', done:true},
- {name:'Catch & shoot 45°', detail:'2 séries × 15 réceptions', score:'', done:false},
- ]},
- 'corner-gauche': {name:'Corner gauche', hot:'Point chaud — priorité maximale', drills:[
- {name:'Corner 3 en série', detail:'5 séries × 10 — objectif 40%', score:'34%', done:true},
- {name:'Relocation après passe', detail:'3 séries × 8 — replacement corner', score:'', done:false},
- {name:'Tir sous fatigue', detail:'Sprint + 5 tirs corner × 4', score:'', done:false},
- ]},
- 'corner-droit': {name:'Corner droit', hot:'Zone à surveiller', drills:[
- {name:'Corner 3 en série', detail:'3 séries × 10 — objectif 38%', score:'36%', done:true},
- ]},
- 'top-cle': {name:'Top de la clé', hot:'Point chaud — priorité moyenne', drills:[
- {name:'3PT sortie d\'écran', detail:'4 séries × 8 — screen à droite', score:'11/16', done:true},
- {name:'Hésitation + tir', detail:'3 séries × 10 — lecture du défenseur', score:'', done:false},
- {name:'Logo range (bonus)', detail:'1 série × 10 pour le fun ', score:'', done:false},
- ]},
-};
-
-const drillsList = document.getElementById('drillsList');
-const iconDone = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6L9 17l-5-5"/></svg>';
-const iconTodo = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8"/></svg>';
-
-function showZone(key){
- const z = zones[key];
- document.getElementById('zoneName').textContent = z.name;
- document.getElementById('zoneFocus').lastChild.textContent = ' ' + z.hot;
- drillsList.innerHTML = z.drills.map((d,i) => `
- <div class="drill" style="animation-delay:${i*70}ms;">
- <span class="drill-status ${d.done?'done':'todo'}">${d.done?iconDone:iconTodo}</span>
- <span style="flex:1;">
- <span class="drill-name">${d.name}</span>
- <div class="drill-detail">${d.detail}</div>
-</span>
- <span class="drill-score mono ${d.score?'':'dim'}">${d.score || 'à faire'}</span>
-</div>`).join('');
- document.querySelectorAll('.izone').forEach(el => el.classList.toggle('selected', el.dataset.zone === key));
-}
-document.querySelectorAll('.izone').forEach(el => {
- el.addEventListener('click', () => showZone(el.dataset.zone));
-});
-showZone('raquette');
-
-function animateGoals(){
- document.querySelectorAll('.goal-fill').forEach(f => {
- f.style.width = '0%';
- requestAnimationFrame(() => requestAnimationFrame(() => { f.style.width = f.dataset.w + '%'; }));
- });
-}
-animateGoals();
-
-/* ============ GAME CENTER ============ */
-// compte à rebours vivant
-const cd = {d:2, h:7, m:42, s:18};
-const pad = n => String(n).padStart(2,'0');
-function renderCd(){
- document.getElementById('nhD').textContent = pad(cd.d);
- document.getElementById('nhH').textContent = pad(cd.h);
- document.getElementById('nhM').textContent = pad(cd.m);
- document.getElementById('nhS').textContent = pad(cd.s);
-}
-setInterval(() => {
- cd.s--;
- if(cd.s < 0){ cd.s = 59; cd.m--; }
- if(cd.m < 0){ cd.m = 59; cd.h--; }
- if(cd.h < 0){ cd.h = 23; cd.d--; }
- renderCd();
-}, 1000);
-renderCd();
-
-/* Box scores officiels EuroLeague 2025-26 (Francisco). NB : les positions de tir
-   (baskets) sont illustratives — le feed officiel ne publie pas la carte des tirs. */
-const matches = [
- {day:'20 mars 2026 · journée 32', opp:'Real Madrid', code:'RMB', us:87, them:85, win:true, pts:20, ast:5, reb:0, eva:22,
- baskets:[
- {x:50,y:20,pts:2,zone:'Raquette',time:'Q1 06:44'},
- {x:85,y:78,pts:3,zone:'Corner droit',time:'Q2 04:12'},
- {x:40,y:50,pts:2,zone:'Mi-distance gauche',time:'Q3 05:30'},
- {x:50,y:85,pts:3,zone:'Top de la clé',time:'Q4 02:58'},
- ]},
- {day:'25 février 2026 · journée 29', opp:'Olympiacos', code:'OLY', us:99, them:94, win:true, pts:23, ast:7, reb:3, eva:36,
- baskets:[
- {x:50,y:22,pts:2,zone:'Raquette',time:'Q1 07:15'},
- {x:18,y:80,pts:3,zone:'Corner gauche',time:'Q2 05:47'},
- {x:50,y:85,pts:3,zone:'Top de la clé',time:'Q3 03:22'},
- {x:60,y:30,pts:2,zone:'Mi-distance droite',time:'Q4 06:05'},
- ]},
- {day:'13 février 2026 · journée 28', opp:'Hapoel Tel Aviv', code:'HTA', us:93, them:82, win:true, pts:15, ast:3, reb:4, eva:11,
- baskets:[
- {x:50,y:20,pts:2,zone:'Raquette',time:'Q1 08:02'},
- {x:16,y:82,pts:3,zone:'Corner gauche',time:'Q1 03:40'},
- {x:50,y:85,pts:3,zone:'Top de la clé',time:'Q2 06:18'},
- {x:70,y:58,pts:2,zone:'Mi-distance droite',time:'Q3 04:44'},
- {x:55,y:25,pts:2,zone:'Raquette',time:'Q3 01:29'},
- {x:85,y:78,pts:3,zone:'Corner droit',time:'Q4 05:51'},
- ]},
- {day:'11 décembre 2025 · journée 15', opp:'Paris Basketball', code:'PBB', us:108, them:105, win:true, pts:26, ast:5, reb:4, eva:28,
- baskets:[
- {x:50,y:20,pts:2,zone:'Raquette',time:'Q1 08:12'},
- {x:54,y:22,pts:2,zone:'Raquette',time:'Q3 06:30'},
- ]},
-];
-
-const GAUGE_C = 2 * Math.PI * 26;
-const EVA_MAX = 32;
-const grid = document.getElementById('matchGrid');
-matches.forEach((m, i) => {
- const card = document.createElement('article');
- card.className = 'gcard card-elevated';
- card.innerHTML = `
- <div class="gc-top">
- <span class="gc-date">${m.day}</span>
- <span class="gc-badge ${m.win?'win':'loss'}" style="animation-delay:${i*100}ms;">${m.win?' VICTOIRE':'DÉFAITE'}</span>
-</div>
- <div class="gc-teams">
- <div class="gc-team"><div class="gc-crest home mono">ZAL</div><div class="gc-name">Žalgiris</div></div>
- <div class="gc-score mono ${m.win?'':'lost'}">${m.us}<span class="sep">–</span>${m.them}</div>
- <div class="gc-team"><div class="gc-crest mono">${m.code}</div><div class="gc-name">${m.opp}</div></div>
-</div>
- <div class="gc-perf">
- <div class="gauge">
- <svg width="62" height="62" viewBox="0 0 62 62">
- <circle cx="31" cy="31" r="26" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>
- <circle class="gauge-fill" cx="31" cy="31" r="26" fill="none"
- stroke="${m.win?'#E4682A':'#CE8B8B'}" stroke-width="5" stroke-linecap="round"
- stroke-dasharray="0 ${GAUGE_C.toFixed(1)}" transform="rotate(-90 31 31)"
- data-pct="${Math.min(1, m.eva/EVA_MAX)}"
- style="filter:drop-shadow(0 0 6px ${m.win?'rgba(228,104,42,0.6)':'rgba(206,139,139,0.5)'});"/>
-</svg>
- <div class="gauge-val">
- <span class="gauge-num mono ${m.win?'':'dim'}">${m.eva}</span>
- <span class="gauge-cap">ÉVA</span>
-</div>
-</div>
- <div class="gc-chips mono">
- <span class="gc-chip"><b>${m.pts}</b> PTS</span>
- <span class="gc-chip"><b>${m.ast}</b> AST</span>
- <span class="gc-chip"><b>${m.reb}</b> REB</span>
-</div>
- <button class="btn-recap gc-cta ${m.win?'':'ghost'}" data-recap="${i}">
- <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
- Voir le récap
-</button>
-</div>`;
- grid.appendChild(card);
-});
-
-function animateProGauges(){
- document.querySelectorAll('.pg-fill').forEach(g => {
- g.setAttribute('stroke-dasharray', '0 131.9');
- requestAnimationFrame(() => requestAnimationFrame(() => {
- g.setAttribute('stroke-dasharray', `${(parseFloat(g.dataset.pct)*131.9).toFixed(1)} 131.9`);
- }));
- });
-}
-animateProGauges();
-
-function animateGauges(){
- document.querySelectorAll('.gauge-fill').forEach(g => {
- g.setAttribute('stroke-dasharray', `0 ${GAUGE_C.toFixed(1)}`);
- requestAnimationFrame(() => requestAnimationFrame(() => {
- g.setAttribute('stroke-dasharray', `${(parseFloat(g.dataset.pct)*GAUGE_C).toFixed(1)} ${GAUGE_C.toFixed(1)}`);
- }));
- });
-}
-animateGauges();
-
-/* ============ MODAL RÉCAP INTERACTIF ============ */
-const overlay = document.getElementById('recapOverlay');
-const spotLayer = document.getElementById('spotLayer');
-const recapCourt = document.getElementById('recapCourt');
-const rcLabel = document.getElementById('rcLabel');
-const rcDetail = document.getElementById('rcDetail');
-const rcTime = document.getElementById('rcTime');
-const recapDots = document.getElementById('recapDots');
-let recapTimers = [];
-let recapIndex = 0;
-
-function clearRecap(){ recapTimers.forEach(t => clearTimeout(t)); recapTimers = []; }
-
-function playRecap(i){
- clearRecap();
- const m = matches[i];
- recapIndex = i;
- document.getElementById('recapMatch').textContent = 'vs ' + m.opp;
- spotLayer.innerHTML = '';
- recapDots.innerHTML = m.baskets.map(() => '<span class="rdot"></span>').join('');
- recapCourt.classList.remove('enter');
- void recapCourt.offsetWidth;
- recapCourt.classList.add('enter');
- rcLabel.textContent = 'COUP D\'ENVOI';
- rcDetail.textContent = `${m.us} – ${m.them} · ${m.win ? 'Victoire' : 'Défaite'}`;
- rcTime.textContent = '--:--';
- let running = 0;
- m.baskets.forEach((b, k) => {
- running += b.pts;
- const cumul = running;
- recapTimers.push(setTimeout(() => {
- const s = document.createElement('div');
- s.className = 'spot p' + b.pts;
- s.style.left = b.x + '%';
- s.style.top = (100 - b.y) + '%';
- s.innerHTML = '<span class="ring"></span><span class="core"></span><span class="pts">+' + b.pts + '</span>';
- spotLayer.appendChild(s);
- rcLabel.textContent = ('PANIER À ' + b.pts + 'PTS — ' + b.zone).toUpperCase();
- rcDetail.textContent = `Cumul terrain : ${cumul} pts · panier ${k+1}/${m.baskets.length}`;
- rcTime.textContent = b.time.split(' ')[1] + ' · ' + b.time.split(' ')[0];
- recapDots.querySelectorAll('.rdot').forEach((d, di) => d.classList.toggle('on', di <= k));
- }, 900 + k * 1050));
- });
- const total = m.baskets.reduce((a,b) => a + b.pts, 0);
- recapTimers.push(setTimeout(() => {
- rcLabel.textContent = 'RÉCAP TERMINÉ ';
- rcDetail.textContent = `${m.baskets.length} paniers marqués · ${total} pts inscrits depuis le terrain · ${m.pts} pts au total`;
- rcTime.textContent = m.win ? 'V' : 'D';
- }, 900 + m.baskets.length * 1050 + 700));
-}
-
-document.addEventListener('click', e => {
- const btn = e.target.closest('[data-recap]');
- if(btn){
- overlay.classList.add('open');
- playRecap(parseInt(btn.dataset.recap));
- }
-});
-document.getElementById('recapClose').addEventListener('click', () => { overlay.classList.remove('open'); clearRecap(); });
-overlay.addEventListener('click', e => { if(e.target === overlay){ overlay.classList.remove('open'); clearRecap(); } });
-document.getElementById('recapReplay').addEventListener('click', () => playRecap(recapIndex));
-
-/* ============ HOOPFEED ============ */
-document.getElementById('btnFollow').addEventListener('click', function(){
- const on = this.textContent === 'Suivre';
- this.textContent = on ? 'Abonné ' : 'Suivre';
- this.style.opacity = on ? '0.75' : '1';
-});
-
-document.querySelectorAll('.post').forEach(post => {
- const likeBtn = post.querySelector('[data-like]');
- const countEl = post.querySelector('.like-count');
- const burst = post.querySelector('.burst');
- let count = parseInt(likeBtn.dataset.count);
-
- function setLiked(liked){
- const heart = likeBtn.querySelector('svg path');
- likeBtn.classList.toggle('liked', liked);
- heart.setAttribute('fill', liked ? 'currentColor' : 'none');
- count += liked ? 1 : -1;
- countEl.textContent = count.toLocaleString('fr-FR');
- }
- likeBtn.addEventListener('click', () => setLiked(!likeBtn.classList.contains('liked')));
-
-
- post.querySelector('[data-media]').addEventListener('dblclick', () => {
- if(!likeBtn.classList.contains('liked')) setLiked(true);
- burst.classList.remove('go');
- void burst.offsetWidth;
- burst.classList.add('go');
- setTimeout(() => burst.classList.remove('go'), 750);
- });
-
- const input = post.querySelector('[data-input]');
- const send = post.querySelector('[data-send]');
- const comments = post.querySelector('[data-comments]');
- function addComment(){
- const txt = input.value.trim();
- if(!txt) return;
- const c = document.createElement('div');
- c.className = 'comment';
- c.innerHTML = '<b>moi</b> ' + txt.replace(/</g,'&lt;');
- comments.appendChild(c);
- input.value = '';
- }
- send.addEventListener('click', addComment);
- input.addEventListener('keydown', e => { if(e.key === 'Enter') addComment(); });
- post.querySelector('[data-comment-focus]').addEventListener('click', () => input.focus());
-});
-
-/* ============ HYDRATATION API ============ */
-async function hydratePro(){
-  if(!location.protocol.startsWith('http')) return;
-  try{
-    const r = await fetch('/api/players?id=sylvain-francisco');
-    if(!r.ok) throw 0;
-    const {player} = await r.json();
-    const m = player.profil.moyennesTournoi;
-    document.querySelectorAll('.pro-stats').forEach(g => {
-      const v = g.querySelectorAll('.ps-val');
-      if(v.length >= 4){
-        v[0].textContent = m.pts.toFixed(1);
-        v[1].textContent = m.reb.toFixed(1);
-        v[2].textContent = m.pd.toFixed(1);
-        v[3].textContent = m.eva.toFixed(1);
-      }
-    });
-    console.info('[HoopBoard] Profil joueur hydraté depuis l\'API');
-  }catch(e){
-    console.info('[HoopBoard] API indisponible — données embarquées utilisées.');
-  }
-}
-hydratePro();
-
-/* ============ SHELL — présentation uniquement (drawer, titre de page) ============ */
-const TB_TITLES = {training:'Training Hub', games:'Game Center', feed:'HoopFeed'};
-const tbTitleEl = document.getElementById('tbTitle');
-const menuBtn = document.getElementById('menuBtn');
-const appScrim = document.getElementById('appScrim');
-function closeNav(){ document.body.classList.remove('nav-open'); menuBtn.setAttribute('aria-expanded','false'); }
-menuBtn.addEventListener('click', () => {
-  const open = document.body.classList.toggle('nav-open');
-  menuBtn.setAttribute('aria-expanded', open);
-});
-appScrim.addEventListener('click', closeNav);
-document.addEventListener('keydown', e => { if(e.key === 'Escape') closeNav(); });
-document.addEventListener('click', e => {
-  const el = e.target.closest('[data-view]');
-  if(!el) return;
-  if(tbTitleEl && TB_TITLES[el.dataset.view]) tbTitleEl.textContent = TB_TITLES[el.dataset.view];
-  closeNav();
-});
-</script>
+<script src="/lib/data.js"></script>
+<script src="/lib/match-events.js"></script>
+<script src="/assets/store.js"></script>
+<script src="/assets/court.js"></script>
+<script src="/assets/player.js"></script>
 
 </body>
 </html>
