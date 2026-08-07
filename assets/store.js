@@ -119,10 +119,12 @@
     result: null, topScorer: null, lieu: PROCHAIN.lieu || null, hasBoxScore: false
   });
 
+  let LIVE = null; // feuille générée par le Match Live (session en cours)
   const getMatches = () => MATCHES.slice();
   function getMatch(id) {
     if (!id) return null;
     const k = String(id).toLowerCase();
+    if (k === 'live') return LIVE ? LIVE.match : null;
     return MATCHES.find((m) => m.id === k)
       || MATCHES.find((m) => m.id.indexOf(k) !== -1 || k.indexOf(m.id) !== -1)
       || MATCHES.find((m) => slug(m.away.name).indexOf(k) !== -1)
@@ -191,6 +193,7 @@
     },
     // persistance
     getSessions: () => readColl('sessions'), addSession: (s) => addToColl('sessions', s),
+    setLiveResult: (r) => { LIVE = r; }, getLiveResult: () => LIVE,
     getUserPlayers: () => readColl('players'), addUserPlayer: (p) => addToColl('players', p),
     _coll: { readColl, writeColl, addToColl }
   };

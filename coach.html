@@ -2017,10 +2017,33 @@ document.addEventListener('click', e => {
     const blob=new Blob(['﻿'+text],{type:'text/csv;charset=utf-8'}), url=URL.createObjectURL(blob), a=document.createElement('a');
     a.href=url; a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(url); a.remove(); },0);
   }
+  function renderLiveFeuille(el){
+    const Store=window.HoopStore, R=Store&&Store.getLiveResult();
+    if(!R){ el.innerHTML=emptyState('Aucune feuille live','Terminez un match dans le Match Live pour générer sa feuille.','#/live','Aller au Match Live'); return; }
+    const m=R.match;
+    const teamTable=(td)=>`<div class="fs-card"><h3 class="fs-h3">${esc(td.name)} <span class="fs-badge">${td.score} pts</span></h3>
+      <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="c">№</th><th class="l">Joueur</th><th class="c">Points</th><th class="c">Fautes</th></tr></thead>
+      <tbody>${td.players.map(p=>`<tr><td class="c">${p.num}</td><td class="l"><span class="fs-pname">${esc(p.name)}</span></td><td class="c strong">${p.pts}</td><td class="c">${p.fa}</td></tr>`).join('')||'<tr><td colspan="4" style="padding:16px;color:var(--t3);text-align:center;">Aucune action enregistrée.</td></tr>'}</tbody></table></div></div>`;
+    let html=`<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/live">${backSvg}Retour au Match Live</button>
+        <h2 class="page-title">Feuille de match — session live</h2>
+        <div class="page-meta">Générée depuis les événements saisis${R.quarter?' · arrêt en '+esc(R.quarter):''}</div>
+      </div><div class="fs-actions"><button class="btn btn-secondary sm" data-fs="print">Imprimer</button></div></div>`
+      + `<div class="fs-scoreline"><span class="fs-team ${m.result==='win'?'win':(m.result==='loss'?'loss':'')}">${esc(m.home.name)}</span>
+        <span class="fs-score mono">${m.home.score}<span class="fs-colon">:</span>${m.away.score}</span>
+        <span class="fs-team">${esc(m.away.name)}</span><span class="fs-status s-final">Terminé</span></div>`;
+    if(R.shots&&R.shots.length&&window.HoopCourt) html+=`<div class="fs-card"><h3 class="fs-h3">Tirs localisés (${R.shots.length})</h3><div class="an-court" id="liveShots"></div></div>`;
+    html+=teamTable(R.home)+teamTable(R.away);
+    html+=`<p class="fs-note fs-foot">Résumé de la session de saisie live : score, points et fautes par joueur dérivés des événements ; tirs localisés sur le terrain (court.js).</p>`;
+    el.innerHTML=html;
+    if(R.shots&&R.shots.length&&window.HoopCourt){ const c=el.querySelector('#liveShots'); if(c) HoopCourt.render(c,{mode:'readonly', shots:R.shots}); }
+    el.querySelectorAll('[data-fs]').forEach(b=>b.addEventListener('click',()=>window.print()));
+  }
   function renderFeuille(matchId){
     const el=document.getElementById('page-feuille'); if(!el) return;
     const Store=window.HoopStore;
     if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    if(String(matchId).toLowerCase()==='live') return renderLiveFeuille(el);
     const m=Store.getMatch(matchId);
     if(!m){ el.innerHTML=emptyState('Match introuvable',`Aucun match ne correspond à « ${matchId} ».`,'#/matchs'); return; }
     let html=header(m);
@@ -2439,7 +2462,7 @@ selectAction(0);
     let a=Math.atan2(dy,dx)*180/Math.PI; if(a<0) a+=360;
     if(x<=32 && y<=150) return Z('three-left-corner',3);
     if(x>=468 && y<=150) return Z('three-right-corner',3);
-    if(d>=222){ if(a<70) return Z('three-right-wing',3); if(a<=110) return Z('three-center',3); return Z('three-left-wing',3); }
+    if(d>222){ if(a<70) return Z('three-right-wing',3); if(a<=110) return Z('three-center',3); return Z('three-left-wing',3); } // sur la ligne = 2 pts (cohérent court.js)
     if(d<=45){ if(x<235) return Z('near-left',2); if(x<=265) return Z('near-center',2); return Z('near-right',2); }
     if(x>=169 && x<=331 && y<=191) return x<250 ? Z('paint-left',2) : Z('paint-right',2);
     if(a<30) return Z('mid-right-baseline',2);
@@ -2469,6 +2492,25 @@ selectAction(0);
       if(e.actionType==='timeout') TO[e.teamId]=Math.max(0,TO[e.teamId]-1);
     });
     return {scores,TF,TO,fouls,pts};
+  }
+
+  /* ---- fin de match : génère la feuille depuis les événements ---- */
+  function genLiveFeuille(){
+    if(!window.HoopStore) return;
+    const s=recompute();
+    const teamData = t => ({ name:TEAM[t].name, code:TEAM[t].code, score:s.scores[t],
+      players: ROSTER[t].filter(p=>(s.pts[key(t,p.num)]||0)>0 || (s.fouls[key(t,p.num)]||0)>0 || TEAM[t].court.indexOf(p.num)!==-1)
+        .map(p=>({num:p.num, name:p.name, pts:s.pts[key(t,p.num)]||0, fa:s.fouls[key(t,p.num)]||0}))
+        .sort((a,b)=>b.pts-a.pts) });
+    const shots = events.filter(e=>e.actionType==='shot' && e.x!=null).map(e=>({x:e.x, y:e.y, result:e.result}));
+    window.HoopStore.setLiveResult({
+      match:{ id:'live', competition:'Match live — session de saisie', date:null, status:'final',
+        home:{name:TEAM.zal.name, code:TEAM.zal.code, score:s.scores.zal},
+        away:{name:TEAM.opp.name, code:TEAM.opp.code, score:s.scores.opp},
+        result: s.scores.zal>s.scores.opp?'win':(s.scores.zal<s.scores.opp?'loss':null) },
+      home: teamData('zal'), away: teamData('opp'), shots:shots, quarter: qLabel()
+    });
+    if(typeof navigate==='function') navigate('#/matchs/live/feuille');
   }
 
   /* ---- helpers ---- */
@@ -2763,7 +2805,7 @@ selectAction(0);
     else if(a==='poss'){ possession=other(possession); render(); toast('neutral','Possession · '+(possession==='zal'?TEAM.zal.name:TEAM.opp.name)); }
     else if(a==='next-q'){ if(quarter<8)quarter++; clock=10*60; render(); }
     else if(a==='prev-q'){ if(quarter>1)quarter--; clock=10*60; render(); }
-    else if(a==='end'){ if(confirm('Terminer le match ? La saisie sera close.')){ ended=true; running=false; disarm(); render(); toast('neutral','Match terminé'); } }
+    else if(a==='end'){ if(confirm('Terminer le match ? La saisie sera close et la feuille générée.')){ ended=true; running=false; disarm(); render(); toast('neutral','Match terminé'); genLiveFeuille(); } }
     menu.classList.remove('open'); }));
 
   /* ---- sélecteur d'équipe ---- */
