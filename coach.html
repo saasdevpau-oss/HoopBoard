@@ -746,7 +746,7 @@
           <div class="dn-sub">Playoffs — quart de finale · Istanbul · Ülker Arena</div>
         </div>
       </div>
-      <div class="dn-actions"><button class="btn btn-secondary sm" data-goto="gamecenter">Préparer le match</button></div>
+      <div class="dn-actions"><button class="btn btn-secondary sm" data-route="#/matchs/fenerbahce/preparation">Préparer le match</button></div>
     </div>
 
     <div class="dash-panel dash-last card">
@@ -1786,6 +1786,11 @@
 ============================================================ -->
 <section class="page" id="page-analyse"></section>
 
+<!-- ============================================================
+     PAGE — PRÉPARATION DU MATCH (dossier de scouting adversaire)
+============================================================ -->
+<section class="page" id="page-preparation"></section>
+
 <!-- Entraînements : formulaire nouvelle séance + détail d'une séance -->
 <section class="page" id="page-training-new"></section>
 <section class="page" id="page-training-detail"></section>
@@ -1872,6 +1877,7 @@ const ROUTES = [
   ['^/matchs/?$',                      'matchs'],
   ['^/matchs/([^/]+)/feuille/?$',      'feuille',        ['matchId']],
   ['^/matchs/([^/]+)/analyse/?$',      'analyse',        ['matchId']],
+  ['^/matchs/([^/]+)/preparation/?$',  'preparation',    ['matchId']],
   ['^/matchs/([^/]+)/live/?$',         'live',           ['matchId']],
   ['^/matchs/nouveau/?$',              'match-new'],
   ['^/matchs/([^/]+)/?$',              'match',          ['matchId']],
@@ -1883,9 +1889,9 @@ const ROUTES = [
   ['^/entrainements/?$',               'training']
 ];
 /* vues disposant déjà d'une section ; les autres -> placeholder « en construction » */
-const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail' };
-const VIEW_TAB     = { dashboard:'dashboard', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
-const VIEW_TITLE   = { dashboard:'Dashboard', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
+const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', preparation:'page-preparation', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail' };
+const VIEW_TAB     = { dashboard:'dashboard', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', preparation:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
+const VIEW_TITLE   = { dashboard:'Dashboard', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', preparation:'Préparation du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
 const PLACEHOLDER  = { 'match-new':'Nouveau match' };
 /* boutons hérités data-goto -> hash (les ids réels arriveront via data-route) */
 const GOTO_HASH = { dashboard:'#/', gamecenter:'#/matchs', effectif:'#/effectif', training:'#/entrainements', live:'#/live', joueur:'#/joueurs/sylvain-francisco', match:'#/matchs/hapoel' };
@@ -2076,10 +2082,16 @@ document.addEventListener('click', e => {
       <span class="fs-status s-${m.status}">${STATUS[m.status]||''}</span></div>`;
   }
   function actionsBar(m){
+    if(m.status==='upcoming'){
+      const prep = (window.HoopStore && HoopStore.getScouting(m.id))
+        ? `<button class="btn btn-primary sm" data-route="#/matchs/${m.id}/preparation">Préparer le match</button>` : '';
+      return `<div class="mh-actions">${prep}
+        <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/live">Démarrer le live</button></div>`;
+    }
     return `<div class="mh-actions">
       <button class="btn btn-primary sm" data-route="#/matchs/${m.id}/feuille">Feuille de match</button>
       <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/analyse">Analyse</button>
-      <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/live">${m.status==='upcoming'?'Démarrer le live':'Match live'}</button></div>`;
+      <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/live">Match live</button></div>`;
   }
   function topPlayers(bs){
     const top = bs.home.players.slice().sort((a,b)=>b.pts-a.pts).slice(0,3);
@@ -2154,12 +2166,177 @@ document.addEventListener('click', e => {
   routeHandlers.match = p => renderMatchDetail(p.matchId || 'hapoel');
   routeHandlers.analyse = p => renderAnalyse(p.matchId || 'hapoel');
 
+  /* --- Préparation du match : dossier de scouting de l'adversaire --- */
+  function prepInitials(name){
+    const parts = String(name||'').trim().split(/\s+/);
+    const a = parts[0] ? parts[0][0] : '';
+    const b = parts.length>1 ? parts[parts.length-1][0] : '';
+    return (a+b).toUpperCase();
+  }
+  function prepEffBar(label, o){
+    if(!o) return '';
+    return `<div class="prep-eff-row">
+      <div class="prep-eff-head"><span>${esc(label)}</span><span class="prep-eff-pct"><b>${o.pct}%</b> <i class="mono">${o.r}/${o.t}</i></span></div>
+      <div class="prep-eff-track"><div class="prep-eff-fill" style="width:${Math.max(2,Math.min(100,o.pct))}%"></div></div></div>`;
+  }
+  function prepLeader(label, p, key, unit){
+    if(!p) return '';
+    return `<div class="prep-leader"><span class="prep-leader-lab">${esc(label)}</span>
+      <span class="prep-leader-name">${esc(p.nom)}</span>
+      <span class="prep-leader-val"><b>${p[key]}</b> ${esc(unit)}/match</span></div>`;
+  }
+  function prepPlayer(p){
+    return `<div class="prep-player">
+      <span class="prep-ava">${esc(prepInitials(p.nom))}</span>
+      <div class="prep-player-id">
+        <span class="prep-player-name">${esc(p.nom)}${p.num!=null?` <span class="prep-num mono">#${p.num}</span>`:''}</span>
+        <span class="prep-player-meta">${esc(p.poste)} · ${esc(p.taille)}</span>
+        <span class="prep-player-note">${esc(p.note)}</span>
+      </div>
+      <div class="prep-player-stats">
+        <span class="prep-stat"><b>${p.pts}</b><i>pts</i></span>
+        <span class="prep-stat"><b>${p.reb}</b><i>reb</i></span>
+        <span class="prep-stat"><b>${p.pd}</b><i>pd</i></span>
+        <span class="prep-stat"><b>${p.troisPct}%</b><i>3pts</i></span>
+      </div></div>`;
+  }
+  function renderPreparation(matchId){
+    const el = document.getElementById('page-preparation'); if(!el) return;
+    const Store = window.HoopStore;
+    if(!Store){ el.innerHTML = emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    const m = Store.getMatch(matchId);
+    if(!m){ el.innerHTML = emptyState('Match introuvable', `Aucun match ne correspond à « ${matchId} ».`, '#/matchs'); return; }
+    const sc = Store.getScouting(m.id);
+    if(!sc){
+      el.innerHTML = `<div class="page-head fs-head"><div>
+          <button class="fs-back" data-route="#/matchs/${m.id}">${backSvg}Retour au match</button>
+          <h2 class="page-title">Préparation — ${esc(m.away.name)}</h2></div></div>
+        <div class="fs-card">${emptyState('Scouting indisponible','Le dossier de préparation de cet adversaire n’est pas encore disponible dans la démo.','#/matchs/'+m.id,'Voir le match')}</div>`;
+      return;
+    }
+    const s = sc.saison, eff = sc.efficacite || {}, au = sc.autres || {};
+    const bilanClub = Store.getTournoi().bilan || {}, statsClub = Store.getTournoi().statsEquipe || {}, clubNom = Store.getClub().nom;
+
+    /* Forme récente : pastilles V/D */
+    const forme = (sc.formeRecente||[]).map(g=>{
+      const t = `${g.victoire?'V':'D'} ${g.dom?'vs ':'@ '}${g.adversaire} · ${g.score[0]}–${g.score[1]}`;
+      return `<span class="prep-form-dot ${g.victoire?'win':'loss'}" title="${esc(t)}">${g.victoire?'V':'D'}</span>`;
+    }).join('');
+
+    /* Comparaison rapide : valeurs Žalgiris réelles vs scouting adverse */
+    const winPct = (v,d)=> (v+d)>0 ? v/(v+d) : 0;
+    const CMP = [
+      { lab:'Bilan',                  us:`${bilanClub.victoires}-${bilanClub.defaites}`, them:`${s.victoires}-${s.defaites}`, mine:winPct(bilanClub.victoires,bilanClub.defaites), their:winPct(s.victoires,s.defaites) },
+      { lab:'Points marqués /match',  us:statsClub.ptsPour,  them:s.ptsPour,  mine:statsClub.ptsPour,  their:s.ptsPour  },
+      { lab:'Points encaissés /match',us:statsClub.ptsContre,them:s.ptsContre,mine:-statsClub.ptsContre,their:-s.ptsContre },
+      { lab:'Différentiel',           us:`+${statsClub.diff}`,them:`+${s.diff}`,mine:statsClub.diff,    their:s.diff    },
+    ];
+    const cmpRows = CMP.map(r=>{
+      const usLead = r.mine>r.their, themLead = r.their>r.mine;
+      return `<div class="prep-cmp-row"><span class="prep-cmp-lab">${esc(r.lab)}</span>
+        <span class="prep-cmp-val us ${usLead?'lead':''}">${esc(String(r.us))}</span>
+        <span class="prep-cmp-val them ${themLead?'lead':''}">${esc(String(r.them))}</span></div>`;
+    }).join('');
+
+    const iconUp = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 15l7-7 7 7"/></svg>';
+    const iconDn = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M19 9l-7 7-7-7"/></svg>';
+    const li = arr => (arr||[]).map(x=>`<li>${esc(x)}</li>`).join('');
+
+    el.innerHTML = `<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/matchs">${backSvg}Tous les matchs</button>
+        <h2 class="page-title">Préparation — ${esc(sc.equipe)}</h2>
+        <div class="page-meta">${esc(sc.contexte)}${sc.lieu?' · '+esc(sc.lieu):''}</div>
+      </div><div class="fs-actions">
+        <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/live">Démarrer le live</button>
+      </div></div>
+
+      <div class="prep-hero">
+        <div class="prep-hero-main">
+          <div class="prep-hero-top"><span class="prep-badge mono">${esc(sc.code)}</span>
+            <div><div class="prep-hero-name">${esc(sc.equipe)}</div>
+              <div class="prep-hero-sub">${s.victoires}-${s.defaites} · ${s.classement}ᵉ sur ${s.classementSur} · saison régulière</div></div>
+          </div>
+          <p class="prep-hero-style">${esc(sc.style)}</p>
+          <div class="prep-hero-form"><span class="prep-form-lab">5 derniers matchs</span>${forme}</div>
+        </div>
+        <div class="prep-hero-kpis">
+          <div class="prep-kpi"><span class="prep-kpi-val">${s.ptsPour}</span><span class="prep-kpi-lab">Pts marqués<br>/match</span></div>
+          <div class="prep-kpi"><span class="prep-kpi-val">${s.ptsContre}</span><span class="prep-kpi-lab">Pts encaissés<br>/match</span></div>
+          <div class="prep-kpi"><span class="prep-kpi-val accent">+${s.diff}</span><span class="prep-kpi-lab">Différentiel<br>/match</span></div>
+        </div>
+      </div>
+
+      <div class="prep-two">
+        <div class="fs-card prep-sw prep-strength"><h3 class="fs-h3"><span class="prep-ic up">${iconUp}</span>Points forts</h3>
+          <ul class="prep-list">${li(sc.pointsForts)}</ul></div>
+        <div class="fs-card prep-sw prep-weak"><h3 class="fs-h3"><span class="prep-ic down">${iconDn}</span>Faiblesses à exploiter</h3>
+          <ul class="prep-list">${li(sc.faiblesses)}</ul></div>
+      </div>
+
+      <div class="fs-card"><h3 class="fs-h3">Joueurs à surveiller</h3>
+        <div class="prep-leaders">
+          ${prepLeader('Meilleur scoreur', sc.leaders.scoreur, 'pts', 'pts')}
+          ${prepLeader('Meilleur passeur', sc.leaders.passeur, 'pd', 'pd')}
+          ${prepLeader('Meilleur rebondeur', sc.leaders.rebondeur, 'reb', 'reb')}
+        </div>
+        <div class="prep-players">${(sc.joueursCles||[]).map(prepPlayer).join('')}</div></div>
+
+      <div class="fs-card"><h3 class="fs-h3">Profil offensif — zones préférentielles
+          <span class="an-legend"><i class="lg-cold"></i>faible % <i class="lg-hot"></i>fort %</span></h3>
+        <div class="an-grid">
+          <div><div id="prepCourt" class="an-court"></div>
+            <p class="an-sel" id="prepSel">Touchez une zone du terrain pour voir le détail de l’adversaire.</p></div>
+          <div class="prep-off">
+            <div class="prep-eff">
+              ${prepEffBar('2 points', eff.p2)}
+              ${prepEffBar('3 points', eff.p3)}
+              ${prepEffBar('Lancers francs', eff.lf)}
+            </div>
+            <div class="prep-chips">
+              <span class="an-chip">Pertes de balle <b>${au.ballesPerdues}</b>/match</span>
+              <span class="an-chip">Rebonds offensifs <b>${au.rebondsOff}</b>/match</span>
+              <span class="an-chip">Fautes <b>${au.fautes}</b>/match</span>
+              ${au.interceptions!=null?`<span class="an-chip">Interceptions <b>${au.interceptions}</b>/match</span>`:''}
+            </div>
+          </div>
+        </div></div>
+
+      <div class="prep-two">
+        <div class="fs-card"><h3 class="fs-h3">Comparaison rapide</h3>
+          <div class="prep-cmp">
+            <div class="prep-cmp-row head"><span class="prep-cmp-lab"></span>
+              <span class="prep-cmp-val us">${esc(clubNom)}</span><span class="prep-cmp-val them">${esc(sc.equipe)}</span></div>
+            ${cmpRows}
+          </div></div>
+        <div class="fs-card"><h3 class="fs-h3">Tendances de la saison</h3>
+          <ul class="prep-list prep-trends">${li(sc.tendances)}</ul></div>
+      </div>
+
+      <div class="section-label">Plan de match</div>
+      <div class="prep-plan">
+        <div class="fs-card prep-plan-block exploit"><h3 class="fs-h3">À exploiter</h3><ul class="prep-list">${li(sc.planMatch.exploiter)}</ul></div>
+        <div class="fs-card prep-plan-block avoid"><h3 class="fs-h3">À éviter</h3><ul class="prep-list">${li(sc.planMatch.eviter)}</ul></div>
+        <div class="fs-card prep-plan-block def"><h3 class="fs-h3">Priorités défensives</h3><ul class="prep-list">${li(sc.planMatch.prioritesDef)}</ul></div>
+      </div>
+
+      <p class="fs-note fs-foot">Dossier de scouting à valeur démonstrative : profil de jeu, joueurs clés et zones de tir reconstitués à partir des tendances de la saison de ${esc(sc.equipe)}. Les moyennes du ${esc(clubNom)} en comparaison sont les données réelles de la saison.</p>`;
+
+    if(window.HoopCourt){
+      const zones = sc.zones || {}, hm = seasonHeatmap(zones);
+      HoopCourt.render(document.getElementById('prepCourt'), { mode:'analysis', heatmap:hm,
+        onZoneSelect:(z)=>{ const hz=hm[z.id], sel=document.getElementById('prepSel');
+          if(hz){ const zn=zones[hz.key]; sel.innerHTML = `<b>${esc(z.label)}</b> — zone « ${zlabel(hz.key)} » : ${zn.reussis}/${zn.tentes} tirs (${zn.pct.toFixed(1)}%)`; }
+          else { sel.textContent = z.label + ' — pas de données de zone pour l’adversaire.'; } } });
+    } else if(document.getElementById('prepCourt')){ document.getElementById('prepCourt').innerHTML = '<p class="fs-note">Composant terrain indisponible.</p>'; }
+  }
+  routeHandlers.preparation = p => renderPreparation(p.matchId || 'fenerbahce');
+
   /* --- Liste des matchs (#/matchs) rendue depuis le store --- */
   function matchCard(m){
     const rc = m.result==='win'?'win':(m.result==='loss'?'loss':'');
     const score = m.status==='upcoming' ? '—' : `${m.home.score}–${m.away.score}`;
     const actions = m.status==='upcoming'
-      ? `<button class="btn btn-primary sm" data-route="#/matchs/${m.id}/live">Démarrer le live</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}">Préparer</button>`
+      ? `<button class="btn btn-primary sm" data-route="#/matchs/${m.id}/preparation">Préparer</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/live">Démarrer le live</button>`
       : `<button class="btn btn-secondary sm" data-route="#/matchs/${m.id}">Voir</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/feuille">Feuille</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/analyse">Analyse</button>`;
     return `<div class="mc-card" data-route="#/matchs/${m.id}">
       <div class="mc-top"><span class="mc-date">${m.date?fmtDate(m.date):(m.lieu?esc(m.lieu):'Date à venir')}</span>

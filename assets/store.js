@@ -183,6 +183,20 @@
     getPlayers, getPlayer,
     getMatches, getMatch, getBoxScore, getQuarters,
     getSeasonZones: () => (DATA.zonesTirSaison && DATA.zonesTirSaison.zones) || {},
+    /* Dossier de scouting de l'adversaire d'un match (page « Préparer »).
+       Les leaders (meilleur scoreur/passeur/rebondeur) sont dérivés ici pour
+       rester cohérents avec joueursCles — pas de duplication dans data.js. */
+    getScouting: function (matchId) {
+      const m = getMatch(matchId);
+      if (!m) return null;
+      const sc = DATA.scouting || {};
+      const raw = sc[m.id] || sc[slug(m.away.name)] || null;
+      if (!raw) return null;
+      const js = raw.joueursCles || [];
+      const top = (k) => js.slice().sort((a, b) => (b[k] || 0) - (a[k] || 0))[0] || null;
+      const leaders = { scoreur: top('pts'), passeur: top('pd'), rebondeur: top('reb') };
+      return Object.assign({ matchId: m.id, adversaire: m.away.name }, raw, { leaders });
+    },
     getPlayerHistory: function (id) {
       const out = [];
       const bs = getBoxScore('hapoel');
