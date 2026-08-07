@@ -193,6 +193,121 @@
   function readColl(key) { const s = ls(); if (!s) return []; try { return JSON.parse(s.getItem('hb_' + key) || '[]'); } catch (e) { return []; } }
   function writeColl(key, arr) { const s = ls(); if (s) try { s.setItem('hb_' + key, JSON.stringify(arr)); } catch (e) {} return arr; }
   function addToColl(key, item) { const arr = readColl(key); const it = Object.assign({ id: 'u' + Date.now().toString(36), createdAt: new Date().toISOString() }, item); arr.unshift(it); writeColl(key, arr); return it; }
+  function readObj(key) { const s = ls(); if (!s) return {}; try { return JSON.parse(s.getItem('hb_' + key) || '{}'); } catch (e) { return {}; } }
+  function writeObj(key, obj) { const s = ls(); if (s) try { s.setItem('hb_' + key, JSON.stringify(obj)); } catch (e) {} return obj; }
+
+  /* ================================================================
+     ENTRAÎNEMENTS COLLECTIFS — planning auto + notation rapide + tendances
+     ================================================================ */
+  const COL_CRIT = [
+    { key: 'intensite', label: 'Intensité' }, { key: 'execution', label: "Qualité d'exécution" },
+    { key: 'concentration', label: 'Concentration' }, { key: 'communication', label: 'Communication' },
+    { key: 'engagement', label: 'Engagement collectif' },
+  ];
+  const PL_CRIT = [
+    { key: 'intensite', label: 'Intensité' }, { key: 'reussite', label: 'Réussite / efficacité' },
+    { key: 'concentration', label: 'Concentration' }, { key: 'impact', label: 'Impact collectif' },
+    { key: 'attitude', label: 'Attitude / engagement' },
+  ];
+  const CRIT_OFFSET = [0.1, -0.5, 0.2, 0.0, 0.35];
+  const seeded = (a, b, c) => { const x = Math.sin(a * 127.1 + b * 311.7 + c * 74.7 + 1.37) * 43758.5453; return x - Math.floor(x); };
+  const clampNote = (n) => Math.max(1, Math.min(10, Math.round(n)));
+  const mean = (arr) => (arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0);
+  const round1 = (n) => Math.round(n * 10) / 10;
+  const playerSlope = (pIdx) => (seeded(pIdx, 99, 7) * 2 - 1) * 0.16;
+
+  function genCollectifRoster() {
+    const niv = (DATA.planningCollectif && DATA.planningCollectif.niveaux) || {};
+    return PLAYERS.filter((p) => niv[p.name] != null);
+  }
+  function genSessionEval(sessionIdx, roster, cfg) {
+    const joueurs = {}, presence = {};
+    roster.forEach((p, pIdx) => {
+      const absent = seeded(pIdx, sessionIdx, 3) < 0.08;
+      presence[p.id] = !absent;
+      if (absent) return;
+      const base = cfg.niveaux[p.name] != null ? cfg.niveaux[p.name] : 6.2, slope = playerSlope(pIdx), crit = {};
+      PL_CRIT.forEach((c, ci) => {
+        crit[c.key] = clampNote(base + slope * (sessionIdx - 4) + CRIT_OFFSET[ci] + (seeded(pIdx, sessionIdx, ci) * 2 - 1) * 1.0);
+      });
+      const avg = mean(PL_CRIT.map((c) => crit[c.key]));
+      crit.note = ''; crit.tresBon = avg >= 8.2; crit.aSurveiller = avg <= 5.3;
+      if (crit.tresBon) crit.note = cfg.notesBon[Math.floor(seeded(pIdx, sessionIdx, 5) * cfg.notesBon.length)];
+      else if (crit.aSurveiller) crit.note = cfg.notesSurveiller[Math.floor(seeded(pIdx, sessionIdx, 6) * cfg.notesSurveiller.length)];
+      joueurs[p.id] = crit;
+    });
+    const present = roster.filter((p) => presence[p.id]), collectif = {};
+    COL_CRIT.forEach((c, ci) => {
+      collectif[c.key] = clampNote(mean(present.map((p) => joueurs[p.id][PL_CRIT[ci].key])) + (seeded(0, sessionIdx, ci) * 2 - 1) * 0.5);
+    });
+    const noteCoach = seeded(0, sessionIdx, 42) < 0.2 ? '' : cfg.notesCoach[Math.floor(seeded(0, sessionIdx, 43) * cfg.notesCoach.length)];
+    return { collectif, noteCoach, joueurs, presence };
+  }
+  function baseCollectifs() {
+    const cfg = DATA.planningCollectif; if (!cfg) return [];
+    const roster = genCollectifRoster();
+    return (cfg.seances || []).map((sc, i) => {
+      const s = {
+        id: 'col-' + sc.date, type: 'collectif', titre: cfg.titre, date: sc.date, heure: cfg.heure,
+        duree: cfg.duree, lieu: cfg.lieu, status: sc.status, convoques: roster.map((p) => p.id), presence: {}, eval: null,
+      };
+      if (sc.status === 'done') { const e = genSessionEval(i, roster, cfg); s.presence = e.presence; s.eval = { collectif: e.collectif, noteCoach: e.noteCoach, joueurs: e.joueurs }; }
+      else roster.forEach((p) => { s.presence[p.id] = true; });
+      return s;
+    });
+  }
+  function getCollectifs() {
+    const ov = readObj('collectif_evals');
+    return baseCollectifs().map((s) => {
+      const o = ov[s.id];
+      return o ? Object.assign({}, s, { status: o.status || s.status, presence: o.presence || s.presence, eval: o.eval || s.eval }) : s;
+    }).sort((a, b) => (a.date < b.date ? 1 : -1));
+  }
+  function getCollectif(id) { return getCollectifs().find((s) => s.id === id) || null; }
+  function saveCollectifEval(id, data) {
+    const ov = readObj('collectif_evals');
+    ov[id] = {
+      status: 'done',
+      presence: data.presence || {},
+      eval: { collectif: data.collectif || {}, noteCoach: data.noteCoach || '', joueurs: data.joueurs || {} },
+    };
+    writeObj('collectif_evals', ov);
+    return getCollectif(id);
+  }
+  function collectifAvg(s) { return (s && s.eval) ? round1(mean(COL_CRIT.map((c) => s.eval.collectif[c.key]))) : null; }
+  function playerAvg(s, pid) { if (!s || !s.eval || !s.eval.joueurs[pid]) return null; const j = s.eval.joueurs[pid]; return round1(mean(PL_CRIT.map((c) => j[c.key]))); }
+  function doneChrono() { return getCollectifs().filter((s) => s.eval).sort((a, b) => (a.date < b.date ? -1 : 1)); }
+  function getCollectifTrends() {
+    const all = doneChrono();
+    const sessions = all.map((s) => ({ id: s.id, date: s.date, avg: collectifAvg(s) }));
+    const roster = genCollectifRoster();
+    const players = roster.map((p) => {
+      const series = all.map((s) => playerAvg(s, p.id)).filter((v) => v != null);
+      if (series.length < 2) return null;
+      return { id: p.id, name: p.name, num: p.num, avg: round1(mean(series)), delta: round1(series[series.length - 1] - series[0]), last: series[series.length - 1] };
+    }).filter(Boolean);
+    return { sessions, risers: players.slice().sort((a, b) => b.delta - a.delta).slice(0, 3), fallers: players.slice().sort((a, b) => a.delta - b.delta).slice(0, 3), players };
+  }
+  function getCollectifRecap(id) {
+    const s = getCollectif(id); if (!s || !s.eval) return null;
+    const roster = genCollectifRoster();
+    const present = roster.filter((p) => s.presence[p.id] && s.eval.joueurs[p.id]);
+    const perPlayer = present.map((p) => ({ id: p.id, name: p.name, num: p.num, avg: playerAvg(s, p.id), j: s.eval.joueurs[p.id] }));
+    let bestCrit = null; COL_CRIT.forEach((c) => { const v = s.eval.collectif[c.key]; if (!bestCrit || v > bestCrit.val) bestCrit = { label: c.label, val: v }; });
+    const done = doneChrono(), idx = done.findIndex((x) => x.id === id);
+    const prev = idx > 0 ? done.slice(Math.max(0, idx - 3), idx) : [];
+    const prevAvg = prev.length ? round1(mean(prev.map(collectifAvg))) : null, avg = collectifAvg(s);
+    const fallers = [];
+    perPlayer.forEach((pp) => {
+      for (let k = idx - 1; k >= 0; k--) { const pa = playerAvg(done[k], pp.id); if (pa != null) { const d = round1(pp.avg - pa); if (d < 0) fallers.push({ name: pp.name, num: pp.num, avg: pp.avg, delta: d }); break; } }
+    });
+    fallers.sort((a, b) => a.delta - b.delta);
+    return {
+      session: s, avg: avg, perCrit: COL_CRIT.map((c) => ({ label: c.label, val: s.eval.collectif[c.key] })), bestCrit: bestCrit,
+      top: perPlayer.slice().sort((a, b) => b.avg - a.avg).slice(0, 3), fallers: fallers.slice(0, 3),
+      prevAvg: prevAvg, delta: prevAvg != null ? round1(avg - prevAvg) : null, prevCount: prev.length, noteCoach: s.eval.noteCoach, present: perPlayer.length, convoques: s.convoques.length,
+    };
+  }
 
   return {
     slug, pct, aggregateDetailed,
@@ -282,6 +397,11 @@
     getSessions: () => readColl('sessions'), addSession: (s) => addToColl('sessions', s),
     setLiveResult: (r) => { LIVE = r; }, getLiveResult: () => LIVE,
     getUserPlayers: () => readColl('players'), addUserPlayer: (p) => addToColl('players', p),
-    _coll: { readColl, writeColl, addToColl }
+    // entraînements collectifs (planning auto + notation + tendances)
+    collectifCriteria: () => COL_CRIT.slice(), playerCriteria: () => PL_CRIT.slice(),
+    getCollectifRoster: () => genCollectifRoster().slice(),
+    getCollectifs, getCollectif, saveCollectifEval, getCollectifTrends, getCollectifRecap,
+    collectifAvg, playerAvg,
+    _coll: { readColl, writeColl, addToColl, readObj, writeObj }
   };
 });

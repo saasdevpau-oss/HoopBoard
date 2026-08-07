@@ -2616,16 +2616,64 @@ document.addEventListener('click', e => {
       <div class="mc-comp">${s.objectif?esc(s.objectif):'Sans objectif défini'}</div>
       <div class="tr-meta">${(s.convoques||[]).length} convoqués${(s.zones&&s.zones.length)?` · ${s.zones.length} zone(s) de tir`:''}${s.lieu?' · '+esc(s.lieu):''}</div></div>`;
   }
+  /* --- Entraînements collectifs : helpers d'affichage --- */
+  const COL_STATUS = { upcoming:['À venir','up'], live:['En cours','live'], done:['Terminé','done'] };
+  function colBadge(st){ const x=COL_STATUS[st]||COL_STATUS.done; return `<span class="col-badge ${x[1]}">${x[0]}</span>`; }
+  const shortDate = iso => { const p=(iso||'').split('-'); return p.length===3?`${p[2]}/${p[1]}`:iso; };
+  function collectifCard(s, Store){
+    const pres = Object.keys(s.presence||{}).filter(k=>s.presence[k]).length;
+    const avg = s.eval ? Store.collectifAvg(s) : null;
+    return `<div class="mc-card col-card" data-route="#/entrainements/${s.id}">
+      <div class="mc-top"><span class="mc-date">${fmtDate(s.date)} · ${esc(s.heure||'')}</span>${colBadge(s.status)}</div>
+      <div class="tr-title">${esc(s.titre||'Entraînement collectif')}</div>
+      <div class="col-card-meta"><span>${s.duree||0} min</span><span>${(s.convoques||[]).length} convoqués</span><span>${pres} présents</span></div>
+      ${avg!=null
+        ? `<div class="col-card-foot"><span class="col-avg">${avg}</span><span class="col-avg-lab">/10 · note collective</span></div>`
+        : `<div class="col-card-foot cta">${s.status==='live'?'À noter maintenant':'Bilan en fin de séance'}</div>`}</div>`;
+  }
+  /* mini graphe ligne (échelle 0-10), réutilise les classes rc-* */
+  function miniLine(vals, labels){
+    if(!vals || vals.length<2) return '<p class="fs-note">Pas encore assez de séances notées pour une tendance.</p>';
+    const W=560,H=170,pl=24,pr=12,pt=12,pb=22, n=vals.length, maxY=10, minY=0;
+    const X=i=> pl+(i/(n-1))*(W-pl-pr);
+    const Y=v=> H-pb-((v-minY)/(maxY-minY))*(H-pt-pb);
+    const path=vals.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+    const dots=vals.map((v,i)=>`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="3" class="ml-dot"/>`).join('');
+    const grid=[0,5,10].map(v=>`<line x1="${pl}" y1="${Y(v).toFixed(1)}" x2="${W-pr}" y2="${Y(v).toFixed(1)}" class="rc-grid"/><text x="${pl-5}" y="${(Y(v)+3).toFixed(1)}" class="rc-yl">${v}</text>`).join('');
+    const step=Math.ceil(n/6)||1;
+    const xl=(labels||[]).map((l,i)=> (i%step===0)?`<text x="${X(i).toFixed(1)}" y="${H-6}" class="rc-xl">${esc(l)}</text>`:'').join('');
+    return `<svg viewBox="0 0 ${W} ${H}" class="rc-svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Tendance des notes collectives">${grid}${xl}<path d="${path}" class="rc-line rc-home"/>${dots}</svg>`;
+  }
+  function trendPlayerRow(p, kind){
+    const d=(p.delta>0?'+':'')+p.delta;
+    return `<div class="col-trend-row"><span class="col-trend-name">${p.num!=null?'#'+p.num+' ':''}${esc(p.name)}</span>
+      <span class="col-trend-d ${kind}">${d}</span><span class="col-trend-avg mono">moy. ${p.avg}</span></div>`;
+  }
   function renderTraining(){
     const el=document.getElementById('page-training'); if(!el) return;
     const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
-    const sessions=Store.getSessions();
+    const cols=Store.getCollectifs(), manual=Store.getSessions(), trends=Store.getCollectifTrends();
+    const aVenir=cols.filter(s=>s.status!=='done'), notees=cols.filter(s=>s.status==='done');
     let html=`<div class="page-head"><div><h2 class="page-title">Entraînement</h2>
         <div class="page-meta">${esc(Store.getClub().nom)} · préparation EuroLeague</div></div>
-        <button class="btn btn-primary" data-route="#/entrainements/nouveau">+ Nouvelle séance</button></div>`;
-    html += sessions.length
-      ? `<div class="section-label">Séances planifiées (${sessions.length})</div><div class="mc-grid">${sessions.map(sessionCard).join('')}</div>`
-      : `<div class="fs-card">${emptyState('Aucune séance','Aucune séance planifiée. Créez votre première séance d’entraînement.','#/entrainements/nouveau','+ Nouvelle séance')}</div>`;
+        <button class="btn btn-secondary" data-route="#/entrainements/nouveau">+ Séance manuelle</button></div>`;
+    /* bannière planning (séances auto) */
+    html+=`<div class="fs-card col-plan"><div class="col-plan-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
+      <div><div class="col-plan-t">Entraînements collectifs générés automatiquement</div>
+      <div class="col-plan-s">Lundi · Mercredi · Vendredi — ${esc(cols[0]?cols[0].heure:'10:00')} · ${cols[0]?cols[0].duree:90} min · ${esc(cols[0]?cols[0].lieu:'')}. Vous n’avez rien à recréer : notez simplement le bilan en fin de séance.</div></div></div>`;
+    /* tendances équipe */
+    if(trends.sessions.length>=2){
+      html+=`<div class="fs-card"><h3 class="fs-h3">Tendance des notes collectives</h3>
+        <div class="an-grid">
+          <div class="rap-chart">${miniLine(trends.sessions.map(s=>s.avg), trends.sessions.map(s=>shortDate(s.date)))}</div>
+          <div class="col-trend-lists">
+            <div class="rap-cmp-col up"><span class="rap-col-h">En progression</span>${trends.risers.map(p=>trendPlayerRow(p,'up')).join('')||'<p class="fs-note">—</p>'}</div>
+            <div class="rap-cmp-col down"><span class="rap-col-h">En baisse</span>${trends.fallers.map(p=>trendPlayerRow(p,'down')).join('')||'<p class="fs-note">—</p>'}</div>
+          </div></div></div>`;
+    }
+    if(aVenir.length) html+=`<div class="section-label">À venir &amp; en cours</div><div class="mc-grid">${aVenir.map(s=>collectifCard(s,Store)).join('')}</div>`;
+    if(notees.length) html+=`<div class="section-label">Séances notées (${notees.length})</div><div class="mc-grid">${notees.map(s=>collectifCard(s,Store)).join('')}</div>`;
+    if(manual.length) html+=`<div class="section-label">Autres séances (créées manuellement)</div><div class="mc-grid">${manual.map(sessionCard).join('')}</div>`;
     el.innerHTML=html;
   }
   /* --- Nouvelle séance : formulaire + sélecteur de zones court.js --- */
@@ -2668,6 +2716,7 @@ document.addEventListener('click', e => {
   function renderSessionDetail(id){
     const el=document.getElementById('page-training-detail'); if(!el) return;
     const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Modèle non chargé.','#/'); return; }
+    if(Store.getCollectif && Store.getCollectif(id)) return renderCollectifDetail(el, id);
     const s=Store.getSessions().find(x=>x.id===id);
     if(!s){ el.innerHTML=emptyState('Séance introuvable','Cette séance n’existe pas ou a été supprimée.','#/entrainements','Retour aux entraînements'); return; }
     const roster=Store.getPlayers(), conv=(s.convoques||[]).map(cid=>{ const p=roster.find(x=>x.id===cid); return p?(p.num!=null?'#'+p.num+' ':'')+p.name:cid; });
@@ -2682,6 +2731,102 @@ document.addEventListener('click', e => {
     if(s.zones&&s.zones.length&&window.HoopCourt) html+=`<div class="fs-card"><h3 class="fs-h3">Zones de tir travaillées</h3><div class="an-court" id="tdCourt"></div></div>`;
     el.innerHTML=html;
     if(s.zones&&s.zones.length&&window.HoopCourt){ const c=el.querySelector('#tdCourt'); if(c) HoopCourt.render(c,{mode:'readonly', highlightZones:s.zones}); }
+  }
+  /* --- Détail d'une séance collective : notation express + récap (même page) --- */
+  function collectifHeader(s, mode){
+    return `<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/entrainements">${backSvg}Entraînements</button>
+        <h2 class="page-title">${esc(s.titre||'Entraînement collectif')} ${colBadge(s.status)}</h2>
+        <div class="page-meta">${fmtDate(s.date)} · ${esc(s.heure||'')} · ${s.duree||0} min · ${esc(s.lieu||'')}</div>
+      </div><div class="fs-actions">${mode==='recap'
+        ? `<button class="btn btn-secondary sm" data-col="edit">Modifier les notes</button>`
+        : (s.status==='done' ? `<button class="btn btn-secondary sm" data-col="cancel">Annuler</button>` : '')}</div></div>`;
+  }
+  function ratingPanelHTML(s, Store){
+    const roster=Store.getCollectifRoster().filter(p=>(s.convoques||[]).indexOf(p.id)!==-1);
+    const COL=Store.collectifCriteria(), PL=Store.playerCriteria(), ev=s.eval||{collectif:{},noteCoach:'',joueurs:{}};
+    const seg=COL.map(c=>{ const val=ev.collectif[c.key]!=null?ev.collectif[c.key]:6; let b='';
+      for(let n=1;n<=10;n++) b+=`<button type="button" class="seg-btn${n===val?' on':''}" data-val="${n}">${n}</button>`;
+      return `<div class="col-seg" data-crit="${c.key}" data-val="${val}"><span class="col-seg-lab">${esc(c.label)}</span><div class="seg">${b}</div></div>`;
+    }).join('');
+    const cards=roster.map(p=>{ const j=(ev.joueurs&&ev.joueurs[p.id])||{}, present=s.presence[p.id]!==false;
+      const crit=PL.map(c=>{ const v=j[c.key]!=null?j[c.key]:6;
+        return `<label class="pl-crit"><span class="pl-crit-lab">${esc(c.label)}</span>
+          <input type="range" min="1" max="10" value="${v}" class="pl-slider" data-crit="${c.key}"${present?'':' disabled'}>
+          <output class="pl-crit-val">${v}</output></label>`; }).join('');
+      return `<div class="pl-eval${present?'':' absent'}" data-pid="${p.id}">
+        <div class="pl-eval-head"><span class="pl-eval-name">${p.num!=null?'<span class="prep-num mono">#'+p.num+'</span> ':''}${esc(p.name)}</span>
+          <button type="button" class="pres-toggle${present?' on':''}">${present?'Présent':'Absent'}</button></div>
+        <div class="pl-crits">${crit}</div>
+        <div class="pl-eval-foot">
+          <input type="text" class="pl-note mc-input" placeholder="Note courte (facultatif)" value="${esc(j.note||'')}"${present?'':' disabled'}>
+          <button type="button" class="tag-toggle good${j.tresBon?' on':''}">Très bon</button>
+          <button type="button" class="tag-toggle warn${j.aSurveiller?' on':''}">À surveiller</button>
+        </div></div>`; }).join('');
+    return `<div class="fs-card"><h3 class="fs-h3">Bilan express du collectif</h3>
+        <p class="fs-note" style="margin-bottom:14px">Une note de 1 à 10 par critère — tout se fait sur cette page.</p>
+        <div class="col-segs">${seg}</div>
+        <textarea id="colNoteCoach" class="mc-input col-note" rows="2" placeholder="Note générale du coach (facultatif)">${esc(ev.noteCoach||'')}</textarea></div>
+      <div class="fs-card"><h3 class="fs-h3">Évaluation des joueurs présents</h3>
+        <p class="fs-note" style="margin-bottom:12px">Glissez le curseur — quelques secondes par joueur. Basculez « Absent » si besoin.</p>
+        <div class="pl-evals">${cards}</div></div>
+      <div class="col-save-bar"><button type="button" class="btn btn-primary" data-col="save">Enregistrer le bilan</button>
+        <button type="button" class="btn btn-secondary" data-route="#/entrainements">Plus tard</button></div>`;
+  }
+  function recapView(r){
+    if(!r) return `<div class="fs-card">${emptyState('Bilan indisponible','Cette séance n’a pas encore été notée.','#/entrainements','Retour')}</div>`;
+    const cmpTxt=r.prevAvg!=null?`${r.delta>0?'+':''}${r.delta} vs les ${r.prevCount} séances précédentes (${r.prevAvg}/10)`:'Première séance notée de la période.';
+    const perCrit=r.perCrit.map(c=>`<div class="prep-eff-row"><div class="prep-eff-head"><span>${esc(c.label)}</span><span class="prep-eff-pct"><b>${c.val}</b>/10</span></div><div class="prep-eff-track"><div class="prep-eff-fill" style="width:${c.val*10}%"></div></div></div>`).join('');
+    const topRows=r.top.map((p,i)=>`<div class="md-top"><span class="md-rank">${i+1}</span><span class="md-num mono">${p.num!=null?'#'+p.num:''}</span><span class="md-name">${esc(p.name)}${p.j.tresBon?' <span class="col-star">★</span>':''}${p.j.aSurveiller?' <span class="col-watch">⚑</span>':''}</span><span class="md-line mono">${p.avg}/10</span></div>`).join('');
+    const fallRows=r.fallers.length?r.fallers.map(p=>`<div class="col-trend-row"><span class="col-trend-name">${p.num!=null?'#'+p.num+' ':''}${esc(p.name)}</span><span class="col-trend-d down">${p.delta}</span><span class="col-trend-avg mono">${p.avg}/10</span></div>`).join(''):'<p class="fs-note">Aucun joueur en baisse sur cette séance.</p>';
+    return `<div class="col-recap-hero">
+        <div class="col-recap-big"><span class="col-recap-num">${r.avg}</span><span class="col-recap-den">/10</span><span class="col-recap-lab">Moyenne collective</span></div>
+        <div class="col-recap-side">
+          <div class="col-recap-kv"><span>Présents</span><b>${r.present}/${r.convoques}</b></div>
+          <div class="col-recap-kv"><span>Meilleur critère</span><b>${esc(r.bestCrit.label)} · ${r.bestCrit.val}/10</b></div>
+          <div class="col-recap-kv"><span>Vs séances précédentes</span><b class="${r.delta>0?'up':(r.delta<0?'down':'')}">${cmpTxt}</b></div>
+        </div></div>
+      <div class="prep-two">
+        <div class="fs-card"><h3 class="fs-h3">Scores collectifs par critère</h3><div class="prep-eff">${perCrit}</div></div>
+        <div class="fs-card"><h3 class="fs-h3">Joueurs les mieux notés</h3><div class="md-tops">${topRows}</div>
+          <h4 class="col-sub">Joueurs en baisse</h4>${fallRows}</div></div>
+      ${r.noteCoach?`<div class="fs-card"><h3 class="fs-h3">Note du coach</h3><p class="col-coachnote">${esc(r.noteCoach)}</p></div>`:''}`;
+  }
+  function readPanel(el){
+    const collectif={}; el.querySelectorAll('.col-seg').forEach(cs=>collectif[cs.dataset.crit]=Number(cs.dataset.val));
+    const nc=el.querySelector('#colNoteCoach'), noteCoach=nc?nc.value.trim():'';
+    const joueurs={}, presence={};
+    el.querySelectorAll('.pl-eval').forEach(pe=>{ const pid=pe.dataset.pid, present=pe.querySelector('.pres-toggle').classList.contains('on');
+      presence[pid]=present; if(!present) return;
+      const j={}; pe.querySelectorAll('.pl-slider').forEach(sl=>j[sl.dataset.crit]=Number(sl.value));
+      const note=pe.querySelector('.pl-note'); j.note=note?note.value.trim():'';
+      j.tresBon=pe.querySelector('.tag-toggle.good').classList.contains('on');
+      j.aSurveiller=pe.querySelector('.tag-toggle.warn').classList.contains('on');
+      joueurs[pid]=j; });
+    return { collectif, noteCoach, joueurs, presence };
+  }
+  function wireCollectif(el, id, mode){
+    const Store=window.HoopStore;
+    el.querySelectorAll('[data-col]').forEach(b=>b.addEventListener('click',()=>{
+      const a=b.dataset.col;
+      if(a==='edit') renderCollectifDetail(el, id, 'edit');
+      else if(a==='cancel') renderCollectifDetail(el, id, 'recap');
+      else if(a==='save'){ Store.saveCollectifEval(id, readPanel(el)); renderCollectifDetail(el, id, 'recap'); window.scrollTo({top:0,behavior:'instant'}); }
+    }));
+    if(mode!=='edit') return;
+    el.querySelectorAll('.col-seg').forEach(cs=>cs.querySelectorAll('.seg-btn').forEach(btn=>btn.addEventListener('click',()=>{
+      cs.dataset.val=btn.dataset.val; cs.querySelectorAll('.seg-btn').forEach(x=>x.classList.remove('on')); btn.classList.add('on'); })));
+    el.querySelectorAll('.pl-slider').forEach(sl=>sl.addEventListener('input',()=>{ const o=sl.parentElement.querySelector('.pl-crit-val'); if(o)o.textContent=sl.value; }));
+    el.querySelectorAll('.pres-toggle').forEach(pt=>pt.addEventListener('click',()=>{ const pe=pt.closest('.pl-eval'), on=pt.classList.toggle('on');
+      pt.textContent=on?'Présent':'Absent'; pe.classList.toggle('absent',!on); pe.querySelectorAll('.pl-slider,.pl-note').forEach(x=>x.disabled=!on); }));
+    el.querySelectorAll('.tag-toggle').forEach(tt=>tt.addEventListener('click',()=>tt.classList.toggle('on')));
+  }
+  function renderCollectifDetail(el, id, forceMode){
+    const Store=window.HoopStore, s=Store.getCollectif(id);
+    if(!s){ el.innerHTML=emptyState('Séance introuvable','Cette séance n’existe pas ou a été supprimée.','#/entrainements','Retour aux entraînements'); return; }
+    const mode=forceMode||(s.status==='done'?'recap':'edit');
+    el.innerHTML=collectifHeader(s, mode)+(mode==='recap'?recapView(Store.getCollectifRecap(id)):ratingPanelHTML(s, Store));
+    wireCollectif(el, id, mode);
   }
   routeHandlers.training = renderTraining;
   routeHandlers['training-new'] = renderNewSession;

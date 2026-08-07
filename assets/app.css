@@ -651,6 +651,88 @@ input[type="text"],input[type="email"],textarea,select{
   .rap-cmp-lists{grid-template-columns:1fr;gap:14px;}
 }
 
+/* ---- Entraînements collectifs ---- */
+.ml-dot{fill:var(--orange);}
+.col-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 9px;border-radius:100px;white-space:nowrap;}
+.col-badge.up{background:var(--gold-soft);color:var(--gold);}
+.col-badge.live{background:var(--orange-soft);color:var(--orange);}
+.col-badge.done{background:var(--win-soft);color:var(--win);}
+.col-card-meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--t3);margin:8px 0 12px;}
+.col-card-foot{display:flex;align-items:baseline;gap:6px;border-top:1px solid var(--hair-soft);padding-top:10px;}
+.col-avg{font-family:var(--cond);font-size:26px;font-weight:700;color:var(--orange);line-height:1;}
+.col-avg-lab{font-size:11.5px;color:var(--t3);}
+.col-card-foot.cta{font-size:12.5px;color:var(--gold);font-weight:600;}
+.col-plan{display:flex;gap:14px;align-items:flex-start;}
+.col-plan-ic{flex:none;width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--orange);background:var(--orange-soft);}
+.col-plan-t{font-size:14px;font-weight:600;color:var(--t1);margin-bottom:3px;}
+.col-plan-s{font-size:12.5px;color:var(--t3);line-height:1.55;max-width:70ch;}
+.col-trend-lists{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.col-trend-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--hair-soft);}
+.col-trend-row:first-of-type{border-top:0;}
+.col-trend-name{flex:1;font-size:13px;color:var(--t1);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.col-trend-d{font-family:var(--cond);font-size:16px;font-weight:700;}
+.col-trend-d.up{color:var(--win);}
+.col-trend-d.down{color:var(--loss);}
+.col-trend-avg{font-size:11.5px;color:var(--t3);}
+
+/* notation express : collectif (segmented 1-10) */
+.col-segs{display:flex;flex-direction:column;gap:14px;}
+.col-seg{display:grid;grid-template-columns:170px 1fr;align-items:center;gap:14px;}
+.col-seg-lab{font-size:13.5px;color:var(--t2);font-weight:500;}
+.seg{display:flex;gap:4px;}
+.seg-btn{flex:1;min-width:24px;height:36px;border:1px solid var(--hair);border-radius:5px;color:var(--t3);font-family:var(--mono);font-size:12.5px;transition:.12s;}
+.seg-btn:hover{border-color:var(--orange);color:var(--t1);}
+.seg-btn.on{background:var(--orange);border-color:var(--orange);color:#fff;font-weight:700;}
+.col-note{width:100%;margin-top:16px;resize:vertical;font-family:var(--sans);}
+
+/* notation express : joueurs (sliders) */
+.pl-evals{display:flex;flex-direction:column;gap:14px;}
+.pl-eval{border:1px solid var(--hair);border-radius:var(--card-radius);padding:14px 16px;background:var(--surface-2);}
+.pl-eval.absent{opacity:.5;}
+.pl-eval-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;}
+.pl-eval-name{font-size:14px;font-weight:600;color:var(--t1);}
+.pres-toggle{font-size:11.5px;font-weight:600;padding:5px 13px;border-radius:100px;border:1px solid var(--hair);color:var(--t3);}
+.pres-toggle.on{background:var(--win-soft);color:var(--win);border-color:rgba(127,160,95,.35);}
+.pl-crits{display:grid;grid-template-columns:1fr 1fr;gap:9px 22px;}
+.pl-crit{display:grid;grid-template-columns:118px 1fr 26px;align-items:center;gap:10px;}
+.pl-crit-lab{font-size:12px;color:var(--t3);}
+.pl-slider{width:100%;accent-color:var(--orange);height:22px;cursor:pointer;}
+.pl-crit-val{font-family:var(--cond);font-size:16px;font-weight:700;color:var(--t1);text-align:right;}
+.pl-eval-foot{display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin-top:12px;}
+.pl-note{flex:1;min-width:180px;}
+.tag-toggle{font-size:12px;font-weight:600;padding:6px 13px;border-radius:100px;border:1px solid var(--hair);color:var(--t3);}
+.tag-toggle.good.on{background:var(--win-soft);color:var(--win);border-color:rgba(127,160,95,.35);}
+.tag-toggle.warn.on{background:var(--gold-soft);color:var(--gold);border-color:rgba(201,158,99,.35);}
+.col-save-bar{position:sticky;bottom:0;display:flex;gap:10px;padding:14px 0;margin-top:4px;background:linear-gradient(to top,var(--bg) 60%,transparent);z-index:5;}
+.col-save-bar .btn{flex:0 0 auto;}
+
+/* récap de séance */
+.col-recap-hero{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;background:var(--surface-2);border:1px solid var(--hair);border-radius:var(--card-radius);padding:22px 24px;margin-bottom:18px;}
+.col-recap-big{display:flex;flex-direction:column;align-items:center;justify-content:center;padding-right:22px;border-right:1px solid var(--hair);}
+.col-recap-num{font-family:var(--cond);font-size:54px;font-weight:700;color:var(--orange);line-height:.9;}
+.col-recap-den{font-size:14px;color:var(--t3);margin-top:2px;}
+.col-recap-lab{font-size:11px;text-transform:uppercase;letter-spacing:.03em;color:var(--t3);margin-top:6px;text-align:center;}
+.col-recap-side{display:flex;flex-direction:column;gap:10px;}
+.col-recap-kv{display:flex;justify-content:space-between;gap:14px;font-size:13px;color:var(--t3);border-bottom:1px solid var(--hair-soft);padding-bottom:9px;}
+.col-recap-kv:last-child{border-bottom:0;}
+.col-recap-kv b{color:var(--t1);font-weight:600;text-align:right;}
+.col-recap-kv b.up{color:var(--win);}
+.col-recap-kv b.down{color:var(--loss);}
+.col-sub{font-size:12px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.03em;margin:16px 0 8px;}
+.col-coachnote{font-size:14px;line-height:1.6;color:var(--t2);font-style:italic;}
+.col-star{color:var(--gold);}
+.col-watch{color:var(--loss);}
+
+@media(max-width:720px){
+  .col-seg{grid-template-columns:1fr;gap:6px;}
+  .pl-crits{grid-template-columns:1fr;gap:8px;}
+  .pl-crit{grid-template-columns:110px 1fr 26px;}
+  .col-trend-lists{grid-template-columns:1fr;gap:12px;}
+  .col-recap-hero{grid-template-columns:1fr;gap:16px;}
+  .col-recap-big{flex-direction:row;gap:8px;align-items:baseline;border-right:0;border-bottom:1px solid var(--hair);padding:0 0 14px;justify-content:flex-start;}
+  .col-recap-lab{margin-top:0;margin-left:auto;}
+}
+
 /* ---- Liste des matchs ---- */
 .mc-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
 .mc-input{background:var(--field-bg);border:1px solid var(--hair);border-radius:var(--radius);color:var(--t1);font-size:14px;padding:9px 13px;min-height:var(--field-h);}
