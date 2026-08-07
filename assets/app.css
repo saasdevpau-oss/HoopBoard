@@ -733,6 +733,18 @@ input[type="text"],input[type="email"],textarea,select{
   .col-recap-lab{margin-top:0;margin-left:auto;}
 }
 
+/* notation coach par joueur (séances tactiques à thème) */
+.th-notes{display:flex;flex-direction:column;}
+.th-note-row{display:grid;grid-template-columns:minmax(120px,1.3fr) minmax(64px,2fr) auto;grid-template-areas:"name bar val" "comment comment comment";gap:5px 12px;align-items:center;padding:11px 0;border-top:1px solid var(--hair-soft);}
+.th-note-row:first-child{border-top:0;}
+.th-note-name{grid-area:name;font-size:13.5px;color:var(--t1);font-weight:600;}
+.th-note-bar{grid-area:bar;height:7px;border-radius:100px;background:var(--field-bg);overflow:hidden;}
+.th-note-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--orange-deep),var(--orange-vif));}
+.th-note-val{grid-area:val;font-family:var(--cond);font-size:17px;font-weight:700;color:var(--t1);white-space:nowrap;}
+.th-note-val i{font-style:normal;font-size:11px;color:var(--t3);font-weight:400;}
+.th-note-comment{grid-area:comment;font-size:12px;color:var(--t3);line-height:1.4;}
+.th-note-comment:empty{display:none;}
+
 /* ---- Liste des matchs ---- */
 .mc-filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;}
 .mc-input{background:var(--field-bg);border:1px solid var(--hair);border-radius:var(--radius);color:var(--t1);font-size:14px;padding:9px 13px;min-height:var(--field-h);}

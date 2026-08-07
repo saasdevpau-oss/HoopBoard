@@ -309,6 +309,60 @@
     };
   }
 
+  /* ---- Séances à thème : génération des résultats (tir) et notes (coach) ---- */
+  const clampPct = (n) => Math.max(3, Math.min(96, Math.round(n)));
+  const zoneType = (id) => (id.indexOf('three') === 0 ? '3pt' : (id.indexOf('midrange') === 0 || id.indexOf('short-corner') === 0 ? 'mid' : 'paint'));
+  const posteCat = (poste) => (/fort|Int|Piv/i.test(poste || '') ? 'int' : 'ext');
+  const SHOT_BASE = { '3pt': { ext: 37, int: 25 }, mid: { ext: 44, int: 41 }, paint: { ext: 54, int: 65 } };
+  function thematicRoster(s) {
+    return s.convoques === 'all' ? PLAYERS.slice() : PLAYERS.filter((p) => (s.convoques || []).indexOf(p.id) !== -1);
+  }
+  function genShootResults(s, sIdx, roster) {
+    const reps = s.reps || 10, res = {};
+    roster.forEach((p, pIdx) => {
+      const cat = posteCat(p.poste), skillAdj = (((p.season && p.season.tirsPct) || 50) - 50) * 0.22;
+      const zones = {}; let tm = 0, ta = 0;
+      s.zones.forEach((zid, zi) => {
+        const pct = clampPct(SHOT_BASE[zoneType(zid)][cat] + skillAdj + (seeded(pIdx, sIdx * 7 + zi, 21) * 2 - 1) * 8);
+        const m = Math.max(0, Math.min(reps, Math.round(reps * pct / 100)));
+        zones[zid] = { m: m, a: reps }; tm += m; ta += reps;
+      });
+      res[p.id] = { zones: zones, total: { m: tm, a: ta, pct: ta ? round1((tm / ta) * 100) : 0 } };
+    });
+    return res;
+  }
+  function genCoachEval(s, sIdx, roster) {
+    const niv = (DATA.planningCollectif && DATA.planningCollectif.niveaux) || {};
+    const bon = (DATA.planningCollectif && DATA.planningCollectif.notesBon) || [];
+    const surv = (DATA.planningCollectif && DATA.planningCollectif.notesSurveiller) || [];
+    const out = {};
+    roster.forEach((p, pIdx) => {
+      const base = niv[p.name] != null ? niv[p.name] : 6.2;
+      const note = clampNote(base + (seeded(pIdx, sIdx * 5 + 3, 11) * 2 - 1) * 1.3);
+      let comment = '';
+      if (note >= 8 && bon.length) comment = bon[Math.floor(seeded(pIdx, sIdx, 8) * bon.length)];
+      else if (note <= 5 && surv.length) comment = surv[Math.floor(seeded(pIdx, sIdx, 9) * surv.length)];
+      out[p.id] = { note: note, comment: comment };
+    });
+    return out;
+  }
+  function buildThematic(s, sIdx) {
+    const roster = thematicRoster(s);
+    const t = Object.assign({ id: s.id || ('th-' + (sIdx + 1)), demo: true, status: 'done' }, s);
+    t.roster = roster.map((p) => p.id);
+    if (s.categorie === 'tir') {
+      t.resultats = genShootResults(s, sIdx, roster);
+      const totM = roster.reduce((a, p) => a + t.resultats[p.id].total.m, 0);
+      const totA = roster.reduce((a, p) => a + t.resultats[p.id].total.a, 0);
+      t.teamPct = totA ? round1((totM / totA) * 100) : 0; t.teamMade = totM; t.teamAtt = totA;
+    } else {
+      t.evalCoach = genCoachEval(s, sIdx, roster);
+      const notes = roster.map((p) => t.evalCoach[p.id].note);
+      t.avgNote = round1(mean(notes));
+    }
+    return t;
+  }
+
   return {
     slug, pct, aggregateDetailed,
     getClub: () => CLUB, getTournoi: () => TOURNOI,
@@ -405,7 +459,12 @@
     getThematicSessions: function () {
       const t = DATA.seancesThematiques;
       if (!t || !t.seances) return [];
-      return t.seances.map((s, i) => Object.assign({ id: s.id || ('th-' + (i + 1)), demo: true }, s));
+      return t.seances.map((s, i) => buildThematic(s, i));
+    },
+    getThematicSession: function (id) {
+      const t = DATA.seancesThematiques; if (!t || !t.seances) return null;
+      const i = t.seances.findIndex((s) => (s.id || ('th-')) === id);
+      return i === -1 ? null : buildThematic(t.seances[i], i);
     },
     _coll: { readColl, writeColl, addToColl, readObj, writeObj }
   };

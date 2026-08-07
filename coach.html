@@ -2674,7 +2674,9 @@ document.addEventListener('click', e => {
     if(aVenir.length) html+=`<div class="section-label">À venir &amp; en cours</div><div class="mc-grid">${aVenir.map(s=>collectifCard(s,Store)).join('')}</div>`;
     if(notees.length) html+=`<div class="section-label">Séances notées (${notees.length})</div><div class="mc-grid">${notees.map(s=>collectifCard(s,Store)).join('')}</div>`;
     const themes=Store.getThematicSessions?Store.getThematicSessions():[];
-    if(themes.length) html+=`<div class="section-label">Ateliers à thème</div><div class="mc-grid">${themes.map(sessionCard).join('')}</div>`;
+    const tir=themes.filter(s=>s.categorie==='tir'), tac=themes.filter(s=>s.categorie==='coach');
+    if(tir.length) html+=`<div class="section-label">Séances de tir · résultats par joueur</div><div class="mc-grid">${tir.map(thematicCard).join('')}</div>`;
+    if(tac.length) html+=`<div class="section-label">Séances tactiques · notées par le coach</div><div class="mc-grid">${tac.map(thematicCard).join('')}</div>`;
     if(manual.length) html+=`<div class="section-label">Autres séances (créées manuellement)</div><div class="mc-grid">${manual.map(sessionCard).join('')}</div>`;
     el.innerHTML=html;
   }
@@ -2719,7 +2721,9 @@ document.addEventListener('click', e => {
     const el=document.getElementById('page-training-detail'); if(!el) return;
     const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Modèle non chargé.','#/'); return; }
     if(Store.getCollectif && Store.getCollectif(id)) return renderCollectifDetail(el, id);
-    const s=Store.getSessions().find(x=>x.id===id) || (Store.getThematicSessions?Store.getThematicSessions().find(x=>x.id===id):null);
+    const th=Store.getThematicSession?Store.getThematicSession(id):null;
+    if(th) return renderThematicDetail(el, th);
+    const s=Store.getSessions().find(x=>x.id===id);
     if(!s){ el.innerHTML=emptyState('Séance introuvable','Cette séance n’existe pas ou a été supprimée.','#/entrainements','Retour aux entraînements'); return; }
     const roster=Store.getPlayers(), conv=(s.convoques||[]).map(cid=>{ const p=roster.find(x=>x.id===cid); return p?(p.num!=null?'#'+p.num+' ':'')+p.name:cid; });
     let html=`<div class="page-head fs-head"><div>
@@ -2829,6 +2833,84 @@ document.addEventListener('click', e => {
     const mode=forceMode||(s.status==='done'?'recap':'edit');
     el.innerHTML=collectifHeader(s, mode)+(mode==='recap'?recapView(Store.getCollectifRecap(id)):ratingPanelHTML(s, Store));
     wireCollectif(el, id, mode);
+  }
+  /* --- Séances à thème : carte + fiche (résultats de tir OU notation coach) --- */
+  function thematicCard(s){
+    const foot = s.categorie==='tir'
+      ? `<div class="col-card-foot"><span class="col-avg">${s.teamPct}%</span><span class="col-avg-lab">réussite équipe · ${s.teamMade}/${s.teamAtt}</span></div>`
+      : `<div class="col-card-foot"><span class="col-avg">${s.avgNote}</span><span class="col-avg-lab">/10 · note moyenne coach</span></div>`;
+    return `<div class="mc-card col-card" data-route="#/entrainements/${s.id}">
+      <div class="mc-top"><span class="mc-date">${fmtDate(s.date)} · ${esc(s.heure||'')}</span><span class="ef-tag">${esc(s.type||'')}</span></div>
+      <div class="tr-title">${esc(s.titre||'Séance')}</div>
+      <div class="mc-comp">${esc(s.objectif||'')}</div>
+      <div class="col-card-meta"><span>${s.duree||0} min</span><span>${(s.roster||[]).length} joueurs</span><span>${(s.zones||[]).length} zones</span></div>
+      ${foot}</div>`;
+  }
+  function shortZone(id){ const l=(window.HoopCourt&&HoopCourt.ZONES[id])?HoopCourt.ZONES[id].label:id; return l.replace(/ [23] pts$/,''); }
+  function thematicHeader(s){
+    return `<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/entrainements">${backSvg}Entraînements</button>
+        <h2 class="page-title">${esc(s.titre||'Séance')} <span class="col-badge done">Terminé</span></h2>
+        <div class="page-meta">${fmtDate(s.date)} · ${esc(s.heure||'')} · ${s.duree||0} min · ${esc(s.lieu||'')}</div>
+      </div></div>
+      <div class="fs-card"><h3 class="fs-h3">Détails</h3><div class="tr-detail">
+        <span><b>Type</b>${esc(s.type||'—')}</span><span><b>Intensité</b>${esc(s.intensite||'—')}</span>
+        <span><b>Objectif</b>${esc(s.objectif||'—')}</span>${s.notes?`<span><b>Consignes</b>${esc(s.notes)}</span>`:''}
+        <span><b>${s.categorie==='tir'?'Joueurs':'Joueurs notés'}</b>${(s.roster||[]).length}${s.categorie==='tir'?' · '+(s.reps||10)+' tirs par zone':''}</span></div></div>`;
+  }
+  function renderShootDetail(el, s){
+    const Store=window.HoopStore;
+    const teamZone={}; s.zones.forEach(zid=>{ let m=0,a=0; s.roster.forEach(pid=>{ const z=s.resultats[pid].zones[zid]; m+=z.m; a+=z.a; }); teamZone[zid]={m,a,pct:a?Math.round(m/a*1000)/10:0}; });
+    const players=s.roster.map(pid=>({p:Store.getPlayer(pid)||{name:pid,num:null}, r:s.resultats[pid]})).sort((a,b)=>b.r.total.pct-a.r.total.pct);
+    const zHead=s.zones.map(zid=>`<th class="c">${esc(shortZone(zid))}</th>`).join('');
+    const rows=players.map(x=>`<tr><td class="l"><span class="fs-pname">${x.p.num!=null?'#'+x.p.num+' ':''}${esc(x.p.name)}</span></td>
+      ${s.zones.map(zid=>{const z=x.r.zones[zid];return `<td class="c">${z.m}/${z.a}</td>`;}).join('')}
+      <td class="c strong">${x.r.total.m}/${x.r.total.a}</td><td class="c strong">${x.r.total.pct}%</td></tr>`).join('');
+    const teamRow=`<tr class="fs-total"><td class="l"><b>Équipe</b></td>${s.zones.map(zid=>`<td class="c">${teamZone[zid].m}/${teamZone[zid].a}</td>`).join('')}<td class="c">${s.teamMade}/${s.teamAtt}</td><td class="c">${s.teamPct}%</td></tr>`;
+    const best=players.slice(0,3).map((x,i)=>`<div class="md-top"><span class="md-rank">${i+1}</span><span class="md-num mono">${x.p.num!=null?'#'+x.p.num:''}</span><span class="md-name">${esc(x.p.name)}</span><span class="md-line mono">${x.r.total.m}/${x.r.total.a} · ${x.r.total.pct}%</span></div>`).join('');
+    el.innerHTML = thematicHeader(s)
+      + `<div class="fs-card"><h3 class="fs-h3">Carte de réussite — zones travaillées <span class="an-legend"><i class="lg-cold"></i>faible % <i class="lg-hot"></i>fort %</span></h3>
+          <div class="an-grid">
+            <div><div id="thCourt" class="an-court"></div><p class="an-sel" id="thSel">Touchez une zone pour voir la réussite de l’équipe.</p></div>
+            <div class="fs-card" style="background:var(--surface-2);margin:0"><h3 class="fs-h3">Meilleurs shooteurs</h3><div class="md-tops">${best}</div></div>
+          </div></div>`
+      + `<div class="fs-card"><h3 class="fs-h3">Réussite par joueur et par zone</h3>
+          <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="l">Joueur</th>${zHead}<th class="c">Total</th><th class="c">%</th></tr></thead>
+          <tbody>${rows}${teamRow}</tbody></table></div>
+          <p class="fs-note" style="margin-top:12px">Chaque joueur a tiré ${s.reps||10} fois par zone. Les pourcentages sont calculés à partir des réussites saisies.</p></div>`;
+    if(window.HoopCourt){
+      const pcts=s.zones.map(z=>teamZone[z].pct), mn=Math.min.apply(null,pcts), mx=Math.max.apply(null,pcts), hm={};
+      s.zones.forEach(zid=>{ hm[zid]={ value: mx>mn?(teamZone[zid].pct-mn)/(mx-mn):0.5, key:zid }; });
+      HoopCourt.render(document.getElementById('thCourt'),{mode:'analysis', heatmap:hm,
+        onZoneSelect:(z)=>{ const tz=teamZone[z.id], sel=document.getElementById('thSel');
+          if(tz) sel.innerHTML=`<b>${esc(z.label)}</b> — équipe ${tz.m}/${tz.a} (${tz.pct}%)`;
+          else sel.textContent=z.label+' — hors séance.'; }});
+    }
+  }
+  function renderCoachRatedDetail(el, s){
+    const Store=window.HoopStore;
+    const players=s.roster.map(pid=>({p:Store.getPlayer(pid)||{name:pid,num:null}, e:s.evalCoach[pid]})).sort((a,b)=>b.e.note-a.e.note);
+    const rows=players.map(x=>`<div class="th-note-row"><span class="th-note-name">${x.p.num!=null?'<span class="prep-num mono">#'+x.p.num+'</span> ':''}${esc(x.p.name)}</span>
+      <div class="th-note-bar"><div class="th-note-fill" style="width:${x.e.note*10}%"></div></div>
+      <span class="th-note-val">${x.e.note}<i>/10</i></span>
+      <span class="th-note-comment">${x.e.comment?esc(x.e.comment):''}</span></div>`).join('');
+    const best=players.slice(0,3).map((x,i)=>`<div class="md-top"><span class="md-rank">${i+1}</span><span class="md-num mono">${x.p.num!=null?'#'+x.p.num:''}</span><span class="md-name">${esc(x.p.name)}</span><span class="md-line mono">${x.e.note}/10</span></div>`).join('');
+    el.innerHTML = thematicHeader(s)
+      + `<div class="col-recap-hero">
+          <div class="col-recap-big"><span class="col-recap-num">${s.avgNote}</span><span class="col-recap-den">/10</span><span class="col-recap-lab">Note moyenne<br>du coach</span></div>
+          <div class="col-recap-side"><div class="col-recap-kv"><span>Joueurs notés</span><b>${players.length}</b></div>
+            <div class="col-recap-kv"><span>Meilleure note</span><b>${players[0]?esc(players[0].p.name)+' · '+players[0].e.note+'/10':'—'}</b></div>
+            <div class="col-recap-kv"><span>Atelier</span><b>${esc(s.type||'')}</b></div></div></div>`
+      + `<div class="prep-two">
+          <div class="fs-card"><h3 class="fs-h3">Note du coach par joueur</h3><div class="th-notes">${rows}</div></div>
+          <div class="fs-card"><h3 class="fs-h3">Meilleures évaluations</h3><div class="md-tops">${best}</div>
+            ${s.zones&&s.zones.length&&window.HoopCourt?`<h4 class="col-sub">Zones travaillées</h4><div class="an-court" id="thCourt"></div>`:''}</div></div>`;
+    if(s.zones&&s.zones.length&&window.HoopCourt){ const c=document.getElementById('thCourt'); if(c) HoopCourt.render(c,{mode:'readonly', highlightZones:s.zones}); }
+  }
+  function renderThematicDetail(el, s){
+    if(!s){ el.innerHTML=emptyState('Séance introuvable','Cette séance n’existe pas.','#/entrainements','Retour'); return; }
+    if(s.categorie==='tir') return renderShootDetail(el, s);
+    return renderCoachRatedDetail(el, s);
   }
   routeHandlers.training = renderTraining;
   routeHandlers['training-new'] = renderNewSession;
