@@ -1787,6 +1787,11 @@
 <section class="page" id="page-analyse"></section>
 
 <!-- ============================================================
+     PAGE — ANALYSE COMPLÈTE D'UN MATCH TERMINÉ (« Voir l'analyse »)
+============================================================ -->
+<section class="page" id="page-rapport"></section>
+
+<!-- ============================================================
      PAGE — PRÉPARATION DU MATCH (dossier de scouting adversaire)
 ============================================================ -->
 <section class="page" id="page-preparation"></section>
@@ -1877,6 +1882,7 @@ const ROUTES = [
   ['^/matchs/?$',                      'matchs'],
   ['^/matchs/([^/]+)/feuille/?$',      'feuille',        ['matchId']],
   ['^/matchs/([^/]+)/analyse/?$',      'analyse',        ['matchId']],
+  ['^/matchs/([^/]+)/rapport/?$',      'rapport',        ['matchId']],
   ['^/matchs/([^/]+)/preparation/?$',  'preparation',    ['matchId']],
   ['^/matchs/([^/]+)/live/?$',         'live',           ['matchId']],
   ['^/matchs/nouveau/?$',              'match-new'],
@@ -1889,9 +1895,9 @@ const ROUTES = [
   ['^/entrainements/?$',               'training']
 ];
 /* vues disposant déjà d'une section ; les autres -> placeholder « en construction » */
-const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', preparation:'page-preparation', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail' };
-const VIEW_TAB     = { dashboard:'dashboard', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', preparation:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
-const VIEW_TITLE   = { dashboard:'Dashboard', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', preparation:'Préparation du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
+const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', rapport:'page-rapport', preparation:'page-preparation', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail' };
+const VIEW_TAB     = { dashboard:'dashboard', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', rapport:'gamecenter', preparation:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
+const VIEW_TITLE   = { dashboard:'Dashboard', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', rapport:'Analyse du match', preparation:'Préparation du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
 const PLACEHOLDER  = { 'match-new':'Nouveau match' };
 /* boutons hérités data-goto -> hash (les ids réels arriveront via data-route) */
 const GOTO_HASH = { dashboard:'#/', gamecenter:'#/matchs', effectif:'#/effectif', training:'#/entrainements', live:'#/live', joueur:'#/joueurs/sylvain-francisco', match:'#/matchs/hapoel' };
@@ -2089,9 +2095,8 @@ document.addEventListener('click', e => {
         <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/live">Démarrer le live</button></div>`;
     }
     return `<div class="mh-actions">
-      <button class="btn btn-primary sm" data-route="#/matchs/${m.id}/feuille">Feuille de match</button>
-      <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/analyse">Analyse</button>
-      <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/live">Match live</button></div>`;
+      <button class="btn btn-primary sm" data-route="#/matchs/${m.id}/rapport">Voir l'analyse</button>
+      <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/feuille">Feuille de match</button></div>`;
   }
   function topPlayers(bs){
     const top = bs.home.players.slice().sort((a,b)=>b.pts-a.pts).slice(0,3);
@@ -2331,13 +2336,168 @@ document.addEventListener('click', e => {
   }
   routeHandlers.preparation = p => renderPreparation(p.matchId || 'fenerbahce');
 
+  /* --- Analyse complète d'un match terminé (« Voir l'analyse ») --- */
+  function scoreChart(tl, m){
+    if(!tl || !tl.length) return '';
+    const W=640,H=230, pl=32,pr=14,pt=16,pb=26;
+    const maxY = Math.max(10, Math.ceil(Math.max.apply(null, tl.map(p=>Math.max(p.home,p.away)))/10)*10);
+    const X = mn => pl + (mn/40)*(W-pl-pr);
+    const Y = sc => H-pb - (sc/maxY)*(H-pt-pb);
+    const path = key => tl.map((p,i)=>(i?'L':'M')+X(p.min).toFixed(1)+' '+Y(p[key]).toFixed(1)).join(' ');
+    const grid = [0, maxY/2, maxY].map(v=>`<line x1="${pl}" y1="${Y(v).toFixed(1)}" x2="${W-pr}" y2="${Y(v).toFixed(1)}" class="rc-grid"/><text x="${pl-5}" y="${(Y(v)+3).toFixed(1)}" class="rc-yl">${v}</text>`).join('');
+    const qsep = [10,20,30].map(mn=>`<line x1="${X(mn).toFixed(1)}" y1="${pt}" x2="${X(mn).toFixed(1)}" y2="${H-pb}" class="rc-qsep"/>`).join('');
+    const qlab = [[5,'Q1'],[15,'Q2'],[25,'Q3'],[35,'Q4']].map(q=>`<text x="${X(q[0]).toFixed(1)}" y="${H-7}" class="rc-xl">${q[1]}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" class="rc-svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution du score">
+      ${grid}${qsep}${qlab}
+      <path d="${path('away')}" class="rc-line rc-away"/>
+      <path d="${path('home')}" class="rc-line rc-home"/></svg>`;
+  }
+  function rapTile(val, lab, sub){
+    return `<div class="rap-tile"><span class="rap-tv">${val}</span><span class="rap-tl">${esc(lab)}</span>${sub?`<span class="rap-ts mono">${esc(sub)}</span>`:''}</div>`;
+  }
+  function rapPlayerRow(p, i){
+    return `<div class="md-top"><span class="md-rank">${i+1}</span>
+      <span class="md-num mono">${p.num==null?'':'#'+p.num}</span><span class="md-name">${esc(p.name)}</span>
+      <span class="md-line mono">${p.pts} pts · ${p.reb} reb · ${p.pd} pd · éval ${p.eva}</span></div>`;
+  }
+  function renderRapport(matchId){
+    const el = document.getElementById('page-rapport'); if(!el) return;
+    const Store = window.HoopStore;
+    if(!Store){ el.innerHTML = emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    const m = Store.getMatch(matchId);
+    if(!m){ el.innerHTML = emptyState('Match introuvable', `Aucun match ne correspond à « ${matchId} ».`, '#/matchs'); return; }
+    const head = `<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/matchs">${backSvg}Tous les matchs</button>
+        <h2 class="page-title">Analyse — ${esc(m.away.name)}</h2>
+        <div class="page-meta">${esc(m.competition)}${m.date?' · '+fmtDate(m.date):''}${m.lieu?' · '+esc(m.lieu):''}</div>
+      </div><div class="fs-actions">
+        <button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/feuille">Feuille</button>
+        <button class="btn btn-secondary sm" data-rap="print">Imprimer</button>
+      </div></div>` + scoreline(m);
+    const bs = Store.getBoxScore(m.id);
+    if(!bs){
+      el.innerHTML = head + `<div class="fs-card">${emptyState(
+        m.status==='upcoming'?'Match à venir':'Analyse indisponible',
+        m.status==='upcoming'?'L’analyse détaillée sera disponible une fois le match joué. En attendant, préparez la rencontre.':'Le détail de ce match n’est pas disponible dans la démo.',
+        m.status==='upcoming'?'#/matchs/'+m.id+'/preparation':'#/matchs','Préparer le match')}</div>`;
+      return;
+    }
+    const t = bs.home.totals, q = Store.getQuarters(m.id);
+    const tl = Store.getScoreTimeline(m.id), moments = Store.getKeyMoments(m.id);
+    const zones = Store.getMatchZones(m.id);
+    const cmp = Store.getSeasonComparison(m.id);
+    const players = bs.home.players;
+    const best = players.slice().filter(p=>p.min>0).sort((a,b)=>b.eva-a.eva).slice(0,3);
+    const strug = players.slice().filter(p=>p.min>=14).sort((a,b)=>a.eva-b.eva).filter(p=>p.eva<=8).slice(0,3);
+
+    /* --- Comparaison saison : phrases --- */
+    const num1 = (x,u)=> u==='%' ? Number(x).toFixed(1) : x;
+    const sgn = d => (d>0?'+':'')+d;
+    const cmpSentence = x => `${x.label} : ${num1(x.match,x.unit)}${x.unit} <span class="rap-vs">(${sgn(x.delta)}${x.unit} vs ${num1(x.season,x.unit)}${x.unit} de moyenne)</span>`;
+    const plSentence = p => `${p.num!=null?'#'+p.num+' ':''}${esc(p.name)} : ${p.pts} pts <span class="rap-vs">(${sgn(p.delta)} vs ${p.avgPts} de moyenne)</span>`;
+    const highTile = (x, kind) => x ? `<div class="rap-hi ${kind}"><span class="rap-hi-lab">${kind==='good'?'Stat exceptionnelle':'Point noir'}</span>
+        <span class="rap-hi-val">${esc(x.label)} ${num1(x.match,x.unit)}${x.unit}</span>
+        <span class="rap-hi-d">${sgn(x.delta)}${x.unit} vs saison</span></div>` : '';
+
+    /* --- Synthèse --- */
+    const pos = [];
+    pos.push(`${m.result==='win'?'Victoire':'Défaite'} ${m.home.score}–${m.away.score} face à ${esc(m.away.name)}.`);
+    cmp.better.slice(0,3).forEach(x=> pos.push(`${x.label} au-dessus de la moyenne (${num1(x.match,x.unit)}${x.unit}, ${sgn(x.delta)}${x.unit}).`));
+    if(cmp.keyPlayers[0]) pos.push(`${cmp.keyPlayers[0].name} au niveau : ${cmp.keyPlayers[0].pts} pts, éval ${cmp.keyPlayers[0].eva}.`);
+    const posL = pos.slice(0,5);
+    const imp = [];
+    cmp.worse.slice(0,3).forEach(x=> imp.push(`${x.label} en dessous (${num1(x.match,x.unit)}${x.unit}, ${sgn(x.delta)}${x.unit}).`));
+    cmp.playersDown.slice(0,2).forEach(p=> imp.push(`${p.name} sous son niveau (${p.pts} pts, ${sgn(p.delta)} vs moyenne).`));
+    if(imp.length<3) imp.push('Peu de points faibles : maintenir ce niveau d’exigence sur la durée.');
+    const impL = imp.slice(0,5);
+
+    el.innerHTML = head
+      + (q ? quartersTable(m,q) : '')
+      + `<div class="fs-card"><h3 class="fs-h3">Évolution du score &amp; moments clés</h3>
+          <div class="an-grid">
+            <div class="rap-chart">${scoreChart(tl,m)}
+              <div class="rap-legend"><span class="rap-lg"><i class="rap-dot home"></i>${esc(m.home.name)} <b>${m.home.score}</b></span>
+                <span class="rap-lg"><i class="rap-dot away"></i>${esc(m.away.name)} <b>${m.away.score}</b></span></div></div>
+            <ul class="prep-list rap-moments">${moments.map(x=>`<li>${esc(x)}</li>`).join('')||'<li>Aucun moment clé enregistré.</li>'}</ul>
+          </div></div>`
+      + `<div class="fs-card"><h3 class="fs-h3">Statistiques collectives</h3>
+          <div class="rap-tiles">
+            ${rapTile(t.pts,'Points')}
+            ${rapTile(pctStr(t.p2m,t.p2a)+'%','2 points', t.p2m+'/'+t.p2a)}
+            ${rapTile(pctStr(t.p3m,t.p3a)+'%','3 points', t.p3m+'/'+t.p3a)}
+            ${rapTile(pctStr(t.ftm,t.fta)+'%','Lancers', t.ftm+'/'+t.fta)}
+            ${rapTile(t.reb,'Rebonds', t.ro+' off · '+t.rd+' déf')}
+            ${rapTile(t.pd,'Passes déc.')}
+            ${rapTile(t.int,'Interceptions')}
+            ${rapTile(t.ct,'Contres')}
+            ${rapTile(t.bp,'Pertes de balle')}
+            ${rapTile(t.fa,'Fautes')}
+          </div></div>`
+      + `<div class="prep-two">
+          <div class="fs-card"><h3 class="fs-h3">Meilleurs joueurs du match</h3><div class="md-tops">${best.map(rapPlayerRow).join('')}</div></div>
+          <div class="fs-card"><h3 class="fs-h3">Joueurs en difficulté</h3>${
+            strug.length ? `<div class="md-tops rap-strug">${strug.map(rapPlayerRow).join('')}</div>`
+                         : `<p class="fs-note">Aucun joueur nettement en dessous : rotation homogène sur ce match.</p>`}</div>
+        </div>`
+      + (zones ? `<div class="fs-card"><h3 class="fs-h3">Carte de tirs — zones du match
+            <span class="an-legend"><i class="lg-cold"></i>faible % <i class="lg-hot"></i>fort %</span></h3>
+          <div class="an-grid">
+            <div><div id="rapCourt" class="an-court"></div><p class="an-sel" id="rapSel">Touchez une zone du terrain pour voir son détail.</p></div>
+            <div class="an-shots" style="align-content:start">
+              <span class="an-chip">2 pts <b>${t.p2m}/${t.p2a}</b> · ${pctStr(t.p2m,t.p2a)}%</span>
+              <span class="an-chip">3 pts <b>${t.p3m}/${t.p3a}</b> · ${pctStr(t.p3m,t.p3a)}%</span>
+              <span class="an-chip">LF <b>${t.ftm}/${t.fta}</b> · ${pctStr(t.ftm,t.fta)}%</span></div>
+          </div></div>` : '')
+      + `<div class="fs-card" style="padding-bottom:8px"><h3 class="fs-h3">Feuille de match complète</h3></div>`
+      + boxTable(bs.home)
+      + `<div class="fs-card"><h3 class="fs-h3">${esc(bs.away.name)} <span class="fs-badge">${bs.away.score} pts</span></h3>
+          <p class="fs-note">Le détail individuel de l’adversaire n’est pas publié par le feed EuroLeague — seul le score par quart-temps (ci-dessus) est disponible.</p></div>`
+      + `<div class="section-label">Par rapport à notre saison</div>`
+      + `<div class="prep-two">
+          <div class="fs-card"><h3 class="fs-h3">L’équipe vs sa moyenne</h3>
+            <div class="rap-highs">${highTile(cmp.better[0],'good')}${highTile(cmp.worse[0],'bad')}</div>
+            <div class="rap-cmp-lists">
+              <div class="rap-cmp-col up"><span class="rap-col-h">Mieux que d’habitude</span>
+                <ul class="prep-list">${cmp.better.length?cmp.better.map(x=>`<li>${cmpSentence(x)}</li>`).join(''):'<li>Rien de notablement au-dessus.</li>'}</ul></div>
+              <div class="rap-cmp-col down"><span class="rap-col-h">Moins bien</span>
+                <ul class="prep-list">${cmp.worse.length?cmp.worse.map(x=>`<li>${cmpSentence(x)}</li>`).join(''):'<li>Aucune contre-performance marquée.</li>'}</ul></div>
+            </div></div>
+          <div class="fs-card"><h3 class="fs-h3">Les joueurs vs leur moyenne</h3>
+            <div class="rap-cmp-lists">
+              <div class="rap-cmp-col up"><span class="rap-col-h">Au-dessus de leur niveau</span>
+                <ul class="prep-list">${cmp.playersUp.length?cmp.playersUp.map(p=>`<li>${plSentence(p)}</li>`).join(''):'<li>Aucun joueur nettement au-dessus.</li>'}</ul></div>
+              <div class="rap-cmp-col down"><span class="rap-col-h">En dessous de leur niveau</span>
+                <ul class="prep-list">${cmp.playersDown.length?cmp.playersDown.map(p=>`<li>${plSentence(p)}</li>`).join(''):'<li>Aucun joueur nettement en dessous.</li>'}</ul></div>
+            </div></div>
+        </div>`
+      + `<div class="section-label">Synthèse</div>`
+      + `<div class="prep-plan rap-synth">
+          <div class="fs-card prep-plan-block exploit"><h3 class="fs-h3">Points positifs</h3><ul class="prep-list">${posL.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+          <div class="fs-card prep-plan-block avoid"><h3 class="fs-h3">À améliorer</h3><ul class="prep-list">${impL.map(x=>`<li>${x}</li>`).join('')}</ul></div>
+          <div class="fs-card prep-plan-block def"><h3 class="fs-h3">Joueurs clés</h3>
+            <div class="rap-key">${cmp.keyPlayers.map(p=>`<div class="rap-key-row"><span class="rap-key-name">${p.num!=null?'<span class="prep-num mono">#'+p.num+'</span> ':''}${esc(p.name)}</span>
+              <span class="rap-key-line mono">${p.pts} pts · ${p.reb} reb · ${p.pd} pd · éval ${p.eva}</span></div>`).join('')}</div></div>
+        </div>`
+      + `<p class="fs-note fs-foot">Analyse calculée à partir de la feuille de match (modèle event-sourced) et comparée aux moyennes de la saison. ${m.id==='hapoel'?'Feuille et quart-temps : données réelles EuroLeague.':'Feuille de valeur démonstrative, cohérente avec le score officiel.'}</p>`;
+
+    if(window.HoopCourt && zones && document.getElementById('rapCourt')){
+      const hm = seasonHeatmap(zones);
+      HoopCourt.render(document.getElementById('rapCourt'), { mode:'analysis', heatmap:hm,
+        onZoneSelect:(z)=>{ const hz=hm[z.id], sel=document.getElementById('rapSel');
+          if(hz){ const zn=zones[hz.key]; sel.innerHTML = `<b>${esc(z.label)}</b> — zone « ${zlabel(hz.key)} » : ${zn.reussis}/${zn.tentes} (${zn.pct.toFixed(1)}%)`; }
+          else { sel.textContent = z.label + ' — pas de tir enregistré dans cette zone.'; } } });
+    }
+    el.querySelectorAll('[data-rap="print"]').forEach(b=>b.addEventListener('click',()=>window.print()));
+  }
+  routeHandlers.rapport = p => renderRapport(p.matchId || 'hapoel');
+
   /* --- Liste des matchs (#/matchs) rendue depuis le store --- */
   function matchCard(m){
     const rc = m.result==='win'?'win':(m.result==='loss'?'loss':'');
     const score = m.status==='upcoming' ? '—' : `${m.home.score}–${m.away.score}`;
     const actions = m.status==='upcoming'
       ? `<button class="btn btn-primary sm" data-route="#/matchs/${m.id}/preparation">Préparer</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/live">Démarrer le live</button>`
-      : `<button class="btn btn-secondary sm" data-route="#/matchs/${m.id}">Voir</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/feuille">Feuille</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/analyse">Analyse</button>`;
+      : `<button class="btn btn-primary sm" data-route="#/matchs/${m.id}/rapport">Voir l'analyse</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/feuille">Feuille</button>`;
     return `<div class="mc-card" data-route="#/matchs/${m.id}">
       <div class="mc-top"><span class="mc-date">${m.date?fmtDate(m.date):(m.lieu?esc(m.lieu):'Date à venir')}</span>
         ${m.result?`<span class="result-pill ${rc}">${m.result==='win'?'V':'D'}</span>`:`<span class="fs-status s-${m.status}">${STATUS[m.status]}</span>`}</div>
