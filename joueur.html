@@ -551,7 +551,8 @@ h2.view-title .serif{color:var(--orange);}
 .season-table td{text-align:right; padding:10px; font-family:var(--mono); color:var(--t2); border-bottom:1px solid var(--hair-soft);}
 .season-table td:first-child{text-align:left; font-family:var(--sans); color:var(--t1); font-weight:600;}
 .season-table tr.cur td{color:var(--t1);} .season-table tr.cur{background:var(--orange-soft);}
-.season-table .table-scroll{overflow-x:auto;}
+.table-scroll{overflow-x:auto; -webkit-overflow-scrolling:touch;}
+.season-table{min-width:440px;}
 
 .badges{display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px;}
 .badge{background:var(--surface-1); border:1px solid var(--hair); border-radius:10px; padding:15px; display:flex; align-items:center; gap:12px; transition:.15s;}
@@ -632,6 +633,175 @@ h2.view-title .serif{color:var(--orange);}
   .tiles{grid-template-columns:repeat(2,1fr);}
   .rec-grid{grid-template-columns:1fr 1fr;}
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   HOOPFEED — univers social (Feed / Messages / Profil) façon Instagram
+   ═══════════════════════════════════════════════════════════════════ */
+.hf-app{max-width:940px; margin:0 auto;}
+.hf-topbar{display:flex; align-items:center; gap:14px; margin-bottom:18px;}
+.hf-wordmark{font-size:22px; font-weight:700; letter-spacing:-.02em; color:var(--t1);}
+.hf-wordmark em{font-style:normal; color:var(--orange);}
+.hf-public-pill{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.06em; color:var(--win); background:var(--win-soft); padding:3px 9px; border-radius:20px;}
+.hf-dm-btn{margin-left:auto; width:38px; height:38px; border-radius:10px; background:var(--surface-1); border:1px solid var(--hair); display:flex; align-items:center; justify-content:center; color:var(--t2); position:relative;}
+.hf-dm-btn:hover{color:var(--t1); border-color:var(--t3);}
+.hf-dm-btn .dm-dot{position:absolute; top:8px; right:9px; width:7px; height:7px; border-radius:50%; background:var(--orange); border:1.5px solid var(--surface-2);}
+
+/* nav interne (segmented) */
+.hf-nav{display:flex; gap:2px; padding:4px; background:var(--surface-1); border:1px solid var(--hair); border-radius:10px; margin-bottom:22px;}
+.hf-nav button{flex:1; display:flex; align-items:center; justify-content:center; gap:7px; padding:10px; border-radius:7px; font-size:13px; font-weight:600; color:var(--t3); transition:.15s;}
+.hf-nav button svg{width:16px; height:16px;}
+.hf-nav button:hover{color:var(--t1);}
+.hf-nav button.active{background:var(--surface-2); color:var(--orange); box-shadow:inset 0 0 0 1px var(--hair);}
+.hf-nav .dm-dot{width:6px; height:6px; border-radius:50%; background:var(--orange); margin-left:-2px;}
+.hf-sub{display:none;} .hf-sub.active{display:block; animation:riseIn .3s ease;}
+
+/* stories */
+.hf-stories{display:flex; gap:16px; overflow-x:auto; padding-bottom:14px; margin-bottom:8px; scrollbar-width:none;}
+.hf-stories::-webkit-scrollbar{display:none;}
+.hf-story{display:flex; flex-direction:column; align-items:center; gap:6px; flex-shrink:0; cursor:pointer; width:64px;}
+.hf-story .st-ring{width:60px; height:60px; border-radius:50%; padding:2.5px; background:linear-gradient(135deg,var(--orange),var(--gold)); display:flex;}
+.hf-story .st-ring.seen{background:var(--hair);}
+.hf-story .st-inner{flex:1; border-radius:50%; background:var(--surface-2); border:2px solid var(--bg); display:flex; align-items:center; justify-content:center; font-family:var(--cond); font-weight:700; font-size:17px; color:var(--t1);}
+.hf-story .st-name{font-size:10.5px; color:var(--t3); max-width:64px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center;}
+
+/* feed centré */
+.hf-feed{max-width:520px; margin:0 auto;}
+.post-author{cursor:pointer;}
+.post .post-ctx .verified{color:var(--orange); margin-left:3px;}
+.post-flag.rec{background:var(--gold-soft); color:var(--gold);}
+.post-flag.info{background:var(--info,#8E9196); color:#0d0b0a;}
+.hf-privacy-note{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--t4); margin-top:10px; padding-top:10px; border-top:1px solid var(--hair-soft);}
+.hf-privacy-note svg{width:12px; height:12px; flex-shrink:0;}
+
+/* ---------- Profil Instagram ---------- */
+.igp-head{display:flex; gap:26px; align-items:center; margin-bottom:22px;}
+.igp-avatar{width:96px; height:96px; border-radius:50%; flex-shrink:0; background:linear-gradient(150deg,var(--orange),var(--gold)); display:flex; align-items:center; justify-content:center; position:relative;}
+.igp-avatar .init{font-family:var(--cond); font-weight:700; font-size:40px; color:#fff;}
+.igp-avatar .num{position:absolute; bottom:-2px; right:-2px; width:30px; height:30px; border-radius:50%; background:var(--void,#141110); border:2.5px solid var(--bg); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:12px; color:var(--orange-vif);}
+.igp-info{flex:1; min-width:0;}
+.igp-toprow{display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-bottom:14px;}
+.igp-handle{font-size:20px; font-weight:600; color:var(--t1);}
+.igp-handle .verified{color:var(--orange); margin-left:4px;}
+.igp-actions{display:flex; gap:8px;}
+.igp-btn{padding:7px 18px; border-radius:8px; font-size:13px; font-weight:600; transition:.15s;}
+.igp-btn.primary{background:var(--orange); color:#fff;} .igp-btn.primary:hover{background:var(--orange-vif);}
+.igp-btn.ghost{background:var(--surface-1); border:1px solid var(--hair); color:var(--t1);} .igp-btn.ghost:hover{border-color:var(--t3);}
+.igp-counts{display:flex; gap:30px; margin-bottom:14px;}
+.igp-count b{font-family:var(--mono); font-weight:600; color:var(--t1); font-size:16px;} .igp-count span{color:var(--t3); font-size:13px; margin-left:5px;}
+.igp-name{font-size:14px; font-weight:600; color:var(--t1);}
+.igp-bio{font-size:13px; color:var(--t3); margin-top:3px; line-height:1.5;}
+.igp-bio .tag{color:var(--orange);}
+/* stat row publique */
+.igp-stats{display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:var(--hair); border:1px solid var(--hair); border-radius:12px; overflow:hidden; margin-bottom:8px;}
+.igp-stat{background:var(--surface-1); padding:16px 8px; text-align:center;}
+.igp-stat b{display:block; font-family:var(--mono); font-size:24px; font-weight:600; color:var(--t1); line-height:1;}
+.igp-stat span{font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--t4); margin-top:6px; display:block;}
+.igp-stat-note{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--t4); margin-bottom:22px;}
+.igp-stat-note svg{width:12px; height:12px;}
+/* barre onglet grille */
+.igp-gridtab{display:flex; align-items:center; justify-content:center; gap:8px; padding:12px; border-top:1px solid var(--hair); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.08em; color:var(--t1);}
+.igp-gridtab svg{width:14px; height:14px;}
+/* grille de posts */
+.igp-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:4px;}
+.igp-cell{position:relative; aspect-ratio:1; border-radius:4px; overflow:hidden; cursor:pointer; background:linear-gradient(150deg,var(--surface-2),var(--surface-1));}
+.igp-cell:hover .igp-cell-hover{opacity:1;}
+.igp-cell-scene{position:absolute; inset:0; display:flex; flex-direction:column; justify-content:space-between; padding:10px;}
+.igp-cell-top{font-size:10px; font-weight:600; color:var(--t3); text-transform:uppercase; letter-spacing:.04em;}
+.igp-cell-score{font-family:var(--mono); font-size:15px; font-weight:600; color:var(--t1);}
+.igp-cell-stat{font-family:var(--cond); font-weight:700; font-size:30px; color:var(--orange-vif); line-height:.9;}
+.igp-cell-stat small{font-size:12px; color:var(--t3); font-family:var(--sans); font-weight:600;}
+.igp-cell-badge{position:absolute; top:7px; right:7px; font-size:11px;}
+.igp-cell-hover{position:absolute; inset:0; background:rgba(10,8,7,0.55); display:flex; align-items:center; justify-content:center; gap:16px; opacity:0; transition:.15s; color:#fff; font-family:var(--mono); font-size:13px; font-weight:600;}
+.igp-cell-hover span{display:inline-flex; align-items:center; gap:5px;}
+
+/* ---------- Messages (Instagram Direct) ---------- */
+.dm-layout{display:grid; grid-template-columns:320px 1fr; gap:0; border:1px solid var(--hair); border-radius:12px; overflow:hidden; min-height:560px; background:var(--surface-1);}
+.dm-list{border-right:1px solid var(--hair); overflow-y:auto;}
+.dm-list-head{padding:16px 18px; border-bottom:1px solid var(--hair); font-size:15px; font-weight:600; color:var(--t1);}
+.dm-conv{display:flex; align-items:center; gap:12px; padding:12px 16px; cursor:pointer; border-bottom:1px solid var(--hair-soft); transition:background .15s;}
+.dm-conv:hover{background:var(--surface-2);} .dm-conv.active{background:var(--surface-2);}
+.dm-av{width:46px; height:46px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-family:var(--cond); font-weight:700; font-size:16px; color:#fff;}
+.dm-conv-body{flex:1; min-width:0;}
+.dm-conv-name{font-size:13.5px; font-weight:600; color:var(--t1); display:flex; align-items:center; gap:5px;}
+.dm-conv-last{font-size:12px; color:var(--t3); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;}
+.dm-conv.unread .dm-conv-last{color:var(--t1); font-weight:600;}
+.dm-conv-meta{display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex-shrink:0;}
+.dm-conv-time{font-size:11px; color:var(--t4); font-family:var(--mono);}
+.dm-unread-dot{width:9px; height:9px; border-radius:50%; background:var(--orange);}
+/* thread */
+.dm-thread{display:flex; flex-direction:column; min-height:560px; background:var(--field-bg);}
+.dm-thread-head{display:flex; align-items:center; gap:12px; padding:13px 18px; border-bottom:1px solid var(--hair); background:var(--surface-1);}
+.dm-back{display:none; width:32px; height:32px; align-items:center; justify-content:center; border-radius:8px; color:var(--t2);}
+.dm-back:hover{background:var(--surface-2);}
+.dm-thread-name{font-size:14px; font-weight:600; color:var(--t1);}
+.dm-thread-sub{font-size:11px; color:var(--t4);}
+.dm-msgs{flex:1; overflow-y:auto; padding:20px 18px; display:flex; flex-direction:column; gap:10px;}
+.dm-msg{max-width:74%; display:flex; flex-direction:column; gap:3px;}
+.dm-msg.them{align-self:flex-start;} .dm-msg.me{align-self:flex-end; align-items:flex-end;}
+.dm-bubble{padding:9px 13px; border-radius:16px; font-size:13.5px; line-height:1.45;}
+.dm-msg.them .dm-bubble{background:var(--surface-2); color:var(--t1); border-bottom-left-radius:5px;}
+.dm-msg.me .dm-bubble{background:var(--orange); color:#fff; border-bottom-right-radius:5px;}
+.dm-time{font-size:10px; color:var(--t4); font-family:var(--mono); padding:0 4px;}
+.dm-daysep{text-align:center; font-size:10.5px; color:var(--t4); text-transform:uppercase; letter-spacing:.05em; margin:6px 0;}
+/* post partagé dans un message */
+.dm-shared{width:230px; border:1px solid var(--hair); border-radius:12px; overflow:hidden; background:var(--surface-1); cursor:pointer;}
+.dm-shared-head{display:flex; align-items:center; gap:8px; padding:9px 11px; border-bottom:1px solid var(--hair-soft);}
+.dm-shared-av{width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:var(--cond); font-weight:700; font-size:10px; color:#fff;}
+.dm-shared-user{font-size:12px; font-weight:600; color:var(--t1);}
+.dm-shared-scene{padding:14px; background:linear-gradient(150deg,var(--surface-2),var(--surface-1));}
+.dm-shared-eyebrow{font-size:9px; text-transform:uppercase; letter-spacing:.05em; color:var(--t4);}
+.dm-shared-score{font-family:var(--mono); font-size:16px; font-weight:600; color:var(--t1); margin-top:3px;}
+.dm-shared-stats{font-family:var(--cond); font-weight:700; font-size:15px; color:var(--orange-vif); margin-top:6px;}
+.dm-shared-cap{font-size:11px; color:var(--t3); padding:8px 11px; border-top:1px solid var(--hair-soft);}
+/* barre de saisie */
+.dm-compose{display:flex; align-items:center; gap:10px; padding:12px 16px; border-top:1px solid var(--hair); background:var(--surface-1);}
+.dm-compose input{flex:1; background:var(--field-bg); border:1px solid var(--hair); border-radius:22px; padding:10px 16px; color:var(--t1); font:inherit; font-size:13.5px;}
+.dm-compose input:focus{outline:none; border-color:var(--orange);}
+.dm-send{width:38px; height:38px; border-radius:50%; background:var(--orange); color:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.dm-send:hover{background:var(--orange-vif);}
+.dm-empty{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; color:var(--t4); text-align:center; padding:40px;}
+.dm-empty svg{width:48px; height:48px; opacity:.4;}
+
+/* ---------- Overlay HoopFeed générique (post / mini-profil / partage) ---------- */
+.hf-overlay{position:fixed; inset:0; z-index:130; background:rgba(8,6,5,0.74); backdrop-filter:blur(3px); display:none; align-items:flex-start; justify-content:center; padding:26px 16px; overflow-y:auto;}
+.hf-overlay.open{display:flex;}
+.hf-modal{width:min(480px,100%); background:var(--surface-2); border:1px solid var(--hair); border-radius:14px; overflow:hidden; animation:riseIn .28s ease; margin:auto;}
+.hf-modal .hf-close{position:absolute; top:14px; right:14px; z-index:5; width:32px; height:32px; border-radius:8px; background:rgba(20,17,16,0.7); display:flex; align-items:center; justify-content:center; color:#fff;}
+.hf-modal-head{position:relative;}
+/* mini profil */
+.mini-prof{padding:22px; text-align:center;}
+.mini-prof .mini-av{width:80px; height:80px; border-radius:50%; margin:0 auto 12px; display:flex; align-items:center; justify-content:center; font-family:var(--cond); font-weight:700; font-size:32px; color:#fff;}
+.mini-prof .mini-name{font-size:18px; font-weight:700; color:var(--t1);}
+.mini-prof .mini-handle{font-size:13px; color:var(--t3); margin-top:2px;}
+.mini-prof .mini-role{font-size:12px; color:var(--t4); margin-top:6px;}
+.mini-prof .mini-stats{display:flex; justify-content:center; gap:26px; margin:16px 0;}
+.mini-prof .mini-stat b{display:block; font-family:var(--mono); font-size:18px; color:var(--t1);}
+.mini-prof .mini-stat span{font-size:10px; color:var(--t4); text-transform:uppercase;}
+.mini-prof .mini-actions{display:flex; gap:8px; justify-content:center;}
+/* partage : liste conversations */
+.share-head{padding:16px 20px; border-bottom:1px solid var(--hair); font-size:15px; font-weight:600; color:var(--t1);}
+.share-list{max-height:340px; overflow-y:auto;}
+.share-item{display:flex; align-items:center; gap:12px; padding:11px 20px; cursor:pointer; transition:background .15s;}
+.share-item:hover{background:var(--surface-1);}
+.share-item .dm-av{width:38px; height:38px; font-size:14px;}
+.share-item.sent{opacity:.5; pointer-events:none;}
+.share-sent-tag{margin-left:auto; font-size:11px; color:var(--win); font-family:var(--mono);}
+
+@media(max-width:720px){
+  .igp-head{gap:16px;}
+  .igp-avatar{width:76px; height:76px;} .igp-avatar .init{font-size:30px;}
+  .igp-counts{gap:20px;}
+  .igp-cell-stat{font-size:24px;}
+  .hf-nav button span.lbl{display:none;}
+  /* messages : une seule colonne, on bascule liste <-> thread */
+  .dm-layout{grid-template-columns:1fr; min-height:0; border:none; border-radius:0;}
+  .dm-layout.show-thread .dm-list{display:none;}
+  .dm-layout:not(.show-thread) .dm-thread{display:none;}
+  .dm-list{border-right:none; border:1px solid var(--hair); border-radius:12px;}
+  .dm-thread{border:1px solid var(--hair); border-radius:12px; min-height:70vh;}
+  .dm-back{display:flex;}
+  .dm-conv-last{max-width:150px;}
+}
 </style>
 
 <!-- ============ SPRITE LOGO ============ -->
@@ -674,7 +844,7 @@ h2.view-title .serif{color:var(--orange);}
     </span>
   </div>
   <nav class="sb-nav ptabs" aria-label="Espace joueur">
-    <div class="sb-group">Mon espace</div>
+    <div class="sb-group">Performance · privé</div>
     <button class="ptab active" data-view="dashboard">
       <span class="ptab-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
       <span class="ptab-label"><span>Dashboard</span><span class="ptab-sub">Ma saison</span></span>
@@ -687,13 +857,10 @@ h2.view-title .serif{color:var(--orange);}
       <span class="ptab-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>
       <span class="ptab-label"><span>Game Center</span><span class="ptab-sub">Matchs</span></span>
     </button>
-    <button class="ptab" data-view="feed">
+    <div class="sb-group">Social · public</div>
+    <button class="ptab" data-view="hoopfeed">
       <span class="ptab-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l14-5v12L3 13z"/><path d="M8 13.5V18a2 2 0 004 0v-2.5"/></svg></span>
-      <span class="ptab-label"><span>HoopFeed</span><span class="ptab-sub">Équipe</span></span>
-    </button>
-    <button class="ptab" data-view="profile">
-      <span class="ptab-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg></span>
-      <span class="ptab-label"><span>Profil</span><span class="ptab-sub">Sylvain Francisco</span></span>
+      <span class="ptab-label"><span>HoopFeed</span><span class="ptab-sub">Feed · Messages · Profil</span></span>
     </button>
   </nav>
   <div class="sb-foot">
@@ -720,8 +887,7 @@ h2.view-title .serif{color:var(--orange);}
  <section class="pview active enter-right" id="view-dashboard"><div class="view-render" id="pane-dashboard"></div></section>
  <section class="pview" id="view-training"><div class="view-render" id="pane-training"></div></section>
  <section class="pview" id="view-games"><div class="view-render" id="pane-games"></div></section>
- <section class="pview" id="view-feed"><div class="view-render" id="pane-feed"></div></section>
- <section class="pview" id="view-profile"><div class="view-render" id="pane-profile"></div></section>
+ <section class="pview" id="view-hoopfeed"><div class="view-render" id="pane-hoopfeed"></div></section>
 </main>
 </div>
 </div>
@@ -732,13 +898,17 @@ h2.view-title .serif{color:var(--orange);}
   <button class="bn-item active" data-view="dashboard"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span><span class="bn-lab">Dashboard</span></button>
   <button class="bn-item" data-view="training"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6.5 6.5l11 11M4 10l2.5-2.5M10 4L7.5 6.5M20 14l-2.5 2.5M14 20l2.5-2.5"/><circle cx="12" cy="12" r="9.5"/></svg></span><span class="bn-lab">Entraîn.</span></button>
   <button class="bn-item" data-view="games"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span><span class="bn-lab">Matchs</span></button>
-  <button class="bn-item" data-view="feed"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l14-5v12L3 13z"/><path d="M8 13.5V18a2 2 0 004 0v-2.5"/></svg></span><span class="bn-lab">HoopFeed</span></button>
-  <button class="bn-item" data-view="profile"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg></span><span class="bn-lab">Profil</span></button>
+  <button class="bn-item" data-view="hoopfeed"><span class="bn-ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 11l14-5v12L3 13z"/><path d="M8 13.5V18a2 2 0 004 0v-2.5"/></svg></span><span class="bn-lab">HoopFeed</span></button>
 </nav>
 
 <!-- ============ MODAL DÉTAIL MATCH (rempli par player.js) ============ -->
 <div class="sheet-overlay" id="sheetOverlay" role="dialog" aria-modal="true" aria-label="Détail du match">
   <div class="sheet" id="sheetBox"></div>
+</div>
+
+<!-- ============ MODAL HOOPFEED (post, mini-profil, partage — rempli par player.js) ============ -->
+<div class="hf-overlay" id="hfOverlay" role="dialog" aria-modal="true" aria-label="HoopFeed">
+  <div class="hf-modal" id="hfBox"></div>
 </div>
 
 <script src="/lib/data.js"></script>

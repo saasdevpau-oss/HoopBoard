@@ -288,7 +288,7 @@
     const ls = lastShoot(), lc = lastColl();
     const lcNote = lc ? S.playerAvg(lc, PID) : null;
     const next = tournoi.prochainMatch;
-    const feedTop = FEED.slice(0, 2);
+    const feedTop = PUBLIC_POSTS.slice(0, 2);
     const html =
       '<div class="view-head"><h2 class="view-title">Bonjour, <em class="serif">Sylvain</em></h2><div class="view-sub">Ta saison ' + esc(tournoi.nom) + ' en un coup d\'œil</div></div>'
       // hero identité + prochain rendez-vous
@@ -489,7 +489,13 @@
       + '<div class="tile-sub" style="margin-top:8px">Barres vertes = victoires · rouges = défaites</div></div>'
       // records
       + '<div class="sec-head"><span class="sec-title">Mes records de la saison</span></div>'
-      + '<div class="rec-grid">' + recordsHTML() + '</div>';
+      + '<div class="rec-grid" style="margin-bottom:22px">' + recordsHTML() + '</div>'
+      // statistiques par saison (privé)
+      + '<div class="sec-head"><span class="sec-title">Statistiques par saison</span></div>'
+      + '<div class="panel card-elevated" style="margin-bottom:22px"><div class="table-scroll">' + seasonsTableHTML() + '</div><div class="tile-sub" style="margin-top:8px">Saisons antérieures : données de démonstration en progression.</div></div>'
+      // badges / accomplissements (privé)
+      + '<div class="sec-head"><span class="sec-title">Badges & accomplissements</span></div>'
+      + '<div class="badges">' + BADGES.slice().sort((a, b) => (b.count > 0) - (a.count > 0)).map(badgeHTML).join('') + '</div>';
     $('#sub-saison').innerHTML = html;
   }
   function recordCard(val, lab, g) { return '<div class="rec-card"><div class="rec-val">' + val + '</div><div class="rec-lab">' + lab + '</div><div class="rec-ctx">vs ' + esc(g.opponent) + ' · ' + fmtDate(g.date) + '</div></div>'; }
@@ -656,73 +662,154 @@
   }
 
   /* ============================================================
-     9. VUE — HOOPFEED (posts générés depuis les données partagées)
+     9. HOOPFEED — univers SOCIAL (Feed / Messages / Profil)
+     ------------------------------------------------------------
+     Réseau social façon Instagram. STRICTEMENT public : ne montre que
+     résumés de matchs, performances, records, posts — jamais les données
+     privées (évaluations coach, détail des tirs, analyses, play-by-play).
+     Connecté aux mêmes données : chaque match du Game Center privé peut
+     générer une publication publique (résumé uniquement).
      ============================================================ */
-  function buildFeed() {
-    const bg = bestGame, posts = [];
-    const scene = (cls, eyebrow, score, tag) => '<div class="post-media" data-media><div class="scene ' + cls + '"><svg class="scene-court" viewBox="0 0 300 320" fill="none"><path d="M18 4 V96 A132 132 0 0 0 282 96 V4" stroke="rgba(201,158,99,0.35)" stroke-width="2"/><rect x="110" y="4" width="80" height="118" stroke="rgba(201,158,99,0.28)" stroke-width="2"/><circle cx="150" cy="24" r="6" stroke="rgba(244,150,88,0.7)" stroke-width="2"/></svg><div class="scene-eyebrow">' + eyebrow + '</div>' + (score ? '<div class="scene-score mono">' + score + '</div>' : '') + (tag ? '<div class="scene-tag">' + tag + '</div>' : '') + '</div><div class="burst"><div class="heart-big"><svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg></div></div></div>';
-    const chips = (arr) => '<div class="stats-carousel card">' + arr.map((c) => '<div class="stat-chip"><span class="sc-val mono">' + c[0] + '</span><span class="sc-label">' + c[1] + '</span></div>').join('') + '</div>';
-    // 1. meilleur match (auto)
-    posts.push({ id: 'p-best', author: 'sf', flag: bg.win ? 'VICTOIRE' : 'DÉFAITE', flagCls: bg.win ? 'win' : 'loss', ctx: 'EuroLeague · vs ' + bg.opponent + ' · ' + fmtDate(bg.date), auto: true,
-      media: scene('scene-1', 'Meilleur match de la saison · ' + bg.eva + ' d\'évaluation', bg.us + '<small> –</small>' + bg.them, 'Masterclass'),
-      stats: chips([[bg.pts + ' PTS', 'Points'], [bg.pd + ' AST', 'Passes déc.'], [bg.reb + ' REB', 'Rebonds'], ['+' + bg.eva + ' ÉVA', 'Évaluation']]),
-      caption: '<b>@sylvainfrancisco</b> ' + bg.eva + ' d\'évaluation face à ' + bg.opponent + ', mon meilleur match de la saison. Fier du groupe <span style="color:var(--tq)">#Zalgiris #EuroLeague</span>',
-      likes: 214 + bg.eva, comments: [['staff.zalgiris', 'Match référence, le travail paie Sylvain'], ['m.wright7', 'Gros match frérot 🔥']] });
-    // 2. record de points (auto)
-    posts.push({ id: 'p-rec', author: 'club', flag: 'RECORD', flagCls: 'win', ctx: 'Žalgiris Kaunas · ' + fmtDate(RECORDS.pts.date), auto: true,
-      media: scene('scene-2', 'Record personnel de la saison', RECORDS.pts.pts + '<small> PTS</small>', 'Career-high saison'),
-      stats: chips([[RECORDS.pts.pts + ' PTS', 'Record'], [RECORDS.pts.p3m + '/' + RECORDS.pts.p3a + ' 3PT', 'À 3 points'], [RECORDS.pts.pd + ' AST', 'Passes'], ['vs ' + RECORDS.pts.opponent.split(' ')[0], 'Adversaire']]),
-      caption: '<b>@bczalgiris</b> ' + RECORDS.pts.pts + " points pour Sylvain Francisco face à " + RECORDS.pts.opponent + ' : record personnel de la saison ! <span style="color:var(--tq)">#Zalgiris</span>',
-      likes: 512, comments: [['fan_kaunas', 'Quel meneur 💚'], ['sylvainfrancisco', 'Merci pour le soutien 🙏']] });
-    // 3. séance de tir (auto)
-    const ls = lastShoot();
-    posts.push({ id: 'p-shoot', author: 'sf', flag: 'TRAINING', flagCls: 'gold', ctx: 'Séance de tir · ' + fmtDate(ls.date), auto: true,
-      media: scene('scene-3', ls.focus + ' · ' + ls.made + '/' + ls.att + ' au tir', ls.pct + '<small> %</small>', 'Shooting'),
-      stats: chips([[ls.pct + '%', 'Réussite'], [ls.att + '', 'Tirs pris'], [ls.ftm + '/' + ls.fta, 'Lancers'], [SHOOT.kpi.count + '', 'Séances']]),
-      caption: '<b>@sylvainfrancisco</b> Encore du travail au shoot avant les Playoffs. ' + ls.pct + '% aujourd\'hui <span style="color:var(--tq)">#Shooting #Zalgiris</span>',
-      likes: 128, comments: [['coach.trinchieri', 'La régularité paie 👌']] });
-    // 4. entraînement collectif (auto)
-    const lc = lastColl(), lcNote = lc ? S.playerAvg(lc, PID) : null;
-    if (lc) posts.push({ id: 'p-coll', author: 'club', flag: 'COLLECTIF', flagCls: 'gold', ctx: esc(lc.titre) + ' · ' + fmtDate(lc.date), auto: true,
-      media: scene('scene-2', 'Séance collective · préparation Playoffs', S.collectifAvg(lc) + '<small> /10</small>', 'Team work'),
-      stats: chips([[lcNote + '/10', 'Note de Sylvain'], [S.collectifAvg(lc) + '/10', 'Collectif'], [lc.duree + ' min', 'Durée'], ['Žalgiris', 'Arena']]),
-      caption: '<b>@bczalgiris</b> Grosse séance collective à la Žalgiris Arena. Le groupe répond présent avant les Playoffs 💪',
-      likes: 176, comments: [['edgaras.u', 'On lâche rien 💚']] });
-    // 5. prochain match (club)
+  const AV_GRAD = {
+    orange: 'linear-gradient(150deg,#E4682A,#C99E63)', green: 'linear-gradient(150deg,#2f7d4f,#7FA05F)',
+    blue: 'linear-gradient(150deg,#3a6ea5,#7BA6C9)', purple: 'linear-gradient(150deg,#6d4b8c,#A8785C)',
+    red: 'linear-gradient(150deg,#b0453a,#C0766B)', teal: 'linear-gradient(150deg,#2c7a72,#5fb3a8)',
+    gold: 'linear-gradient(150deg,#b8863f,#C99E63)',
+  };
+  const noDia = (s) => s.normalize('NFD').replace(/[̀-ͯ]/g, '');
+  function handleOf(name) { const p = noDia(name).toLowerCase().split(/\s+/); const last = p[p.length - 1].replace(/[^a-z]/g, ''); return p[0][0] + '.' + last; }
+  function isoStr(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+  function nowTime() { const d = new Date(); return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0'); }
+  function avatar(acc, cls) { return '<div class="' + (cls || 'dm-av') + '" style="background:' + (AV_GRAD[acc.color] || AV_GRAD.orange) + '">' + esc(acc.av) + '</div>'; }
+
+  const SCENE_SVG = '<svg class="scene-court" viewBox="0 0 300 320" fill="none"><path d="M18 4 V96 A132 132 0 0 0 282 96 V4" stroke="rgba(201,158,99,0.35)" stroke-width="2"/><rect x="110" y="4" width="80" height="118" stroke="rgba(201,158,99,0.28)" stroke-width="2"/><circle cx="150" cy="24" r="6" stroke="rgba(244,150,88,0.7)" stroke-width="2"/></svg>';
+  const HEART_BURST = '<div class="burst"><div class="heart-big"><svg width="64" height="64" viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg></div></div>';
+  const HEART_ICO = '<span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg></span>';
+  const COMMENT_ICO = '<span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8z"/></svg></span>';
+  const SHARE_ICO = '<span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></span>';
+  const SEND_ICO = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>';
+  const DM_ICO = '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M21 11.5a8.4 8.4 0 01-11.7 7.7L3 21l1.9-5.6A8.4 8.4 0 1121 11.5z"/></svg>';
+  const HOME_ICO = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>';
+  const USER_ICO = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-7 8-7s8 3 8 7"/></svg>';
+  const GRID_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>';
+  const LOCK_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 018 0v4"/></svg>';
+  const DM_BIG_ICO = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 11.5a8.4 8.4 0 01-11.7 7.7L3 21l1.9-5.6A8.4 8.4 0 1121 11.5z"/></svg>';
+
+  /* ---- Comptes (identités du réseau) ---- */
+  const ME = { id: 'me', name: player.name, handle: 'sylvainfrancisco', type: 'me', club: club.nom, num: player.num, poste: player.poste, av: 'SF', color: 'orange', verified: true, followers: 15300, following: 183 };
+  const CLUB_ACC = { id: 'bczalgiris', name: club.nom, handle: 'bczalgiris', type: 'club', club: club.nom, poste: 'Club officiel', av: 'ZAL', color: 'green', verified: true, followers: 412000, following: 64 };
+  const MATE_COLORS = ['blue', 'purple', 'red', 'teal', 'gold', 'green'];
+  const MATES = S.getPlayers().filter((p) => p.id !== PID).slice(0, 6).map((p, i) => ({
+    id: p.id, name: p.name, handle: handleOf(p.name), type: 'player', club: club.nom, num: p.num, poste: p.poste,
+    av: initials(p.name), color: MATE_COLORS[i % MATE_COLORS.length], verified: i < 2,
+    followers: 2200 + Math.round(rng('f' + p.id)() * 9000), following: 130 + Math.round(rng('g' + p.id)() * 260), season: p.season,
+  }));
+  const EXTRA = [
+    { id: 'keenanevans', name: 'Keenan Evans', handle: 'keenanevans', type: 'player', club: 'Basketball', poste: 'Arrière', av: 'KE', color: 'red', verified: true, followers: 38000, following: 210, season: { pts: 14.2, reb: 2.5, pd: 3.4 } },
+    { id: 'staffzalgiris', name: 'Staff Žalgiris', handle: 'staff.zalgiris', type: 'coach', club: club.nom, poste: 'Coaching staff', av: 'ST', color: 'gold', verified: true, followers: 9800, following: 40 },
+  ];
+  const ACCOUNTS = [ME, CLUB_ACC].concat(MATES).concat(EXTRA);
+  const ACC = {}; ACCOUNTS.forEach((a) => (ACC[a.id] = a));
+
+  /* ---- Publications PUBLIQUES (résumés uniquement) ---- */
+  function buildPublicPosts() {
+    const posts = [], seen = {}, chosen = [];
+    [RECORDS.pts, RECORDS.eva, RECORDS.pd].concat(LOG.slice(-7)).forEach((g) => { if (!seen[g.gameId]) { seen[g.gameId] = 1; chosen.push(g); } });
+    chosen.sort((a, b) => (a.date < b.date ? 1 : -1));
+    chosen.forEach((g) => {
+      const rec = g.gameId === RECORDS.pts.gameId;
+      posts.push({
+        id: 'm-' + g.gameId, accId: ME.id, auto: true, date: g.date, srcGame: g.gameId,
+        flag: rec ? 'RECORD' : (g.win ? 'VICTOIRE' : 'DÉFAITE'), flagCls: rec ? 'rec' : (g.win ? 'win' : 'loss'),
+        ctx: 'EuroLeague · vs ' + g.opponent + ' · ' + fmtDate(g.date),
+        sceneCls: rec ? 'scene-2' : (g.win ? 'scene-1' : 'scene-3'),
+        eyebrow: rec ? ('Record personnel · ' + g.pts + ' points 🔥') : ((g.win ? 'Victoire' : 'Défaite') + ' · ' + g.eva + ' d\'évaluation'),
+        score: g.us + '<small> –</small>' + g.them, tag: 'vs ' + g.opponent,
+        stats: [[g.pts + ' PTS', 'Points'], [g.pd + ' AST', 'Passes'], [g.reb + ' REB', 'Rebonds'], [g.p3m + '/' + g.p3a + ' 3PT', 'À 3 pts']],
+        caption: '<b>@sylvainfrancisco</b> ' + (rec ? ('Nouveau record avec ' + g.pts + ' points 🔥 ') : ('Žalgiris ' + g.us + '–' + g.them + ' face à ' + g.opponent + '. ')) + '<span style="color:var(--tq)">#Zalgiris #EuroLeague</span>',
+        likes: 120 + g.eva * 4 + (rec ? 280 : 0),
+        comments: [['staff.zalgiris', rec ? 'Historique 👏' : 'Solide Sylvain'], ['m.wright', g.win ? 'On enchaîne 💚' : 'On se relève 💪']],
+        grid: { top: 'vs ' + g.opponent, score: 'ZAL ' + g.us + '–' + g.them, stat: g.pts, statLab: 'PTS', badge: rec ? '🔥' : '' },
+      });
+    });
+    // post entraînement/lifestyle (public, SANS détail privé)
+    posts.push({
+      id: 't-grind', accId: ME.id, auto: false, date: isoStr(lastShoot().date),
+      flag: 'TRAINING', flagCls: 'info', ctx: 'Séance · ' + fmtDate(lastShoot().date),
+      sceneCls: 'scene-3', eyebrow: 'Préparation Playoffs', score: null, tag: 'Grind',
+      stats: [], caption: '<b>@sylvainfrancisco</b> Encore du travail à la salle avant les Playoffs 💪 <span style="color:var(--tq)">#Grind #Zalgiris</span>',
+      likes: 142, comments: [['keenanevans', 'Beast mode 🔥']],
+      grid: { top: 'Entraînement', score: 'Žalgiris Arena', stat: '∞', statLab: 'GRIND', badge: '' },
+    });
+    // posts coéquipiers
+    MATES.slice(0, 2).forEach((m, i) => {
+      const r = rng('tm' + m.id), s = m.season, opp = i ? 'Real Madrid' : 'FC Barcelone', g = LOG[LOG.length - 1 - i];
+      const pts = Math.round(s.pts * (1.5 + r() * 0.4)), reb = Math.round(s.reb * (1.3 + r() * 0.6)), ast = Math.round(s.pd * (1.3 + r() * 0.6));
+      posts.push({
+        id: 'mate-' + m.id, accId: m.id, auto: false, date: g.date,
+        flag: 'VICTOIRE', flagCls: 'win', ctx: 'EuroLeague · vs ' + opp + ' · ' + fmtDate(g.date),
+        sceneCls: i ? 'scene-1' : 'scene-2', eyebrow: 'Grosse performance', score: (80 + Math.round(r() * 18)) + '<small> –</small>' + (72 + Math.round(r() * 14)), tag: m.poste,
+        stats: [[pts + ' PTS', 'Points'], [reb + ' REB', 'Rebonds'], [ast + ' AST', 'Passes']],
+        caption: '<b>@' + m.handle + '</b> Gros combat collectif, on prend la victoire 💚 <span style="color:var(--tq)">#Zalgiris</span>',
+        likes: 90 + Math.round(r() * 120), comments: [['sylvainfrancisco', 'Énorme 🔥']],
+      });
+    });
+    // posts club
+    const r0 = tournoi.resultats[0], ts = r0.topScorer;
+    posts.push({
+      id: 'club-res', accId: CLUB_ACC.id, auto: false, date: r0.date,
+      flag: 'RÉSULTAT', flagCls: 'gold', ctx: 'EuroLeague · ' + fmtDate(r0.date),
+      sceneCls: 'scene-1', eyebrow: 'Victoire EuroLeague', score: r0.score[0] + '<small> –</small>' + r0.score[1], tag: r0.adversaire,
+      stats: [[r0.score[0] + '–' + r0.score[1], 'Score'], [ts.pts + ' PTS', 'Top scoreur'], [esc((ts.nom.split(' ')[1] || ts.nom)), 'MVP match']],
+      caption: '<b>@bczalgiris</b> Victoire ' + r0.score[0] + '–' + r0.score[1] + ' face à ' + r0.adversaire + ' ! 💚 <span style="color:var(--tq)">#Zalgiris #EuroLeague</span>',
+      likes: 820, comments: [['fan_kaunas', 'ŽALGIRIS 💚💚'], ['sylvainfrancisco', 'Team W 🙌']],
+    });
     const nm = tournoi.prochainMatch;
-    posts.push({ id: 'p-next', author: 'club', flag: 'À VENIR', flagCls: 'gold', ctx: 'Playoffs EuroLeague · ' + esc(nm.lieu), auto: false,
-      media: scene('scene-1', 'Prochain rendez-vous · Playoffs EuroLeague', 'ZAL <small>vs</small> ' + nm.code, esc(nm.adversaire)),
-      stats: chips([['J-2', 'Compte à rebours'], [tournoi.bilan.victoires + '-' + tournoi.bilan.defaites, 'Bilan saison'], ['5e', 'Classement'], ['Istanbul', 'Déplacement']]),
-      caption: '<b>@bczalgiris</b> Direction ' + esc(nm.lieu) + ' pour affronter ' + esc(nm.adversaire) + ' en Playoffs. On y va ensemble 💚 <span style="color:var(--tq)">#EuroLeague</span>',
-      likes: 341, comments: [['fan_kaunas', 'On croit en vous !'], ['sylvainfrancisco', 'Prêts 🔒']] });
+    posts.push({
+      id: 'club-next', accId: CLUB_ACC.id, auto: false, date: '2026-03-22',
+      flag: 'À VENIR', flagCls: 'gold', ctx: 'Playoffs · ' + esc(nm.lieu),
+      sceneCls: 'scene-2', eyebrow: 'Prochain match · Playoffs', score: 'ZAL <small>vs</small> ' + nm.code, tag: nm.adversaire,
+      stats: [['J-2', 'Countdown'], [tournoi.bilan.victoires + '-' + tournoi.bilan.defaites, 'Bilan'], ['Playoffs', 'EuroLeague']],
+      caption: '<b>@bczalgiris</b> Direction ' + esc(nm.lieu) + ' pour affronter ' + esc(nm.adversaire) + ' en Playoffs 💚 <span style="color:var(--tq)">#EuroLeague</span>',
+      likes: 1240, comments: [['sylvainfrancisco', 'Prêts 🔒']],
+    });
+    posts.sort((a, b) => (a.date < b.date ? 1 : -1));
     return posts;
   }
+  const PUBLIC_POSTS = buildPublicPosts();
+  const postById = (id) => PUBLIC_POSTS.find((p) => p.id === id);
+
+  /* ---- Conversations (messagerie) ---- */
+  const CONVERSATIONS = [
+    { id: 'c-keenan', accId: 'keenanevans', unread: true, messages: [{ from: 'them', text: 'Yo bro, gros match hier 🔥', time: '22:10' }, { from: 'them', text: '22 et 7 passes, tu régales', time: '22:14' }] },
+    { id: 'c-club', accId: 'bczalgiris', unread: true, messages: [{ from: 'them', text: 'Rappel séance de demain', time: '18:40' }, { from: 'them', text: 'Training moved to 10:30', time: '18:42' }] },
+    { id: 'c-wright', accId: 'moses-wright', unread: false, messages: [{ from: 'me', text: 'On se voit à la salle ?', time: '16:02' }, { from: 'them', text: 'Ouais 10h ça marche', time: '16:20' }, { from: 'me', text: '👍', time: '16:21' }] },
+    { id: 'c-lo', accId: 'maodo-lo', unread: false, messages: [{ from: 'them', text: 'Belle passe hier soir 👌', time: 'Hier' }, { from: 'me', text: 'Team effort 💚', time: 'Hier' }] },
+    { id: 'c-staff', accId: 'staffzalgiris', unread: false, messages: [{ from: 'them', text: 'Bon boulot sur le pick and roll', time: 'Lun' }, { from: 'them', text: 'On revoit la vidéo demain', time: 'Lun' }] },
+  ];
+  const convById = (id) => CONVERSATIONS.find((c) => c.id === id);
+  const REPLIES = ['👍', 'Ok ça marche !', 'Bien reçu 🙏', 'On en parle à la salle', '🔥🔥', 'Nickel, à demain'];
+
+  /* ---- Rendu d'un post ---- */
   function postHTML(p) {
-    const av = p.author === 'sf' ? 'SF' : p.author === 'club' ? 'ZAL' : 'ZAL';
-    const user = p.author === 'sf' ? '@sylvainfrancisco' : '@bczalgiris';
-    return '<article class="post card-elevated" data-post="' + p.id + '"><div class="post-head"><div class="post-avatar"><div class="post-avatar-inner"><span class="init">' + av + '</span></div></div>'
-      + '<div><div class="post-user">' + user + '</div><div class="post-ctx">' + p.ctx + '</div></div>'
-      + '<span class="post-flag ' + (p.flagCls === 'win' ? 'win' : p.flagCls === 'loss' ? 'loss' : '') + '"' + (p.flagCls === 'gold' ? ' style="background:var(--gold-soft);color:var(--gold)"' : '') + '>' + p.flag + '</span></div>'
-      + p.media + p.stats
-      + '<div class="post-actions"><button class="pa-btn" data-like data-count="' + p.likes + '"><span class="ico"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.9-10-9.5C.6 8.3 2.4 4.6 6 4.1c2-.3 3.9.6 6 3 2.1-2.4 4-3.3 6-3 3.6.5 5.4 4.2 4 7.4-2.5 4.6-10 9.5-10 9.5z"/></svg></span><span class="like-count mono">' + p.likes + '</span></button>'
-      + '<button class="pa-btn" data-comment-focus><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 01-8 8H5l-2 2V12a8 8 0 018-8h2a8 8 0 018 8z"/></svg></span><span class="mono">' + p.comments.length + '</span></button>'
-      + '<button class="pa-btn pa-share"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg></span></button>'
-      + (p.auto ? '<span class="id-tag" style="margin-left:auto;font-size:10px">⚡ Généré automatiquement</span>' : '') + '</div>'
+    const acc = ACC[p.accId], grad = AV_GRAD[acc.color] || AV_GRAD.orange;
+    const flag = p.flag ? '<span class="post-flag ' + (p.flagCls === 'win' ? 'win' : p.flagCls === 'loss' ? 'loss' : p.flagCls) + '"' + (p.flagCls === 'gold' ? ' style="background:var(--gold-soft);color:var(--gold)"' : '') + '>' + p.flag + '</span>' : '';
+    const media = '<div class="post-media" data-media><div class="scene ' + (p.sceneCls || 'scene-1') + '">' + SCENE_SVG + '<div class="scene-eyebrow">' + p.eyebrow + '</div>' + (p.score ? '<div class="scene-score mono">' + p.score + '</div>' : '') + (p.tag ? '<div class="scene-tag">' + esc(p.tag) + '</div>' : '') + '</div>' + HEART_BURST + '</div>';
+    const stats = (p.stats && p.stats.length) ? '<div class="stats-carousel card">' + p.stats.map((c) => '<div class="stat-chip"><span class="sc-val mono">' + c[0] + '</span><span class="sc-label">' + c[1] + '</span></div>').join('') + '</div>' : '';
+    return '<article class="post card-elevated" data-post="' + p.id + '">'
+      + '<div class="post-head"><div class="post-author" data-account="' + acc.id + '"><div class="post-avatar"><div class="post-avatar-inner" style="background:' + grad + '"><span class="init">' + esc(acc.av) + '</span></div></div></div>'
+      + '<div class="post-author" data-account="' + acc.id + '" style="flex:1;cursor:pointer"><div class="post-user">@' + esc(acc.handle) + (acc.verified ? ' <span class="verified">✔</span>' : '') + '</div><div class="post-ctx">' + p.ctx + '</div></div>'
+      + flag + '</div>' + media + stats
+      + '<div class="post-actions"><button class="pa-btn" data-like data-count="' + p.likes + '">' + HEART_ICO + '<span class="like-count mono">' + p.likes + '</span></button>'
+      + '<button class="pa-btn" data-comment-focus>' + COMMENT_ICO + '<span class="mono">' + p.comments.length + '</span></button>'
+      + '<button class="pa-btn pa-share" data-share="' + p.id + '">' + SHARE_ICO + '</button>'
+      + (p.auto ? '<span class="id-tag" style="margin-left:auto;font-size:10px">⚡ Auto</span>' : '') + '</div>'
       + '<div class="post-caption">' + p.caption + '</div>'
+      + (p.accId === ME.id && p.srcGame ? '<div class="hf-privacy-note">' + LOCK_ICO + ' Résumé public — le détail complet reste dans ton Game Center privé</div>' : '')
       + '<div class="post-comments" data-comments>' + p.comments.map((c) => '<div class="comment"><b>' + esc(c[0]) + '</b> ' + esc(c[1]) + '</div>').join('') + '</div>'
       + '<div class="comment-box card"><input type="text" placeholder="Ajouter un commentaire…" data-input><button class="btn-send" data-send>Publier</button></div></article>';
   }
-  function feedMiniCard(p) {
-    return '<div class="qa-card" data-goto="feed"><div class="qa-eyebrow">' + icoDot + ' ' + p.flag + (p.auto ? ' · auto' : '') + '</div><div class="qa-title">' + (p.author === 'sf' ? '@sylvainfrancisco' : '@bczalgiris') + '</div><div class="qa-meta">' + p.ctx + '</div></div>';
-  }
-  const FEED = buildFeed();
-  function renderFeed() {
-    const html = '<div class="view-head"><h2 class="view-title">Hoop<em class="serif">Feed</em></h2><div class="view-sub">L\'actualité du Žalgiris — publications automatiques à partir de tes performances</div></div>'
-      + '<div class="feed-col stagger">' + FEED.map(postHTML).join('') + '</div>';
-    $('#pane-feed').innerHTML = html;
-    wireFeed($('#pane-feed'));
-  }
-  function wireFeed(root) {
+  function wirePost(root) {
     $$('.post', root).forEach((post) => {
       const likeBtn = $('[data-like]', post), countEl = $('.like-count', post), burst = $('.burst', post);
       let count = parseInt(likeBtn.dataset.count, 10);
@@ -737,49 +824,144 @@
       const cf = $('[data-comment-focus]', post); if (cf && input) cf.addEventListener('click', () => input.focus());
     });
   }
+  function feedMiniCard(p) { const a = ACC[p.accId]; return '<div class="qa-card" data-goto="hoopfeed"><div class="qa-eyebrow">' + icoDot + ' ' + p.flag + (p.auto ? ' · auto' : '') + '</div><div class="qa-title">@' + esc(a.handle) + '</div><div class="qa-meta">' + p.ctx + '</div></div>'; }
 
-  /* ============================================================
-     10. VUE — PROFIL
-     ============================================================ */
-  function seasonsTable() {
-    // saisons antérieures : démo déterministe en progression vers la saison réelle
-    const cur = { season: tournoi.saison, mj: H.mj, min: H.min, pts: H.pts, reb: H.reb, pd: H.pd, p3: H.p3, eva: H.eva, cur: true };
-    const prev = [
-      { season: '2024–2025', f: 0.86 }, { season: '2023–2024', f: 0.72 }, { season: '2022–2023', f: 0.58 },
-    ].map((s) => ({ season: s.season, mj: Math.round(28 + s.f * 6), min: round1(H.min * (0.82 + s.f * 0.18)), pts: round1(H.pts * s.f), reb: round1(H.reb * (0.8 + s.f * 0.2)), pd: round1(H.pd * (0.75 + s.f * 0.25)), p3: Math.round(H.p3 * (0.9 + s.f * 0.1)), eva: round1(H.eva * s.f) }));
-    return [cur].concat(prev);
+  /* ---- Onglet interne : FEED ---- */
+  function storyHTML(a) { return '<div class="hf-story" data-account="' + a.id + '"><div class="st-ring"><div class="st-inner" style="color:#fff;background:' + (AV_GRAD[a.color] || AV_GRAD.orange) + '">' + esc(a.av) + '</div></div><div class="st-name">' + (a.id === ME.id ? 'Toi' : esc(a.handle)) + '</div></div>'; }
+  function renderHFFeed() {
+    const stories = [ME].concat(MATES).concat([CLUB_ACC, ACC.keenanevans]).map(storyHTML).join('');
+    $('#hf-feed').innerHTML = '<div class="hf-stories">' + stories + '</div><div class="hf-feed">' + PUBLIC_POSTS.map(postHTML).join('') + '</div>';
+    wirePost($('#hf-feed'));
   }
-  function renderProfile() {
-    const seasons = seasonsTable();
-    const badges = BADGES.slice().sort((a, b) => (b.count > 0) - (a.count > 0));
-    const html =
-      '<div class="view-head"><h2 class="view-title">Mon <em class="serif">profil</em></h2><div class="view-sub">Sylvain Francisco — ' + esc(club.nom) + ' · ' + esc(tournoi.nom) + '</div></div>'
-      // hero
-      + '<div class="id-hero" style="margin-bottom:16px"><div class="id-photo"><span class="init">' + initials(player.name) + '</span><span class="num">' + player.num + '</span></div>'
-      + '<div class="id-meta"><div class="id-name">' + esc(player.name) + '</div><div class="id-role">' + esc(player.poste) + ' · n°' + player.num + ' · ' + esc(club.nom) + '</div>'
-      + '<div class="id-tags"><span class="id-tag hot">' + esc(tournoi.mvp === player.name ? 'MVP du club' : 'Meilleur marqueur') + '</span><span class="id-tag">' + esc(player.taille) + '</span><span class="id-tag">Meneur</span><span class="id-tag">' + esc(tournoi.qualification) + '</span></div></div></div>'
-      // infos joueur
-      + '<div class="info-grid" style="margin-bottom:20px">'
-      + [['Poste', player.poste], ['Taille', player.taille], ['Numéro', '#' + player.num], ['Équipe', club.nom], ['Compétition', 'EuroLeague'], ['Nationalité', 'France']].map((c) => '<div class="info-cell"><div class="k">' + c[0] + '</div><div class="v">' + esc(c[1]) + '</div></div>').join('')
-      + '</div>'
-      // stats saison
-      + '<div class="sec-head"><span class="sec-title">Statistiques de la saison</span><span class="tile-sub">' + esc(tournoi.saison) + '</span></div>'
-      + '<div class="tiles" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">'
-      + tile(H.pts, 'Points', null, { accent: true }) + tile(H.reb, 'Rebonds') + tile(H.pd, 'Passes déc.') + tile(H.eva, 'Évaluation')
-      + '</div>'
-      + '<div class="pcts" style="margin-bottom:20px">' + pctCell('FG%', player.season.tirsPct) + pctCell('2PT%', H.p2) + pctCell('3PT%', H.p3) + pctCell('LF%', H.lf) + '</div>'
-      // stats par saison
-      + '<div class="sec-head"><span class="sec-title">Statistiques par saison</span></div>'
-      + '<div class="panel card-elevated" style="margin-bottom:20px"><div class="table-scroll"><table class="season-table"><thead><tr><th>Saison</th><th>MJ</th><th>MIN</th><th>PTS</th><th>REB</th><th>PD</th><th>3PT%</th><th>ÉVA</th></tr></thead><tbody>'
-      + seasons.map((s) => '<tr class="' + (s.cur ? 'cur' : '') + '"><td>' + esc(s.season) + '</td><td>' + s.mj + '</td><td>' + s.min + '</td><td>' + s.pts + '</td><td>' + s.reb + '</td><td>' + s.pd + '</td><td>' + s.p3 + '%</td><td>' + s.eva + '</td></tr>').join('')
-      + '</tbody></table></div><div class="tile-sub" style="margin-top:8px">Saisons antérieures : données de démonstration en progression.</div></div>'
-      // records
-      + '<div class="sec-head"><span class="sec-title">Records personnels</span></div>'
-      + '<div class="rec-grid" style="margin-bottom:22px">' + recordsHTML() + '</div>'
-      // badges
-      + '<div class="sec-head"><span class="sec-title">Badges & accomplissements</span></div>'
-      + '<div class="badges">' + badges.map(badgeHTML).join('') + '</div>';
-    $('#pane-profile').innerHTML = html;
+
+  /* ---- Onglet interne : PROFIL (façon Instagram) ---- */
+  function renderHFProfile() {
+    const posts = PUBLIC_POSTS.filter((p) => p.accId === ME.id && p.grid);
+    $('#hf-profile').innerHTML =
+      '<div class="igp-head"><div class="igp-avatar"><span class="init">' + initials(player.name) + '</span><span class="num">' + player.num + '</span></div>'
+      + '<div class="igp-info"><div class="igp-toprow"><span class="igp-handle">@sylvainfrancisco <span class="verified">✔</span></span>'
+      + '<div class="igp-actions"><button class="igp-btn ghost" data-follow>Modifier le profil</button></div></div>'
+      + '<div class="igp-counts"><span class="igp-count"><b>' + posts.length + '</b><span>publications</span></span><span class="igp-count"><b>15,3k</b><span>abonnés</span></span><span class="igp-count"><b>183</b><span>abonnements</span></span></div>'
+      + '<div class="igp-name">' + esc(player.name) + '</div><div class="igp-bio">' + esc(player.poste) + ' · n°' + player.num + ' · ' + esc(club.nom) + '<br>Meilleur marqueur du club · <span class="tag">#EuroLeague</span> <span class="tag">#Zalgiris</span></div></div></div>'
+      + '<div class="igp-stats"><div class="igp-stat"><b>' + H.pts + '</b><span>PTS</span></div><div class="igp-stat"><b>' + H.pd + '</b><span>AST</span></div><div class="igp-stat"><b>' + H.reb + '</b><span>REB</span></div><div class="igp-stat"><b>' + H.p3 + '%</b><span>3PT</span></div></div>'
+      + '<div class="igp-stat-note">' + LOCK_ICO + ' Résumé public. Les données détaillées (tirs, évaluations coach, analyses) restent dans l\'espace privé.</div>'
+      + '<div class="igp-gridtab">' + GRID_ICO + ' Publications</div>'
+      + '<div class="igp-grid">' + posts.map(gridCell).join('') + '</div>';
+  }
+  function gridCell(p) {
+    return '<div class="igp-cell" data-gridpost="' + p.id + '"><div class="igp-cell-scene"><div class="igp-cell-top">' + esc(p.grid.top) + '</div>'
+      + '<div><div class="igp-cell-stat">' + p.grid.stat + '<small> ' + p.grid.statLab + '</small></div><div class="igp-cell-score">' + esc(p.grid.score) + '</div></div></div>'
+      + (p.grid.badge ? '<div class="igp-cell-badge">' + p.grid.badge + '</div>' : '')
+      + '<div class="igp-cell-hover"><span>♥ ' + p.likes + '</span><span>💬 ' + p.comments.length + '</span></div></div>';
+  }
+
+  /* ---- Onglet interne : MESSAGES ---- */
+  function convRow(c) {
+    const a = ACC[c.accId], last = c.messages[c.messages.length - 1] || { text: '', time: '' };
+    const lastText = last.sharedPostId ? '📎 Publication partagée' : last.text;
+    return '<div class="dm-conv' + (c.unread ? ' unread' : '') + (c.id === dmOpen ? ' active' : '') + '" data-conv="' + c.id + '">' + avatar(a, 'dm-av')
+      + '<div class="dm-conv-body"><div class="dm-conv-name">' + esc(a.name) + (a.verified ? ' <span class="verified" style="color:var(--orange)">✔</span>' : '') + '</div><div class="dm-conv-last">' + esc(lastText) + '</div></div>'
+      + '<div class="dm-conv-meta"><span class="dm-conv-time">' + esc(last.time) + '</span>' + (c.unread ? '<span class="dm-unread-dot"></span>' : '') + '</div></div>';
+  }
+  function msgHTML(m) {
+    if (m.sharedPostId) {
+      const p = postById(m.sharedPostId); if (!p) return '';
+      const pa = ACC[p.accId];
+      return '<div class="dm-msg ' + (m.from === 'me' ? 'me' : 'them') + '"><div class="dm-shared" data-openpost="' + p.id + '"><div class="dm-shared-head">' + avatar(pa, 'dm-shared-av') + '<span class="dm-shared-user">@' + esc(pa.handle) + '</span></div>'
+        + '<div class="dm-shared-scene"><div class="dm-shared-eyebrow">' + p.eyebrow + '</div>' + (p.score ? '<div class="dm-shared-score mono">' + p.score.replace(/<[^>]+>/g, ' ') + '</div>' : '') + (p.stats && p.stats.length ? '<div class="dm-shared-stats">' + p.stats.slice(0, 3).map((s) => s[0]).join(' · ') + '</div>' : '') + '</div>'
+        + '<div class="dm-shared-cap">Publication HoopFeed</div></div><div class="dm-time">' + esc(m.time) + '</div></div>';
+    }
+    return '<div class="dm-msg ' + (m.from === 'me' ? 'me' : 'them') + '"><div class="dm-bubble">' + esc(m.text) + '</div><div class="dm-time">' + esc(m.time) + '</div></div>';
+  }
+  function threadHTML(c) {
+    const a = ACC[c.accId];
+    return '<div class="dm-thread-head"><button class="dm-back" data-dmback aria-label="Retour"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 6l-6 6 6 6"/></svg></button>' + avatar(a, 'dm-av')
+      + '<div><div class="dm-thread-name">' + esc(a.name) + (a.verified ? ' <span class="verified" style="color:var(--orange)">✔</span>' : '') + '</div><div class="dm-thread-sub">@' + esc(a.handle) + ' · ' + esc(a.poste || '') + '</div></div></div>'
+      + '<div class="dm-msgs" id="dmMsgs">' + c.messages.map(msgHTML).join('') + '</div>'
+      + '<form class="dm-compose" data-dmform="' + c.id + '"><input type="text" placeholder="Message…" data-dminput autocomplete="off"><button type="submit" class="dm-send">' + SEND_ICO + '</button></form>';
+  }
+  function emptyThread() { return '<div class="dm-empty">' + DM_BIG_ICO + '<div style="font-size:15px;color:var(--t2)">Tes messages</div><div style="font-size:12px">Sélectionne une conversation</div></div>'; }
+  function renderHFMessages() {
+    const list = CONVERSATIONS.map(convRow).join('');
+    const thread = dmOpen ? threadHTML(convById(dmOpen)) : emptyThread();
+    $('#hf-messages').innerHTML = '<div class="dm-layout' + (dmOpen ? ' show-thread' : '') + '"><div class="dm-list"><div class="dm-list-head">Messages</div>' + list + '</div><div class="dm-thread">' + thread + '</div></div>';
+    const m = $('#dmMsgs'); if (m) m.scrollTop = m.scrollHeight;
+  }
+  function openConv(id) { dmOpen = id; const c = convById(id); if (c) c.unread = false; renderHFMessages(); refreshDmBadges(); }
+  function sendMsg(convId, text) {
+    const c = convById(convId); if (!c) return;
+    c.messages.push({ from: 'me', text: text, time: nowTime() }); c.unread = false;
+    renderHFMessages();
+    setTimeout(() => { c.messages.push({ from: 'them', text: REPLIES[c.messages.length % REPLIES.length], time: nowTime() }); if (hfSub === 'messages' && dmOpen === convId) renderHFMessages(); }, 950);
+  }
+
+  /* ---- Overlay HoopFeed : post / mini-profil / partage ---- */
+  let shareState = { postId: null, sent: {} };
+  function openHF() { $('#hfOverlay').classList.add('open'); document.body.style.overflow = 'hidden'; }
+  function closeHF() { $('#hfOverlay').classList.remove('open'); document.body.style.overflow = ''; }
+  function modalHead() { return '<div class="hf-modal-head"><button class="hf-close" id="hfClose" aria-label="Fermer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'; }
+  function openPost(id) { const p = postById(id); if (!p) return; $('#hfBox').innerHTML = modalHead() + postHTML(p); wirePost($('#hfBox')); openHF(); }
+  function openAccount(id) {
+    if (id === ME.id) { closeHF(); showView('hoopfeed'); setHfSub('profile'); return; }
+    const a = ACC[id]; if (!a) return;
+    const stats = a.season ? '<div class="mini-stats"><div class="mini-stat"><b>' + a.season.pts + '</b><span>PTS</span></div><div class="mini-stat"><b>' + a.season.reb + '</b><span>REB</span></div><div class="mini-stat"><b>' + a.season.pd + '</b><span>AST</span></div></div>' : '<div style="height:8px"></div>';
+    $('#hfBox').innerHTML = modalHead() + '<div class="mini-prof"><div class="mini-av" style="background:' + (AV_GRAD[a.color] || AV_GRAD.orange) + '">' + esc(a.av) + '</div>'
+      + '<div class="mini-name">' + esc(a.name) + (a.verified ? ' <span class="verified" style="color:var(--orange)">✔</span>' : '') + '</div><div class="mini-handle">@' + esc(a.handle) + '</div>'
+      + '<div class="mini-role">' + esc((a.poste || '') + (a.club ? ' · ' + a.club : '')) + '</div>' + stats
+      + '<div class="mini-actions"><button class="igp-btn primary" data-follow>Suivre</button><button class="igp-btn ghost" data-message="' + a.id + '">Message</button></div></div>';
+    openHF();
+  }
+  function messageAccount(accId) {
+    let c = CONVERSATIONS.find((x) => x.accId === accId);
+    if (!c) { c = { id: 'c-' + accId, accId: accId, unread: false, messages: [] }; CONVERSATIONS.unshift(c); }
+    closeHF(); showView('hoopfeed'); setHfSub('messages'); openConv(c.id);
+  }
+  function openShare(postId) { shareState = { postId: postId, sent: {} }; renderShare(); openHF(); }
+  function renderShare() {
+    const list = CONVERSATIONS.map((c) => { const a = ACC[c.accId], sent = shareState.sent[c.id]; return '<div class="share-item' + (sent ? ' sent' : '') + '" data-shareto="' + c.id + '">' + avatar(a, 'dm-av') + '<div class="dm-conv-body"><div class="dm-conv-name">' + esc(a.name) + '</div><div class="dm-conv-last">@' + esc(a.handle) + '</div></div>' + (sent ? '<span class="share-sent-tag">Envoyé ✓</span>' : '') + '</div>'; }).join('');
+    $('#hfBox').innerHTML = modalHead() + '<div class="share-head">Partager la publication</div><div class="share-list">' + list + '</div>';
+  }
+  function shareToConv(convId) {
+    const c = convById(convId); if (!c || shareState.sent[convId]) return;
+    c.messages.push({ from: 'me', sharedPostId: shareState.postId, time: nowTime() });
+    shareState.sent[convId] = true; renderShare(); renderHFMessages(); refreshDmBadges();
+  }
+  function refreshDmBadges() {
+    const un = CONVERSATIONS.filter((c) => c.unread).length;
+    $$('#pane-hoopfeed .hf-nav .dm-dot, #pane-hoopfeed .hf-dm-btn .dm-dot').forEach((d) => (d.style.display = un ? '' : 'none'));
+  }
+
+  /* ---- Coquille HoopFeed + nav interne ---- */
+  let hfSub = 'feed', dmOpen = null;
+  function unreadCount() { return CONVERSATIONS.filter((c) => c.unread).length; }
+  function renderHoopFeed() {
+    const un = unreadCount(), dot = un ? '<span class="dm-dot"></span>' : '';
+    $('#pane-hoopfeed').innerHTML =
+      '<div class="hf-app"><div class="hf-topbar"><span class="hf-wordmark">Hoop<em>Feed</em></span><span class="hf-public-pill">Espace public</span>'
+      + '<button class="hf-dm-btn" data-hfsub="messages" aria-label="Messages">' + DM_ICO + dot + '</button></div>'
+      + '<div class="hf-nav"><button data-hfsub="feed">' + HOME_ICO + '<span class="lbl">Feed</span></button>'
+      + '<button data-hfsub="messages">' + DM_ICO + '<span class="lbl">Messages</span>' + dot + '</button>'
+      + '<button data-hfsub="profile">' + USER_ICO + '<span class="lbl">Mon profil</span></button></div>'
+      + '<div class="hf-sub" id="hf-feed"></div><div class="hf-sub" id="hf-messages"></div><div class="hf-sub" id="hf-profile"></div></div>';
+    renderHFFeed(); renderHFProfile(); renderHFMessages();
+    setHfSub(hfSub);
+  }
+  function setHfSub(sub) {
+    hfSub = sub;
+    $$('#pane-hoopfeed .hf-nav button').forEach((b) => b.classList.toggle('active', b.dataset.hfsub === sub));
+    $$('#pane-hoopfeed .hf-sub').forEach((s) => s.classList.remove('active'));
+    const t = $('#hf-' + sub); if (t) t.classList.add('active');
+    if (sub === 'messages') { const m = $('#dmMsgs'); if (m) m.scrollTop = m.scrollHeight; }
+  }
+
+  /* ---- Profil (privé, Game Center) : table par saison + badges ---- */
+  function seasonsTableHTML() {
+    const cur = { season: tournoi.saison, mj: H.mj, min: H.min, pts: H.pts, reb: H.reb, pd: H.pd, p3: H.p3, eva: H.eva, cur: true };
+    const prev = [{ season: '2024–2025', f: 0.86 }, { season: '2023–2024', f: 0.72 }, { season: '2022–2023', f: 0.58 }]
+      .map((s) => ({ season: s.season, mj: Math.round(28 + s.f * 6), min: round1(H.min * (0.82 + s.f * 0.18)), pts: round1(H.pts * s.f), reb: round1(H.reb * (0.8 + s.f * 0.2)), pd: round1(H.pd * (0.75 + s.f * 0.25)), p3: Math.round(H.p3 * (0.9 + s.f * 0.1)), eva: round1(H.eva * s.f) }));
+    const rows = [cur].concat(prev);
+    return '<table class="season-table"><thead><tr><th>Saison</th><th>MJ</th><th>MIN</th><th>PTS</th><th>REB</th><th>PD</th><th>3PT%</th><th>ÉVA</th></tr></thead><tbody>'
+      + rows.map((s) => '<tr class="' + (s.cur ? 'cur' : '') + '"><td>' + esc(s.season) + '</td><td>' + s.mj + '</td><td>' + s.min + '</td><td>' + s.pts + '</td><td>' + s.reb + '</td><td>' + s.pd + '</td><td>' + s.p3 + '%</td><td>' + s.eva + '</td></tr>').join('') + '</tbody></table>';
   }
   function badgeHTML(b) {
     const earned = b.count > 0;
@@ -787,10 +969,10 @@
   }
 
   /* ============================================================
-     11. Routage & interactions globales
+     10. Routage & interactions globales
      ============================================================ */
-  const VIEWS = ['dashboard', 'training', 'games', 'feed', 'profile'];
-  const TITLES = { dashboard: 'Dashboard', training: 'Entraînements', games: 'Game Center', feed: 'HoopFeed', profile: 'Profil' };
+  const VIEWS = ['dashboard', 'training', 'games', 'hoopfeed'];
+  const TITLES = { dashboard: 'Dashboard', training: 'Entraînements', games: 'Game Center', hoopfeed: 'HoopFeed' };
   let current = 'dashboard';
   function showView(view, opts) {
     if (VIEWS.indexOf(view) === -1) return;
@@ -816,46 +998,68 @@
   }
 
   function init() {
-    renderDashboard(); renderTraining(); renderGames(); renderFeed(); renderProfile();
+    renderDashboard(); renderTraining(); renderGames(); renderHoopFeed();
 
-    // navigation principale (sidebar + bottom nav)
     document.addEventListener('click', (e) => {
+      // navigation principale
       const nav = e.target.closest('[data-view]');
       if (nav) { showView(nav.dataset.view); return; }
       const goto = e.target.closest('[data-goto]');
       if (goto) { showView(goto.dataset.goto, { subtab: goto.dataset.subtab }); return; }
-      // sous-onglets
+      // HoopFeed : nav interne + interactions sociales
+      const hfs = e.target.closest('[data-hfsub]');
+      if (hfs) { if (hfs.dataset.hfsub === 'messages') { dmOpen = null; renderHFMessages(); } setHfSub(hfs.dataset.hfsub); return; }
+      const conv = e.target.closest('[data-conv]');
+      if (conv) { openConv(conv.dataset.conv); return; }
+      if (e.target.closest('[data-dmback]')) { dmOpen = null; renderHFMessages(); return; }
+      const gp = e.target.closest('[data-gridpost]');
+      if (gp) { openPost(gp.dataset.gridpost); return; }
+      const op = e.target.closest('[data-openpost]');
+      if (op) { openPost(op.dataset.openpost); return; }
+      const shto = e.target.closest('[data-shareto]');
+      if (shto) { shareToConv(shto.dataset.shareto); return; }
+      const sh = e.target.closest('[data-share]');
+      if (sh) { openShare(sh.dataset.share); return; }
+      const msg = e.target.closest('[data-message]');
+      if (msg) { messageAccount(msg.dataset.message); return; }
+      const acc = e.target.closest('[data-account]');
+      if (acc) { openAccount(acc.dataset.account); return; }
+      const fol = e.target.closest('[data-follow]');
+      if (fol) { const on = fol.textContent.trim() === 'Suivre'; fol.textContent = on ? 'Abonné' : 'Suivre'; fol.classList.toggle('ghost', on); fol.classList.toggle('primary', !on); return; }
+      if (e.target.closest('#hfClose')) { closeHF(); return; }
+      const hov = $('#hfOverlay'); if (hov && e.target === hov) { closeHF(); return; }
+      // sous-onglets privés (training/games)
       const sub = e.target.closest('.subtab');
       if (sub) { const group = sub.closest('[data-subtabs]').dataset.subtabs; if (group === 'training') trainSub = sub.dataset.sub; else gameSub = sub.dataset.sub; setSubtab(group, sub.dataset.sub); return; }
-      // toggle de plage (dashboard)
       const rg = e.target.closest('[data-range]');
       if (rg) { dashRange = rg.dataset.range; const box = $('#dashChart'); if (box) box.innerHTML = dashChartHTML(); return; }
-      // filtre saison
-      const sf = e.target.closest('[data-f]');
-      if (sf && sf.closest('[data-season-filter]')) { seasonFilter = sf.dataset.f; renderSaison(); return; }
-      // ouverture d'un match
+      const sfil = e.target.closest('[data-f]');
+      if (sfil && sfil.closest('[data-season-filter]')) { seasonFilter = sfil.dataset.f; renderSaison(); return; }
       const mm = e.target.closest('[data-match]');
       if (mm) { openMatch(mm.dataset.match); return; }
-      // séance collective -> ouvre son détail (réutilise la carte étendue, ici scroll)
-      // filtres play-by-play
       const pq = e.target.closest('[data-q]');
       if (pq && pq.closest('[data-pbp-q]')) { pbpQuarter = pq.dataset.q; $$('[data-pbp-q] button').forEach((b) => b.classList.toggle('active', b === pq)); renderPBP(); return; }
       const pf = e.target.closest('[data-pf]');
       if (pf && pf.closest('[data-pbp-f]')) { pbpFilter = pf.dataset.pf; $$('[data-pbp-f] button').forEach((b) => b.classList.toggle('active', b === pf)); renderPBP(); return; }
-      // onglets de la modal
       const st = e.target.closest('[data-stab]');
       if (st) { sheetTab = st.dataset.stab; $$('.sheet-tab').forEach((b) => b.classList.toggle('active', b === st)); $$('.sheet-pane').forEach((p) => p.classList.remove('active')); const sp = $('#spane-' + sheetTab); if (sp) sp.classList.add('active'); return; }
       if (e.target.closest('#sheetClose')) { closeMatch(); return; }
       const ov = $('#sheetOverlay'); if (ov && e.target === ov) { closeMatch(); return; }
     });
 
+    // envoi de message (Entrée ou bouton)
+    document.addEventListener('submit', (e) => {
+      const f = e.target.closest('[data-dmform]');
+      if (f) { e.preventDefault(); const inp = $('[data-dminput]', f); const t = inp.value.trim(); if (t) sendMsg(f.dataset.dmform, t); }
+    });
+
     // drawer mobile
     const menuBtn = $('#menuBtn'), scrim = $('#appScrim');
     if (menuBtn) menuBtn.addEventListener('click', () => { const open = document.body.classList.toggle('nav-open'); menuBtn.setAttribute('aria-expanded', open); });
     if (scrim) scrim.addEventListener('click', () => document.body.classList.remove('nav-open'));
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { document.body.classList.remove('nav-open'); closeMatch(); } });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { document.body.classList.remove('nav-open'); closeMatch(); closeHF(); } });
 
-    console.info('[HoopBoard] Espace joueur prêt — modèle dérivé de HoopStore (', LOG.length, 'matchs,', SHOOT.sessions.length, 'séances de tir).');
+    console.info('[HoopBoard] Espace joueur prêt — privé (Dashboard/Training/Games) + HoopFeed social. Modèle HoopStore :', LOG.length, 'matchs,', PUBLIC_POSTS.length, 'posts publics,', CONVERSATIONS.length, 'conversations.');
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
