@@ -1888,6 +1888,7 @@ const ROUTES = [
   ['^/matchs/nouveau/?$',              'match-new'],
   ['^/matchs/([^/]+)/?$',              'match',          ['matchId']],
   ['^/live/?$',                        'live'],
+  ['^/joueurs/([^/]+)/matchs/([^/]+)/?$', 'joueur-match',  ['playerId','gameId']],
   ['^/joueurs/([^/]+)/?$',             'joueur',         ['playerId']],
   ['^/effectif/?$',                    'effectif'],
   ['^/entrainements/nouveau/?$',       'training-new'],
@@ -1895,9 +1896,9 @@ const ROUTES = [
   ['^/entrainements/?$',               'training']
 ];
 /* vues disposant déjà d'une section ; les autres -> placeholder « en construction » */
-const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', rapport:'page-rapport', preparation:'page-preparation', live:'page-live', joueur:'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail' };
-const VIEW_TAB     = { dashboard:'dashboard', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', rapport:'gamecenter', preparation:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
-const VIEW_TITLE   = { dashboard:'Dashboard', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', rapport:'Analyse du match', preparation:'Préparation du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
+const VIEW_SECTION = { dashboard:'page-dashboard', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', rapport:'page-rapport', preparation:'page-preparation', live:'page-live', joueur:'page-joueur', 'joueur-match':'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail' };
+const VIEW_TAB     = { dashboard:'dashboard', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', rapport:'gamecenter', preparation:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', 'joueur-match':'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
+const VIEW_TITLE   = { dashboard:'Dashboard', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', rapport:'Analyse du match', preparation:'Préparation du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', 'joueur-match':'Match du joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
 const PLACEHOLDER  = { 'match-new':'Nouveau match' };
 /* boutons hérités data-goto -> hash (les ids réels arriveront via data-route) */
 const GOTO_HASH = { dashboard:'#/', gamecenter:'#/matchs', effectif:'#/effectif', training:'#/entrainements', live:'#/live', joueur:'#/joueurs/sylvain-francisco', match:'#/matchs/hapoel' };
@@ -2579,34 +2580,172 @@ document.addEventListener('click', e => {
     form.addEventListener('submit',e=>{ e.preventDefault(); const o={}; new FormData(form).forEach((v,k)=>o[k]=v); Store.addUserPlayer(o); form.reset(); form.hidden=true; apply(); });
   }
 
-  /* --- Fiche joueur (#/joueurs/:id) --- */
+  /* --- Fiche joueur (#/joueurs/:id) : onglets Match / Entraînement --- */
   const statTile=(label,val)=>`<div class="pf-tile"><span class="pf-tv mono">${val==null?'—':val}</span><span class="pf-tl">${esc(label)}</span></div>`;
+  const fInitials=n=>{const a=String(n||'').trim().split(/\s+/);return((a[0]?a[0][0]:'')+(a.length>1?a[a.length-1][0]:'')).toUpperCase();};
+  const fMini=(label,val)=>`<div class="pf-mini"><span class="pf-mini-v mono">${val==null?'—':val}</span><span class="pf-mini-l">${esc(label)}</span></div>`;
+  const fArrow=d=>d>0?'▲':(d<0?'▼':'→');
+  const fDelta=d=>`<span class="pf-d ${d>0?'up':(d<0?'down':'')}">${d>0?'+':''}${d}</span>`;
+  function fPerfChart(log){
+    if(!log||log.length<2) return '';
+    const W=640,H=200,pl=26,pr=12,pt=14,pb=20,n=log.length;
+    const maxY=Math.max(10,Math.ceil(Math.max.apply(null,log.map(g=>Math.max(g.pts,g.eva)))/5)*5);
+    const X=i=>pl+(i/(n-1))*(W-pl-pr), Y=v=>H-pb-(v/maxY)*(H-pt-pb);
+    const path=key=>log.map((g,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(g[key]).toFixed(1)).join(' ');
+    const grid=[0,maxY/2,maxY].map(v=>`<line x1="${pl}" y1="${Y(v).toFixed(1)}" x2="${W-pr}" y2="${Y(v).toFixed(1)}" class="rc-grid"/><text x="${pl-5}" y="${(Y(v)+3).toFixed(1)}" class="rc-yl">${v}</text>`).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" class="rc-svg" preserveAspectRatio="xMidYMid meet" role="img" aria-label="Évolution des performances">${grid}<path d="${path('eva')}" class="rc-line rc-away"/><path d="${path('pts')}" class="rc-line rc-home"/></svg>`;
+  }
+  const ZONE8_ORDER=['RAQUETTE','MI_DISTANCE_GAUCHE','MI_DISTANCE_CENTRE','MI_DISTANCE_DROITE','CORNER_3_GAUCHE','CORNER_3_DROIT','TOP_KEY_GAUCHE','TOP_KEY_DROIT'];
+  function fZoneTable(Z){
+    if(!Z) return '';
+    const rows=ZONE8_ORDER.filter(k=>Z[k]).map(k=>`<tr><td class="l">${zlabel(k)}</td><td class="c">${Z[k].reussis}</td><td class="c">${Z[k].tentes}</td><td class="c strong">${Z[k].pct.toFixed(1)}</td></tr>`).join('');
+    return `<div class="fs-scroll"><table class="fs-box"><thead><tr><th class="l">Zone</th><th class="c">Réussis</th><th class="c">Tentés</th><th class="c">%</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  }
+  function fSpark(series){ return `<div class="pf-spark">${(series||[]).map(v=>`<span class="pf-spark-b" style="height:${Math.max(12,Math.round(v/10*100))}%"></span>`).join('')}</div>`; }
+  function fRenderCourt(cid, selid, Z){
+    if(!window.HoopCourt) return; const el=document.getElementById(cid); if(!el||!Z) return;
+    const hm=seasonHeatmap(Z);
+    HoopCourt.render(el,{mode:'analysis', heatmap:hm, onZoneSelect:(z)=>{ const hz=hm[z.id], sel=document.getElementById(selid); if(!sel)return;
+      if(hz){ const zn=Z[hz.key]; sel.innerHTML=`<b>${esc(z.label)}</b> — ${zn.reussis}/${zn.tentes} (${zn.pct.toFixed(1)}%)`; } else sel.textContent=z.label+' — pas de tir dans cette zone.'; }});
+  }
+  let _ficheTab='match';
+  function ficheHeader(h, Store){
+    return `<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/effectif">${backSvg}Effectif</button>
+        <h2 class="page-title">Fiche joueur</h2></div></div>
+      <div class="pf-hero">
+        <div class="pf-avatar">${esc(fInitials(h.name))}${h.num!=null?`<span class="pf-avatar-num mono">${h.num}</span>`:''}</div>
+        <div class="pf-id"><div class="pf-name">${h.num!=null?`<span class="pf-num mono">#${h.num}</span> `:''}${esc(h.name)}</div>
+          <div class="pf-sub">${esc(h.poste||'—')}${h.taille?' · '+esc(h.taille):''} · ${esc(Store.getClub().nom)}</div></div>
+        <div class="pf-headstats">
+          ${fMini('Matchs',h.mj)}${fMini('Min',h.min)}${fMini('Points',h.pts)}${fMini('Rebonds',h.reb)}${fMini('Passes',h.pd)}${fMini('Interc.',h.int)}
+          ${fMini('% 2 pts',h.p2+'%')}${fMini('% 3 pts',h.p3+'%')}${fMini('% LF',h.lf+'%')}
+        </div>
+      </div>`;
+  }
+  function cmpRowHTML(label,a,b,delta){ return `<div class="pf-cmp-row"><span class="pf-cmp-l">${esc(label)}</span><span class="pf-cmp-v">${a}</span><span class="pf-cmp-s">${b}</span>${fDelta(delta)}</div>`; }
+  function matchTabHTML(playerId, pr){
+    const h=pr.header, log=pr.matchLog, zs=pr.matchZoneSummary, mz=pr.matchZones;
+    const histRow=g=>`<tr>
+        <td class="l">${g.dom?'':'@ '}${esc(g.opponent)}</td><td class="c">${shortDate(g.date)}</td>
+        <td class="c"><span class="result-pill ${g.win?'win':'loss'}">${g.win?'V':'D'}</span> <span class="mono">${g.us}-${g.them}</span></td>
+        <td class="c">${g.min}</td><td class="c strong">${g.pts}</td><td class="c">${g.reb}</td><td class="c">${g.pd}</td><td class="c">${g.int}</td>
+        <td class="c">${g.fgm}/${g.fga}</td><td class="c ${g.pm>=0?'pm-pos':'pm-neg'}">${g.pm>0?'+':''}${g.pm}</td><td class="c strong">${g.eva}</td>
+        <td class="c"><button class="btn-view" data-route="#/joueurs/${playerId}/matchs/${g.gameId}">Voir</button></td></tr>`;
+    return `<div class="prep-two">
+        <div class="fs-card"><h3 class="fs-h3">Statistiques de saison</h3>
+          <div class="pf-tiles">${statTile('Points',h.pts)}${statTile('Rebonds',h.reb)}${statTile('Passes',h.pd)}${statTile('Interc.',h.int)}${statTile('Éval',h.eva)}${statTile('Min',h.min)}</div></div>
+        <div class="fs-card"><h3 class="fs-h3">5 derniers matchs <span class="pf-h3sub">vs moyenne de saison</span></h3>
+          <div class="pf-cmp"><div class="pf-cmp-row head"><span class="pf-cmp-l"></span><span class="pf-cmp-v">5 derniers</span><span class="pf-cmp-s">Saison</span><span></span></div>
+          ${pr.seasonCmp.map(c=>cmpRowHTML(c.label,c.last5,c.season,c.delta)).join('')}</div></div>
+      </div>
+      <div class="fs-card"><h3 class="fs-h3">Évolution des performances <span class="pf-legend"><i class="pf-lg home"></i>Points <i class="pf-lg away"></i>Évaluation</span></h3>${fPerfChart(log)}</div>
+      <div class="fs-card"><h3 class="fs-h3">Zones de tir en match <span class="an-legend"><i class="lg-cold"></i>faible % <i class="lg-hot"></i>fort %</span></h3>
+        <div class="an-grid">
+          <div><div id="fMatchCourt" class="an-court"></div><p class="an-sel" id="fMatchSel">Touchez une zone du terrain pour son détail.</p></div>
+          <div><div class="pf-zonekpis">
+              <div class="pf-zk good"><span>Meilleure zone</span><b>${zs.best.label} · ${zs.best.pct}%</b></div>
+              <div class="pf-zk bad"><span>Zone la plus faible</span><b>${zs.worst.label} · ${zs.worst.pct}%</b></div>
+              <div class="pf-zk"><span>Réussite globale</span><b>${zs.pct}% · ${zs.made}/${zs.att} tirs</b></div>
+            </div>${fZoneTable(mz)}</div></div></div>
+      <div class="fs-card"><h3 class="fs-h3">Historique des matchs (${log.length})</h3>
+        <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="l">Adversaire</th><th class="c">Date</th><th class="c">Résultat</th><th class="c">Min</th><th class="c">Pts</th><th class="c">Reb</th><th class="c">PD</th><th class="c">Int</th><th class="c">Tirs</th><th class="c">+/-</th><th class="c">Éval</th><th class="c"></th></tr></thead>
+          <tbody>${log.slice().reverse().map(histRow).join('')}</tbody></table></div></div>`;
+  }
+  function trainTabHTML(playerId, pr){
+    const Store=window.HoopStore, t=pr.training, coll=t.collective, tzs=t.trainingZoneSummary, vs=t.vsMatch;
+    const critBars=Store.playerCriteria().map(c=>`<div class="prep-eff-row"><div class="prep-eff-head"><span>${esc(c.label)}</span><span class="prep-eff-pct"><b>${coll.critAvg[c.key]}</b>/10</span></div><div class="prep-eff-track"><div class="prep-eff-fill" style="width:${coll.critAvg[c.key]*10}%"></div></div></div>`).join('');
+    const persoCards=t.perso.map(x=>`<div class="pf-cat"><div class="pf-cat-top"><span class="pf-cat-name">${esc(x.cat)}</span><span class="pf-cat-avg">${x.avg}<i>/10</i></span></div>
+        <div class="pf-cat-line"><span>Dernière : <b>${x.last}/10</b></span><span class="pf-cat-trend ${x.recent>0?'up':(x.recent<0?'down':'')}">${fArrow(x.recent)} ${x.recent>0?'+':''}${x.recent}</span></div>
+        ${fSpark(x.series)}</div>`).join('');
+    const histRow=hh=>`<tr><td class="l">${esc(hh.titre)}</td><td class="c">${shortDate(hh.date)}</td><td class="c">${esc(hh.type)}</td>
+        <td class="c">${hh.present?'<span class="pf-pres yes">Présent</span>':'<span class="pf-pres no">Absent</span>'}</td>
+        <td class="c strong">${hh.note!=null?hh.note+'/10':(hh.pct!=null?hh.pct+'%':'—')}</td><td class="l">${esc(hh.result)}</td>
+        <td class="c"><button class="btn-view" data-route="#/entrainements/${hh.id}">Voir</button></td></tr>`;
+    return `<div class="fs-card"><h3 class="fs-h3">Vue d'ensemble — entraînement</h3>
+        <div class="pf-tiles">${statTile('Séances',coll.attended)}${statTile('Présence',coll.presenceRate+'%')}${statTile('Note coach',coll.noteAvg)}${statTile('Intensité',coll.critAvg.intensite)}${statTile('Efficacité',coll.critAvg.reussite)}${statTile('Évol. récente',(coll.recent>0?'+':'')+coll.recent)}</div></div>
+      <div class="fs-card"><h3 class="fs-h3">Tir à l'entraînement <span class="an-legend"><i class="lg-cold"></i>faible % <i class="lg-hot"></i>fort %</span></h3>
+        ${tzs?`<div class="an-grid">
+          <div><div id="fTrainCourt" class="an-court"></div><p class="an-sel" id="fTrainSel">Touchez une zone du terrain pour son détail.</p></div>
+          <div><div class="pf-zonekpis">
+              <div class="pf-zk"><span>% global à l'entraînement</span><b>${tzs.pct}% · ${tzs.made}/${tzs.att}</b></div>
+              <div class="pf-zk good"><span>Meilleure zone</span><b>${tzs.best.label} · ${tzs.best.pct}%</b></div>
+              <div class="pf-zk bad"><span>Zone la plus faible</span><b>${tzs.worst.label} · ${tzs.worst.pct}%</b></div>
+            </div>${fZoneTable(t.trainingZones)}</div></div>`:'<p class="fs-note">Aucune séance de tir enregistrée pour ce joueur.</p>'}</div>
+      <div class="fs-card"><h3 class="fs-h3">Transfert entraînement → match</h3>
+        <div class="pf-vs-head"><span class="pf-vs-k">${vs.trainGlobal}%<i>entraînement</i></span><span class="pf-vs-k">${vs.matchGlobal}%<i>match</i></span><span class="pf-vs-k ${vs.ecart>0?'up':(vs.ecart<0?'down':'')}">${vs.ecart>0?'+':''}${vs.ecart}<i>écart</i></span></div>
+        <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="l">Zone</th><th class="c">Entraînement</th><th class="c">Match</th><th class="c">Écart</th></tr></thead>
+          <tbody>${vs.rows.map(r=>`<tr><td class="l">${esc(r.label)}</td><td class="c">${r.train}%</td><td class="c">${r.match}%</td><td class="c strong ${r.ecart>=0?'pm-pos':'pm-neg'}">${r.ecart>0?'+':''}${r.ecart}</td></tr>`).join('')}</tbody></table></div>
+        <p class="fs-note" style="margin-top:10px">Un écart positif = mieux à l'entraînement qu'en match : la marge de progression restant à transférer en compétition.</p></div>
+      <div class="prep-two">
+        <div class="fs-card"><h3 class="fs-h3">Évaluations en séance collective</h3><div class="prep-eff">${critBars}</div>
+          <h4 class="col-sub">Évolution sur les dernières semaines</h4>${miniLine(coll.series.map(x=>x.avg), coll.series.map(x=>shortDate(x.date)))}</div>
+        <div class="fs-card"><h3 class="fs-h3">Séances personnalisées par catégorie</h3><div class="pf-cats">${persoCards}</div></div>
+      </div>
+      <div class="fs-card"><h3 class="fs-h3">Historique des entraînements (${t.history.length})</h3>
+        <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="l">Séance</th><th class="c">Date</th><th class="c">Type</th><th class="c">Présence</th><th class="c">Note</th><th class="l">Principaux résultats</th><th class="c"></th></tr></thead>
+          <tbody>${t.history.map(histRow).join('')}</tbody></table></div></div>`;
+  }
+  function renderFicheTab(playerId, tab){
+    const c=document.getElementById('ficheTab'); if(!c) return;
+    const pr=window.HoopStore.getPlayerProfile(playerId);
+    if(tab==='entrainement'){ c.innerHTML=trainTabHTML(playerId, pr); fRenderCourt('fTrainCourt','fTrainSel', pr.training.trainingZones); }
+    else { c.innerHTML=matchTabHTML(playerId, pr); fRenderCourt('fMatchCourt','fMatchSel', pr.matchZones); }
+  }
   function renderFiche(playerId){
     const el=document.getElementById('page-joueur'); if(!el) return;
     const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
-    let p=Store.getPlayer(playerId);
-    if(!p){ const u=Store.getUserPlayers().find(x=>x.id===playerId); if(u) p={id:u.id,num:(u.num!=null&&u.num!=='')?+u.num:null,name:((u.prenom?u.prenom+' ':'')+(u.nom||'')).trim(),poste:u.poste,taille:u.taille,status:u.status,season:null}; }
-    if(!p){ el.innerHTML=emptyState('Joueur introuvable',`Aucun joueur ne correspond à « ${playerId} ».`,'#/effectif','Retour à l’effectif'); return; }
-    const s=p.season, hist=Store.getPlayerHistory(p.id);
-    let html=`<div class="page-head fs-head"><div>
-        <button class="fs-back" data-route="#/effectif">${backSvg}Effectif</button>
+    const pr=Store.getPlayerProfile(playerId);
+    if(!pr){
+      let p=Store.getPlayer(playerId);
+      if(!p){ const u=Store.getUserPlayers().find(x=>x.id===playerId); if(u) p={id:u.id,num:(u.num!=null&&u.num!=='')?+u.num:null,name:((u.prenom?u.prenom+' ':'')+(u.nom||'')).trim(),poste:u.poste,taille:u.taille}; }
+      if(!p){ el.innerHTML=emptyState('Joueur introuvable',`Aucun joueur ne correspond à « ${playerId} ».`,'#/effectif','Retour à l’effectif'); return; }
+      el.innerHTML=`<div class="page-head fs-head"><div><button class="fs-back" data-route="#/effectif">${backSvg}Effectif</button>
         <h2 class="page-title">${p.num!=null?'#'+p.num+' ':''}${esc(p.name)}</h2>
-        <div class="page-meta">${esc(p.poste||'—')}${p.taille?' · '+esc(p.taille):''}${p.status==='indispo'?' · indisponible':''} · ${esc(Store.getClub().nom)}</div>
-      </div></div>`;
-    if(s) html+=`<div class="pf-tiles">${statTile('Pts',s.pts)}${statTile('Reb',s.reb)}${statTile('Passes',s.pd)}${statTile('Éval',s.eva)}${statTile('Min',s.min)}${statTile('Matchs',s.mj)}${statTile('Interc.',s.int)}${statTile('% Tirs',s.tirsPct)}</div>`;
-    else html+=`<div class="fs-card">${emptyState('Nouveau joueur','Ce joueur vient d’être ajouté : aucune statistique enregistrée pour l’instant.','#/effectif','Retour à l’effectif')}</div>`;
-    if(s && window.HoopCourt) html+=`<div class="fs-card"><h3 class="fs-h3">Carte de tir <span class="an-legend"><i class="lg-cold"></i>faible % <i class="lg-hot"></i>fort %</span></h3>
-      <div id="ficheCourt" class="an-court"></div>
-      <p class="fs-note">Répartition par zone à l'échelle de l'équipe (référence saison). Le suivi tir par tir individuel sera alimenté par le Match Live.</p></div>`;
-    if(hist.length) html+=`<div class="fs-card"><h3 class="fs-h3">Historique des matchs</h3>
-      <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="l">Adversaire</th><th class="c">Pts</th><th class="c">Reb</th><th class="c">PD</th><th class="c">Éval</th><th class="c"></th></tr></thead>
-      <tbody>${hist.map(h=>`<tr><td class="l">${esc(h.opponent)}</td><td class="c">${h.pts}</td><td class="c">${h.reb}</td><td class="c">${h.pd}</td><td class="c strong">${h.eva}</td><td class="c"><button class="btn-view" data-route="#/matchs/${h.matchId}">Voir match</button></td></tr>`).join('')}</tbody></table></div></div>`;
-    el.innerHTML=html;
-    if(s && window.HoopCourt){ const c=document.getElementById('ficheCourt'); if(c) HoopCourt.render(c,{mode:'readonly', heatmap:seasonHeatmap(Store.getSeasonZones())}); }
+        <div class="page-meta">${esc(p.poste||'—')}${p.taille?' · '+esc(p.taille):''} · ${esc(Store.getClub().nom)}</div></div></div>
+        <div class="fs-card">${emptyState('Nouveau joueur','Ce joueur vient d’être ajouté : aucune statistique enregistrée pour l’instant.','#/effectif','Retour à l’effectif')}</div>`;
+      return;
+    }
+    el.innerHTML = ficheHeader(pr.header, Store)
+      + `<div class="pf-tabs"><button class="pf-tab${_ficheTab==='match'?' on':''}" data-ftab="match">Match</button><button class="pf-tab${_ficheTab==='entrainement'?' on':''}" data-ftab="entrainement">Entraînement</button></div>
+        <div id="ficheTab"></div>`;
+    el.querySelectorAll('[data-ftab]').forEach(b=>b.addEventListener('click',()=>{ _ficheTab=b.dataset.ftab;
+      el.querySelectorAll('.pf-tab').forEach(x=>x.classList.toggle('on', x.dataset.ftab===_ficheTab));
+      renderFicheTab(playerId, _ficheTab); window.scrollTo({top:0,behavior:'instant'}); }));
+    renderFicheTab(playerId, _ficheTab);
+  }
+  function renderPlayerGame(playerId, gameId){
+    const el=document.getElementById('page-joueur'); if(!el) return;
+    const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Modèle non chargé.','#/'); return; }
+    const gd=Store.getPlayerGame(playerId, gameId);
+    if(!gd){ el.innerHTML=emptyState('Match introuvable','Ce match n’existe pas pour ce joueur.','#/joueurs/'+playerId,'Retour à la fiche'); return; }
+    const g=gd.game, p=gd.player, zs=gd.zoneSummary;
+    el.innerHTML=`<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/joueurs/${playerId}">${backSvg}Fiche de ${esc(p.name)}</button>
+        <h2 class="page-title">${esc(p.name)} <span class="md-vs">vs</span> ${esc(g.opponent)}</h2>
+        <div class="page-meta">${fmtDate(g.date)} · ${g.dom?'à domicile':'à l’extérieur'} · <span class="result-pill ${g.win?'win':'loss'}">${g.win?'V':'D'}</span> <span class="mono">${g.us}-${g.them}</span></div>
+      </div></div>
+      <div class="pf-tiles">${statTile('Min',g.min)}${statTile('Points',g.pts)}${statTile('Rebonds',g.reb)}${statTile('Passes',g.pd)}${statTile('Interc.',g.int)}${statTile('Tirs',g.fgm+'/'+g.fga)}${statTile('3 pts',g.p3m+'/'+g.p3a)}${statTile('LF',g.ftm+'/'+g.fta)}${statTile('+/-',(g.pm>0?'+':'')+g.pm)}${statTile('Éval',g.eva)}</div>
+      <div class="fs-card"><h3 class="fs-h3">Carte de tirs du match <span class="an-legend"><i class="lg-cold"></i>faible % <i class="lg-hot"></i>fort %</span></h3>
+        <div class="an-grid"><div><div id="fGameCourt" class="an-court"></div><p class="an-sel" id="fGameSel">Touchez une zone du terrain pour son détail.</p></div>
+          <div>${zs?`<div class="pf-zonekpis"><div class="pf-zk good"><span>Meilleure zone</span><b>${zs.best.label} · ${zs.best.pct}%</b></div><div class="pf-zk bad"><span>Zone la plus faible</span><b>${zs.worst.label} · ${zs.worst.pct}%</b></div></div>`:''}${fZoneTable(gd.zones)}</div></div></div>
+      <div class="prep-two">
+        <div class="fs-card"><h3 class="fs-h3">Actions importantes</h3><ul class="prep-list">${gd.actions.map(a=>`<li>${esc(a)}</li>`).join('')}</ul></div>
+        <div class="fs-card"><h3 class="fs-h3">Comparaison avec sa moyenne</h3>
+          <div class="pf-cmp"><div class="pf-cmp-row head"><span class="pf-cmp-l"></span><span class="pf-cmp-v">Ce match</span><span class="pf-cmp-s">Saison</span><span></span></div>
+          ${gd.metrics.map(m=>cmpRowHTML(m.label,m.m,m.s,m.delta)).join('')}</div></div>
+      </div>
+      <div class="prep-two">
+        <div class="fs-card prep-sw prep-strength"><h3 class="fs-h3">Mieux que d'habitude</h3><ul class="prep-list">${gd.better.length?gd.better.map(m=>`<li>${esc(m.label)} : ${m.m} (+${m.delta} vs ${m.s} de moyenne)</li>`).join(''):'<li>Rien de notablement au-dessus de sa moyenne.</li>'}</ul></div>
+        <div class="fs-card prep-sw prep-weak"><h3 class="fs-h3">Moins bien que d'habitude</h3><ul class="prep-list">${gd.worse.length?gd.worse.map(m=>`<li>${esc(m.label)} : ${m.m} (${m.delta} vs ${m.s} de moyenne)</li>`).join(''):'<li>Aucune baisse marquée.</li>'}</ul></div>
+      </div>
+      <div class="fs-card"><h3 class="fs-h3">Observations du coach</h3><p class="col-coachnote">${esc(gd.obs)}</p></div>`;
+    fRenderCourt('fGameCourt','fGameSel', gd.zones);
   }
 
   routeHandlers.effectif = renderEffectif;
   routeHandlers.joueur = p => renderFiche(p.playerId || 'sylvain-francisco');
+  routeHandlers['joueur-match'] = p => renderPlayerGame(p.playerId, p.gameId);
 
   /* --- Entraînements (#/entrainements) --- */
   function sessionCard(s){

@@ -362,6 +362,153 @@
     }
     return t;
   }
+  function allThematic() {
+    const t = DATA.seancesThematiques;
+    return (t && t.seances) ? t.seances.map((s, i) => buildThematic(s, i)) : [];
+  }
+
+  /* ================================================================
+     FICHE JOUEUR — génération saison (matchs + entraînements)
+     ================================================================ */
+  const isoOf = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const jr = (pi, gi, salt) => 0.62 + 0.76 * seeded(pi, gi, salt);
+  const clampPct2 = (n) => Math.max(0, Math.min(100, Math.round(n)));
+  const OPP_POOL = ['Real Madrid', 'Olympiacos', 'Fenerbahçe Beko', 'Panathinaikos', 'FC Barcelone', 'AS Monaco', 'Baskonia', 'Maccabi Tel Aviv', 'Anadolu Efes', 'Partizan', 'Crvena zvezda', 'Bayern Munich', 'Olimpia Milan', 'Villeurbanne', 'Paris Basketball', 'Hapoel Tel Aviv'];
+  const ZONE8 = ['RAQUETTE', 'MI_DISTANCE_GAUCHE', 'MI_DISTANCE_CENTRE', 'MI_DISTANCE_DROITE', 'CORNER_3_GAUCHE', 'CORNER_3_DROIT', 'TOP_KEY_GAUCHE', 'TOP_KEY_DROIT'];
+  const ZONE8_LABEL = { RAQUETTE: 'Raquette', MI_DISTANCE_GAUCHE: 'Mi-distance gauche', MI_DISTANCE_CENTRE: 'Mi-distance centre', MI_DISTANCE_DROITE: 'Mi-distance droite', CORNER_3_GAUCHE: 'Corner 3 gauche', CORNER_3_DROIT: 'Corner 3 droit', TOP_KEY_GAUCHE: 'Aile 3 gauche', TOP_KEY_DROIT: 'Aile 3 droite' };
+  const Z2S_STORE = { 'restricted-area-left': 'RAQUETTE', 'restricted-area-center': 'RAQUETTE', 'restricted-area-right': 'RAQUETTE', 'paint-left': 'RAQUETTE', 'paint-center': 'RAQUETTE', 'paint-right': 'RAQUETTE', 'short-corner-left': 'MI_DISTANCE_GAUCHE', 'short-corner-right': 'MI_DISTANCE_DROITE', 'midrange-baseline-left': 'MI_DISTANCE_GAUCHE', 'midrange-wing-left': 'MI_DISTANCE_GAUCHE', 'midrange-center': 'MI_DISTANCE_CENTRE', 'midrange-wing-right': 'MI_DISTANCE_DROITE', 'midrange-baseline-right': 'MI_DISTANCE_DROITE', 'three-corner-left': 'CORNER_3_GAUCHE', 'three-corner-right': 'CORNER_3_DROIT', 'three-wing-left': 'TOP_KEY_GAUCHE', 'three-top': 'TOP_KEY_GAUCHE', 'three-wing-right': 'TOP_KEY_DROIT' };
+  const PIDX = {}; PLAYERS.forEach((p, i) => { PIDX[p.id] = i; });
+  function tirProfile(p) {
+    const m = (DATA.profilsTir && DATA.profilsTir.joueurs) || {}, t = m[p.name];
+    return t || (posteCat(p.poste) === 'int' ? { p2: 58, p3: 22, lf: 68 } : { p2: 50, p3: 35, lf: 80 });
+  }
+  let _SCHED = null;
+  function seasonSchedule() {
+    if (_SCHED) return _SCHED;
+    const out = []; let t = new Date('2025-10-02T00:00:00').getTime();
+    for (let i = 0; i < 24; i++) {
+      const opp = OPP_POOL[(i * 3 + 5) % OPP_POOL.length], dom = i % 2 === 0, win = seeded(i, 1, 2) > 0.4;
+      const us = 76 + Math.round(seeded(i, 2, 3) * 24), margin = 1 + Math.round(seeded(i, 3, 4) * 13);
+      t += (4 + Math.round(seeded(i, 5, 6) * 3)) * 86400000;
+      out.push({ i: i, gameId: 'g' + (i + 1), date: isoOf(new Date(t)), opponent: opp, dom: dom, win: win, us: us, them: win ? us - margin : us + margin });
+    }
+    _SCHED = out; return out;
+  }
+  function genGame(p, g) {
+    const pi = PIDX[p.id], S = p.season, tir = tirProfile(p), cat = posteCat(p.poste);
+    const min = clamp(Math.round(S.min + (seeded(pi, g.i, 10) * 2 - 1) * 6), 5, 36), mr = min / Math.max(8, S.min);
+    const p3a = Math.max(0, Math.round((cat === 'ext' ? S.pts * 0.36 : S.pts * 0.12) * mr * jr(pi, g.i, 11)));
+    const p2a = Math.max(cat === 'int' ? 3 : 2, Math.round((cat === 'ext' ? S.pts * 0.42 : S.pts * 0.52) * mr * jr(pi, g.i, 12)));
+    const fta = Math.max(0, Math.round((cat === 'ext' ? S.pts * 0.22 : S.pts * 0.44) * mr * jr(pi, g.i, 13)));
+    const p3m = clamp(Math.round(p3a * tir.p3 / 100 + (seeded(pi, g.i, 14) * 2 - 1) * 1.0), 0, p3a);
+    const p2m = clamp(Math.round(p2a * tir.p2 / 100 + (seeded(pi, g.i, 15) * 2 - 1) * 1.3), 0, p2a);
+    const ftm = clamp(Math.round(fta * tir.lf / 100 + (seeded(pi, g.i, 16) * 2 - 1) * 0.6), 0, fta);
+    const pts = 2 * p2m + 3 * p3m + ftm;
+    const reb = Math.max(0, Math.round(S.reb * mr * jr(pi, g.i, 17))), pd = Math.max(0, Math.round(S.pd * mr * jr(pi, g.i, 18)));
+    const intc = Math.max(0, Math.round(S.int * mr * jr(pi, g.i, 19))), ct = Math.max(0, Math.round((S.ct || 0) * mr * jr(pi, g.i, 20)));
+    const bp = Math.max(0, Math.round((S.bp || 1) * mr * jr(pi, g.i, 21))), fa = Math.max(0, Math.round(2 * mr * jr(pi, g.i, 22)));
+    const pm = (g.win ? 3 : -3) + Math.round((seeded(pi, g.i, 23) * 2 - 1) * 12);
+    const eva = pts + reb + pd + intc + ct - (p2a - p2m) - (p3a - p3m) - (fta - ftm) - bp - fa;
+    return { gameId: g.gameId, date: g.date, opponent: g.opponent, dom: g.dom, win: g.win, us: g.us, them: g.them, min: min, p2m: p2m, p2a: p2a, p3m: p3m, p3a: p3a, ftm: ftm, fta: fta, fgm: p2m + p3m, fga: p2a + p3a, pts: pts, reb: reb, pd: pd, int: intc, ct: ct, bp: bp, fa: fa, pm: pm, eva: eva };
+  }
+  function playerMatchLog(id) { const p = getPlayer(id); if (!p || !p.season) return []; return seasonSchedule().map((g) => genGame(p, g)); }
+  function allocZones(att, made, weights, Z) {
+    const keys = Object.keys(weights); if (att <= 0) return;
+    const raw = keys.map((k) => att * weights[k]), flo = raw.map((x) => Math.floor(x));
+    let rem = att - flo.reduce((a, b) => a + b, 0);
+    const order = keys.map((k, i) => ({ i: i, f: raw[i] - flo[i] })).sort((a, b) => b.f - a.f);
+    for (let j = 0; j < rem; j++) flo[order[j % keys.length].i]++;
+    keys.forEach((k, i) => { const a = flo[i]; if (a <= 0) return; const m = Math.min(a, Math.round(made * a / att)); Z[k] = Z[k] || { tentes: 0, reussis: 0 }; Z[k].tentes += a; Z[k].reussis += m; });
+  }
+  const W2_INT = { RAQUETTE: 0.60, MI_DISTANCE_GAUCHE: 0.14, MI_DISTANCE_CENTRE: 0.12, MI_DISTANCE_DROITE: 0.14 };
+  const W2_EXT = { RAQUETTE: 0.40, MI_DISTANCE_GAUCHE: 0.20, MI_DISTANCE_CENTRE: 0.19, MI_DISTANCE_DROITE: 0.21 };
+  const W3 = { CORNER_3_GAUCHE: 0.26, CORNER_3_DROIT: 0.26, TOP_KEY_GAUCHE: 0.24, TOP_KEY_DROIT: 0.24 };
+  function withPct(Z) { Object.keys(Z).forEach((k) => { Z[k].pct = Z[k].tentes ? round1(Z[k].reussis / Z[k].tentes * 100) : 0; }); return Z; }
+  function playerMatchZones(id) {
+    const p = getPlayer(id); if (!p || !p.season) return null;
+    const pi = PIDX[p.id], cat = posteCat(p.poste), tir = tirProfile(p), Z = {};
+    const w2 = cat === 'int' ? W2_INT : W2_EXT, tot2 = cat === 'int' ? 190 : 130, tot3 = cat === 'int' ? 45 : 160;
+    Object.keys(w2).forEach((k, ki) => { const a = Math.max(8, Math.round(tot2 * w2[k])); const bp = (k === 'RAQUETTE' ? tir.p2 + 13 : tir.p2 - 5); const pct = clampPct(bp + (seeded(pi, ki, 31) * 2 - 1) * 7); Z[k] = { tentes: a, reussis: Math.round(a * pct / 100) }; });
+    Object.keys(W3).forEach((k, ki) => { const a = Math.max(6, Math.round(tot3 * W3[k])); const pct = clampPct(tir.p3 + (seeded(pi, ki, 32) * 2 - 1) * 8); Z[k] = { tentes: a, reussis: Math.round(a * pct / 100) }; });
+    return withPct(Z);
+  }
+  function zoneSummary(Z) {
+    if (!Z) return null; const ks = Object.keys(Z); if (!ks.length) return null;
+    let tt = 0, tr = 0, best = null, worst = null;
+    ks.forEach((k) => { const z = Z[k]; tt += z.tentes; tr += z.reussis; if (!best || z.pct > best.pct) best = { key: k, label: ZONE8_LABEL[k], pct: z.pct, tentes: z.tentes }; if (!worst || z.pct < worst.pct) worst = { key: k, label: ZONE8_LABEL[k], pct: z.pct, tentes: z.tentes }; });
+    return { best: best, worst: worst, pct: tt ? round1(tr / tt * 100) : 0, made: tr, att: tt };
+  }
+  function playerTrainingZones(id) {
+    const th = allThematic().filter((s) => s.categorie === 'tir'), Z = {};
+    th.forEach((s) => { const r = s.resultats[id]; if (!r) return; s.zones.forEach((zid) => { const z = r.zones[zid], k = Z2S_STORE[zid]; if (!k) return; Z[k] = Z[k] || { tentes: 0, reussis: 0 }; Z[k].tentes += z.a; Z[k].reussis += z.m; }); });
+    return Object.keys(Z).length ? withPct(Z) : null;
+  }
+  function playerCollective(id) {
+    const done = getCollectifs().filter((s) => s.eval).sort((a, b) => (a.date < b.date ? -1 : 1));
+    const att = done.filter((s) => s.presence[id] && s.eval.joueurs[id]);
+    const critAvg = {}; PL_CRIT.forEach((c) => { critAvg[c.key] = att.length ? round1(mean(att.map((s) => s.eval.joueurs[id][c.key]))) : 0; });
+    const series = att.map((s) => ({ date: s.date, avg: playerAvg(s, id) }));
+    const recent = series.length >= 4 ? round1(mean(series.slice(-2).map((x) => x.avg)) - mean(series.slice(0, 2).map((x) => x.avg))) : 0;
+    return { doneCount: done.length, attended: att.length, presenceRate: done.length ? Math.round(att.length / done.length * 100) : 0, noteAvg: att.length ? round1(mean(series.map((x) => x.avg))) : 0, critAvg: critAvg, series: series, recent: recent };
+  }
+  const PERSO_CATS = ['Pick and roll', 'Défense', 'Transition', 'Rebond', 'Attaque placée'];
+  function playerPerso(id) {
+    const p = getPlayer(id), pi = PIDX[id], niv = ((DATA.planningCollectif && DATA.planningCollectif.niveaux) || {})[p.name] || 6.2;
+    return PERSO_CATS.map((cat, ci) => {
+      const base = clamp(niv + (seeded(pi, ci, 41) * 2 - 1) * 1.3, 3, 9.5), slope = (seeded(pi, ci, 42) * 2 - 1) * 0.2, n = 7, series = [];
+      for (let k = 0; k < n; k++) series.push(clampNote(base + slope * (k - (n - 1) / 2) + (seeded(pi, ci * 10 + k, 43) * 2 - 1) * 0.9));
+      return { cat: cat, avg: round1(mean(series)), last: series[n - 1], delta: round1(series[n - 1] - series[0]), recent: round1(mean(series.slice(-3)) - mean(series.slice(0, 3))), series: series };
+    });
+  }
+  function playerTrainingHistory(id) {
+    const out = [];
+    getCollectifs().filter((s) => s.eval).forEach((s) => { const present = !!s.presence[id], j = s.eval.joueurs[id]; out.push({ id: s.id, date: s.date, type: 'Collectif', titre: s.titre, present: present, note: (present && j) ? playerAvg(s, id) : null, result: (present && j) ? ('Intensité ' + j.intensite + ' · Effic. ' + j.reussite) : 'Absent' }); });
+    allThematic().forEach((s) => { if ((s.roster || []).indexOf(id) === -1) return; if (s.categorie === 'tir') { const r = s.resultats[id]; out.push({ id: s.id, date: s.date, type: s.type, titre: s.titre, present: true, note: null, pct: r.total.pct, result: r.total.m + '/' + r.total.a + ' (' + r.total.pct + '%)' }); } else { const e = s.evalCoach[id]; out.push({ id: s.id, date: s.date, type: s.type, titre: s.titre, present: true, note: e.note, result: 'Note coach ' + e.note + '/10' }); } });
+    return out.sort((a, b) => (a.date < b.date ? 1 : -1));
+  }
+  function playerMatchVsTraining(id) {
+    const mz = playerMatchZones(id), tz = playerTrainingZones(id);
+    const rows = ZONE8.filter((k) => tz && tz[k] && mz && mz[k]).map((k) => ({ key: k, label: ZONE8_LABEL[k], train: tz[k].pct, match: mz[k].pct, ecart: round1(tz[k].pct - mz[k].pct) }));
+    const tg = tz ? zoneSummary(tz).pct : null, mg = mz ? zoneSummary(mz).pct : null;
+    return { rows: rows, trainGlobal: tg, matchGlobal: mg, ecart: (tg != null && mg != null) ? round1(tg - mg) : null };
+  }
+  function getPlayerProfile(id) {
+    const p = getPlayer(id); if (!p || !p.season) return null;
+    const S = p.season, tir = tirProfile(p), log = playerMatchLog(id), last5 = log.slice(-5);
+    const avg5 = {}; ['pts', 'reb', 'pd', 'int', 'eva', 'min'].forEach((k) => { avg5[k] = last5.length ? round1(mean(last5.map((g) => g[k]))) : 0; });
+    const seasonCmp = [['pts', 'Points', S.pts], ['reb', 'Rebonds', S.reb], ['pd', 'Passes', S.pd], ['int', 'Interceptions', S.int], ['eva', 'Évaluation', S.eva]].map((x) => ({ key: x[0], label: x[1], last5: avg5[x[0]], season: x[2], delta: round1(avg5[x[0]] - x[2]) }));
+    const mz = playerMatchZones(id), tz = playerTrainingZones(id), coll = playerCollective(id);
+    return {
+      header: { id: p.id, name: p.name, num: p.num, poste: p.poste, taille: p.taille, mj: S.mj, min: S.min, pts: S.pts, reb: S.reb, pd: S.pd, int: S.int, p2: tir.p2, p3: tir.p3, lf: tir.lf, eva: S.eva },
+      matchLog: log, last5: last5, avg5: avg5, seasonCmp: seasonCmp,
+      matchZones: mz, matchZoneSummary: zoneSummary(mz),
+      training: { collective: coll, trainingZones: tz, trainingZoneSummary: zoneSummary(tz), perso: playerPerso(id), history: playerTrainingHistory(id), vsMatch: playerMatchVsTraining(id) },
+    };
+  }
+  function genGameZones(p, line) {
+    const cat = posteCat(p.poste), Z = {};
+    allocZones(line.p2a, line.p2m, cat === 'int' ? W2_INT : W2_EXT, Z);
+    allocZones(line.p3a, line.p3m, W3, Z);
+    return withPct(Z);
+  }
+  function getPlayerGame(id, gameId) {
+    const p = getPlayer(id); if (!p || !p.season) return null;
+    const g = seasonSchedule().find((x) => x.gameId === gameId); if (!g) return null;
+    const line = genGame(p, g), S = p.season, zones = genGameZones(p, line);
+    const metrics = [['pts', 'Points', line.pts, S.pts], ['reb', 'Rebonds', line.reb, S.reb], ['pd', 'Passes', line.pd, S.pd], ['int', 'Interceptions', line.int, S.int], ['eva', 'Évaluation', line.eva, S.eva]].map((x) => ({ key: x[0], label: x[1], m: x[2], s: x[3], delta: round1(x[2] - x[3]) }));
+    const better = metrics.filter((x) => x.delta > 0.5).sort((a, b) => b.delta - a.delta);
+    const worse = metrics.filter((x) => x.delta < -0.5).sort((a, b) => a.delta - b.delta);
+    const actions = [];
+    if (line.p3m >= 3) actions.push(line.p3m + '/' + line.p3a + ' à 3 points');
+    if (line.pd >= 5) actions.push(line.pd + ' passes décisives');
+    if (line.reb >= 8) actions.push(line.reb + ' rebonds captés');
+    if (line.int >= 2) actions.push(line.int + ' interceptions');
+    if (line.pts >= S.pts + 8) actions.push('Pointe à ' + line.pts + ' points');
+    if (!actions.length) actions.push(line.pts + ' pts · ' + line.reb + ' reb · ' + line.pd + ' pd');
+    const obs = line.eva >= S.eva + 6 ? 'Match référence, nettement au-dessus de son niveau habituel.' : (line.eva <= S.eva - 6 ? 'Soirée compliquée, en dessous de ses standards de la saison.' : 'Contribution solide, conforme à sa moyenne de saison.');
+    return { player: p, game: line, zones: zones, zoneSummary: zoneSummary(zones), metrics: metrics, better: better, worse: worse, actions: actions, obs: obs };
+  }
 
   return {
     slug, pct, aggregateDetailed,
@@ -466,6 +613,9 @@
       const i = t.seances.findIndex((s) => (s.id || ('th-')) === id);
       return i === -1 ? null : buildThematic(t.seances[i], i);
     },
+    // fiche joueur : profil complet (matchs + entraînements) + détail par match
+    getPlayerProfile, getPlayerGame,
+    zone8Label: (k) => ZONE8_LABEL[k] || k,
     _coll: { readColl, writeColl, addToColl, readObj, writeObj }
   };
 });
