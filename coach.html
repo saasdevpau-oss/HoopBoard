@@ -2673,6 +2673,8 @@ document.addEventListener('click', e => {
     }
     if(aVenir.length) html+=`<div class="section-label">À venir &amp; en cours</div><div class="mc-grid">${aVenir.map(s=>collectifCard(s,Store)).join('')}</div>`;
     if(notees.length) html+=`<div class="section-label">Séances notées (${notees.length})</div><div class="mc-grid">${notees.map(s=>collectifCard(s,Store)).join('')}</div>`;
+    const themes=Store.getThematicSessions?Store.getThematicSessions():[];
+    if(themes.length) html+=`<div class="section-label">Ateliers à thème</div><div class="mc-grid">${themes.map(sessionCard).join('')}</div>`;
     if(manual.length) html+=`<div class="section-label">Autres séances (créées manuellement)</div><div class="mc-grid">${manual.map(sessionCard).join('')}</div>`;
     el.innerHTML=html;
   }
@@ -2717,7 +2719,7 @@ document.addEventListener('click', e => {
     const el=document.getElementById('page-training-detail'); if(!el) return;
     const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Modèle non chargé.','#/'); return; }
     if(Store.getCollectif && Store.getCollectif(id)) return renderCollectifDetail(el, id);
-    const s=Store.getSessions().find(x=>x.id===id);
+    const s=Store.getSessions().find(x=>x.id===id) || (Store.getThematicSessions?Store.getThematicSessions().find(x=>x.id===id):null);
     if(!s){ el.innerHTML=emptyState('Séance introuvable','Cette séance n’existe pas ou a été supprimée.','#/entrainements','Retour aux entraînements'); return; }
     const roster=Store.getPlayers(), conv=(s.convoques||[]).map(cid=>{ const p=roster.find(x=>x.id===cid); return p?(p.num!=null?'#'+p.num+' ':'')+p.name:cid; });
     let html=`<div class="page-head fs-head"><div>

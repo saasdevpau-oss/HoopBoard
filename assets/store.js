@@ -402,6 +402,11 @@
     getCollectifRoster: () => genCollectifRoster().slice(),
     getCollectifs, getCollectif, saveCollectifEval, getCollectifTrends, getCollectifRecap,
     collectifAvg, playerAvg,
+    getThematicSessions: function () {
+      const t = DATA.seancesThematiques;
+      if (!t || !t.seances) return [];
+      return t.seances.map((s, i) => Object.assign({ id: s.id || ('th-' + (i + 1)), demo: true }, s));
+    },
     _coll: { readColl, writeColl, addToColl, readObj, writeObj }
   };
 });
