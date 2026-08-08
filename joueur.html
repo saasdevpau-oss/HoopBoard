@@ -25,12 +25,12 @@
   --tq:var(--orange);
   --tq-deep:var(--orange-deep);
   --tq-soft:var(--orange-soft);
-  --mint:#C99E63;
+  --mint:var(--gold);
   --aqua:var(--gold);
   --aqua-soft:var(--gold-soft);
-  --off:#8E9196;
-  --off-soft:rgba(142,145,150,0.14);
-  --void:#141110;
+  --off:#8A8F96;
+  --off-soft:rgba(138,143,150,0.12);
+  --void:#2A231C;
 }
 
 /* ---------- Onglets (déplacés dans la sidebar) ---------- */
@@ -74,7 +74,7 @@ h2.view-title .serif{color:var(--orange);}
 .iso-court{
   width:min(460px, 92%); transform:rotateX(51deg) rotateZ(-13deg);
   transform-style:preserve-3d;
-  filter:drop-shadow(0 26px 36px rgba(0,0,0,0.45));
+  filter:drop-shadow(0 24px 34px rgba(28,22,16,0.22));
   transition:transform .5s cubic-bezier(.2,.7,.2,1);
 }
 .iso-stage:hover .iso-court{transform:rotateX(47deg) rotateZ(-11deg) scale(1.02);}
@@ -211,14 +211,14 @@ h2.view-title .serif{color:var(--orange);}
 .post-flag.loss{background:var(--loss-soft); color:var(--loss);}
 
 .post-media{
-  position:relative; margin:0 18px; border-radius:4px; overflow:hidden;
+  position:relative; margin:0 18px; border-radius:16px; overflow:hidden;
   border:1px solid var(--hair-soft);
   aspect-ratio:16/9; cursor:pointer;
 }
 .scene{position:absolute; inset:0;}
-.scene-1{background:radial-gradient(ellipse 90% 100% at 22% 88%, rgba(228,104,42,0.22) 0%, transparent 55%), #1A1512;}
-.scene-2{background:radial-gradient(ellipse 90% 100% at 80% 15%, rgba(194,91,69,0.18) 0%, transparent 55%), #191411;}
-.scene-3{background:radial-gradient(ellipse 90% 100% at 50% 110%, rgba(201,158,99,0.14) 0%, transparent 55%), #181310;}
+.scene-1{background:radial-gradient(ellipse 95% 100% at 22% 90%, rgba(228,104,42,0.30) 0%, transparent 58%), linear-gradient(150deg,#FCEFE3,#F5E7D9);}
+.scene-2{background:radial-gradient(ellipse 95% 100% at 80% 12%, rgba(214,75,66,0.22) 0%, transparent 58%), linear-gradient(150deg,#FCEEEB,#F4E6E2);}
+.scene-3{background:radial-gradient(ellipse 95% 100% at 50% 112%, rgba(176,129,44,0.22) 0%, transparent 58%), linear-gradient(150deg,#FBF4E2,#F3EAD5);}
 .scene svg.scene-court{position:absolute; right:-14%; bottom:-30%; width:78%; opacity:0.4; transform:rotate(-9deg);}
 .scene-score{
   position:absolute; left:20px; bottom:40px;
@@ -247,7 +247,7 @@ h2.view-title .serif{color:var(--orange);}
 @keyframes heartpop{0%{transform:scale(0); opacity:0;} 35%{transform:scale(1.15); opacity:1;} 70%{transform:scale(1);} 100%{transform:scale(1); opacity:0;}}
 
 .stats-carousel{
-  margin:12px 18px 0; border-radius:4px;
+  margin:12px 18px 0; border-radius:14px;
   padding:0; display:flex; gap:0; overflow-x:auto;
   background:var(--surface-2);
 }
@@ -299,13 +299,14 @@ h2.view-title .serif{color:var(--orange);}
 .recap-overlay{
   position:fixed; inset:0; z-index:200; display:none;
   align-items:center; justify-content:center; padding:20px;
-  background:rgba(12,10,9,0.72);
+  background:rgba(20,16,12,0.42); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
 }
 .recap-overlay.open{display:flex; animation:fadeIn .25s ease;}
 @keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
 .recap-box{
-  width:min(680px, 100%); border-radius:6px; padding:22px 26px;
-  box-shadow:0 24px 70px rgba(0,0,0,0.55);
+  width:min(680px, 100%); border-radius:20px; padding:22px 26px;
+  background:var(--surface-1); border:1px solid var(--hair);
+  box-shadow:var(--shadow-lg);
   animation:riseIn .3s ease;
 }
 .recap-head{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:4px;}
@@ -317,7 +318,7 @@ h2.view-title .serif{color:var(--orange);}
 .recap-court{
   width:min(400px,86%); position:relative;
   transform:rotateX(50deg) rotateZ(-12deg);
-  filter:drop-shadow(0 22px 30px rgba(0,0,0,0.45));
+  filter:drop-shadow(0 20px 30px rgba(28,22,16,0.22));
 }
 .recap-court.enter{animation:courtIn .7s cubic-bezier(.2,.75,.25,1) both;}
 @keyframes courtIn{
@@ -447,8 +448,8 @@ h2.view-title .serif{color:var(--orange);}
 .crit-rows{display:flex; flex-direction:column; gap:7px;}
 .crit-row{display:grid; grid-template-columns:130px 1fr 30px; align-items:center; gap:10px;}
 .crit-lab{font-size:12px; color:var(--t3);}
-.crit-track{height:6px; border-radius:3px; background:var(--hair-soft); overflow:hidden;}
-.crit-fill{height:100%; border-radius:3px; background:linear-gradient(90deg,var(--gold),var(--orange)); transition:width .6s ease;}
+.crit-track{height:6px; border-radius:100px; background:var(--hair-soft); overflow:hidden;}
+.crit-fill{height:100%; border-radius:100px; background:linear-gradient(90deg,var(--gold),var(--orange)); transition:width .6s ease;}
 .crit-val{font-family:var(--mono); font-size:12px; font-weight:600; color:var(--t2); text-align:right;}
 .coach-quote{margin-top:13px; padding:11px 13px; border-left:2px solid var(--orange); background:var(--orange-soft); border-radius:0 6px 6px 0; font-size:12.5px; color:var(--t2); font-style:italic;}
 
@@ -498,7 +499,7 @@ h2.view-title .serif{color:var(--orange);}
 .chipf.active{background:var(--orange); color:#fff; border-color:var(--orange);}
 
 /* ---------- Modal de détail match ---------- */
-.sheet-overlay{position:fixed; inset:0; z-index:120; background:rgba(8,6,5,0.72); backdrop-filter:blur(3px); display:none; align-items:flex-start; justify-content:center; padding:30px 16px; overflow-y:auto;}
+.sheet-overlay{position:fixed; inset:0; z-index:120; background:rgba(20,16,12,0.42); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); display:none; align-items:flex-start; justify-content:center; padding:30px 16px; overflow-y:auto;}
 .sheet-overlay.open{display:flex;}
 .sheet{width:min(760px,100%); background:var(--surface-2); border:1px solid var(--hair); border-radius:14px; overflow:hidden; animation:riseIn .3s ease; margin:auto;}
 .sheet-head{padding:20px 22px; border-bottom:1px solid var(--hair); position:relative;}
@@ -517,8 +518,8 @@ h2.view-title .serif{color:var(--orange);}
 .cmp-row{display:grid; grid-template-columns:120px 1fr 1fr; align-items:center; gap:12px; padding:8px 0; border-bottom:1px solid var(--hair-soft);}
 .cmp-lab{font-size:12px; color:var(--t3);}
 .cmp-bars{display:flex; flex-direction:column; gap:4px;}
-.cmp-bar-track{height:7px; background:var(--hair-soft); border-radius:4px; overflow:hidden;}
-.cmp-bar{height:100%; border-radius:4px;}
+.cmp-bar-track{height:7px; background:var(--hair-soft); border-radius:100px; overflow:hidden;}
+.cmp-bar{height:100%; border-radius:100px;}
 .cmp-bar.match{background:var(--orange);}
 .cmp-bar.season{background:var(--t4);}
 .cmp-vals{display:flex; justify-content:space-between; font-family:var(--mono); font-size:11px;}
@@ -602,8 +603,8 @@ h2.view-title .serif{color:var(--orange);}
 @media(max-width:860px){
   .bottom-nav{
     display:flex; position:fixed; left:0; right:0; bottom:0; z-index:90;
-    background:rgba(23,19,16,0.94); backdrop-filter:blur(14px);
-    border-top:1px solid var(--hair); padding:6px 4px calc(6px + env(safe-area-inset-bottom,0));
+    background:var(--glass-bg); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
+    border-top:1px solid var(--hair); box-shadow:0 -8px 24px rgba(28,22,16,0.06); padding:6px 4px calc(6px + env(safe-area-inset-bottom,0));
   }
   .bn-item{flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; padding:6px 2px; color:var(--t4); transition:color .15s;}
   .bn-item .bn-ico{width:22px; height:22px; display:flex; align-items:center; justify-content:center;}
@@ -763,10 +764,10 @@ h2.view-title .serif{color:var(--orange);}
 .dm-empty svg{width:48px; height:48px; opacity:.4;}
 
 /* ---------- Overlay HoopFeed générique (post / mini-profil / partage) ---------- */
-.hf-overlay{position:fixed; inset:0; z-index:130; background:rgba(8,6,5,0.74); backdrop-filter:blur(3px); display:none; align-items:flex-start; justify-content:center; padding:26px 16px; overflow-y:auto;}
+.hf-overlay{position:fixed; inset:0; z-index:130; background:rgba(20,16,12,0.42); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); display:none; align-items:flex-start; justify-content:center; padding:26px 16px; overflow-y:auto;}
 .hf-overlay.open{display:flex;}
 .hf-modal{width:min(480px,100%); background:var(--surface-2); border:1px solid var(--hair); border-radius:14px; overflow:hidden; animation:riseIn .28s ease; margin:auto;}
-.hf-modal .hf-close{position:absolute; top:14px; right:14px; z-index:5; width:32px; height:32px; border-radius:8px; background:rgba(20,17,16,0.7); display:flex; align-items:center; justify-content:center; color:#fff;}
+.hf-modal .hf-close{position:absolute; top:14px; right:14px; z-index:5; width:32px; height:32px; border-radius:10px; background:rgba(255,255,255,0.72); -webkit-backdrop-filter:blur(8px); backdrop-filter:blur(8px); box-shadow:var(--shadow-xs); display:flex; align-items:center; justify-content:center; color:var(--t1);}
 .hf-modal-head{position:relative;}
 /* mini profil */
 .mini-prof{padding:22px; text-align:center;}
@@ -817,13 +818,13 @@ h2.view-title .serif{color:var(--orange);}
 </symbol>
 
  <symbol id="iso-court-svg" viewBox="0 0 300 320">
- <rect x="4" y="4" width="292" height="312" rx="8" fill="rgba(30,23,18,0.55)" stroke="rgba(201,158,99,0.22)" stroke-width="1.6"/>
- <rect x="110" y="4" width="80" height="118" fill="none" stroke="rgba(201,158,99,0.18)" stroke-width="1.4"/>
- <circle cx="150" cy="122" r="30" fill="none" stroke="rgba(201,158,99,0.18)" stroke-width="1.4"/>
- <path d="M130 4 A20 20 0 0 0 170 4" fill="none" stroke="rgba(201,158,99,0.18)" stroke-width="1.4"/>
- <path d="M18 4 V96 A132 132 0 0 0 282 96 V4" fill="none" stroke="rgba(201,158,99,0.26)" stroke-width="1.5"/>
- <circle cx="150" cy="24" r="6" fill="none" stroke="rgba(244,150,88,0.6)" stroke-width="1.6"/>
- <line x1="130" y1="8" x2="170" y2="8" stroke="rgba(244,150,88,0.45)" stroke-width="2"/>
+ <rect x="4" y="4" width="292" height="312" rx="8" fill="rgba(205,165,102,0.32)" stroke="rgba(120,82,42,0.30)" stroke-width="1.6"/>
+ <rect x="110" y="4" width="80" height="118" fill="none" stroke="rgba(120,82,42,0.42)" stroke-width="1.4"/>
+ <circle cx="150" cy="122" r="30" fill="none" stroke="rgba(120,82,42,0.42)" stroke-width="1.4"/>
+ <path d="M130 4 A20 20 0 0 0 170 4" fill="none" stroke="rgba(120,82,42,0.42)" stroke-width="1.4"/>
+ <path d="M18 4 V96 A132 132 0 0 0 282 96 V4" fill="none" stroke="rgba(120,82,42,0.50)" stroke-width="1.5"/>
+ <circle cx="150" cy="24" r="6" fill="none" stroke="rgba(228,104,42,0.85)" stroke-width="1.6"/>
+ <line x1="130" y1="8" x2="170" y2="8" stroke="rgba(228,104,42,0.7)" stroke-width="2"/>
 </symbol>
 </defs>
 </svg>
