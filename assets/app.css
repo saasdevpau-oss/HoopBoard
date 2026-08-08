@@ -32,29 +32,35 @@
   --sidebar-bg:rgba(255,255,255,0.66);
   --field-bg:rgba(120,110,98,0.09);
 
-  /* texte — encre chaude sur clair */
-  --t1:rgba(28,24,20,0.96);
-  --t2:rgba(38,32,26,0.70);
-  --t3:rgba(52,44,36,0.54);
-  --t4:rgba(60,52,44,0.40);
+  /* texte — orange HoopBoard en primaire (marque), neutre chaud en secondaire */
+  --t1:#D2551E;                 /* principal = orange profond lisible (titres, noms, scores, valeurs) */
+  --t2:rgba(58,46,36,0.72);     /* secondaire — neutre chaud, calme, lisible */
+  --t3:rgba(58,46,36,0.55);     /* tertiaire */
+  --t4:rgba(58,46,36,0.42);     /* meta / neutre sans jugement */
 
   /* traits */
   --hair:rgba(28,22,16,0.10);
   --hair-soft:rgba(28,22,16,0.055);
   --color-border:var(--hair);
 
-  /* marque & sémantique — orange basket */
-  --orange:#FF6A00;
+  /* ===== tokens globaux HoopBoard ===== */
+  --hb-orange:#FF6A00;
+  --hb-white:#FFFFFF;
+  --text-on-orange:var(--hb-white);
+  --orange:var(--hb-orange);
   --orange-vif:#FF7E24;
   --orange-soft:rgba(255,106,0,0.10);
-  --orange-deep:#E85F00;
+  --orange-deep:#D2551E;        /* orange profond lisible (texte de marque) */
   --gold:#B0812C;
   --gold-soft:rgba(176,129,44,0.13);
-  --win:#2E9E5B;                /* victoire / succès */
-  --win-soft:rgba(46,158,91,0.12);
-  --loss:#D64B42;               /* défaite / erreur */
-  --loss-soft:rgba(214,75,66,0.11);
-  --warn:#B0812C;
+  /* sémantique data : une couleur = un sens, partout */
+  --success:#1F9D57;            --success-soft:rgba(31,157,87,0.12);
+  --danger:#E23B36;             --danger-soft:rgba(226,59,54,0.11);
+  --warning:var(--hb-orange);
+  --neutral:var(--t4);
+  --win:var(--success);         --win-soft:var(--success-soft);
+  --loss:var(--danger);         --loss-soft:var(--danger-soft);
+  --warn:var(--hb-orange);
   --info:#8A8F96;
   --green:var(--win);  --green-soft:var(--win-soft);
   --red:var(--loss);   --red-soft:var(--loss-soft);
@@ -73,8 +79,8 @@
   --blur:saturate(180%) blur(24px);
   --blur-strong:saturate(200%) blur(30px);
   --glass-hi:inset 0 1px 0 rgba(255,255,255,0.9);      /* reflet haut */
-  --card-bg:rgba(255,255,255,0.58);                     /* carte verre (eau visible dessous) */
-  --card-blur:saturate(160%) blur(20px);
+  --card-bg:#FFFFFF;                                     /* cartes de contenu : solides & lisibles */
+  --card-blur:none;
 
   /* géométrie — arrondis Apple Health */
   --radius:14px;
@@ -991,8 +997,8 @@ input[type="text"],input[type="email"],textarea,select{
 /* ================================================================
    Épuration Apple Health : moins de logos, typographie plus grande
    ================================================================ */
-/* crests / badges "logo" redondants (le nom d'équipe reste) */
-.nh-crest,.gc-crest,.lv-crest,.sb-club-crest,.sb-space,.prep-badge{display:none!important;}
+/* crests / badges "logo" redondants dans les cartes (le nom d'équipe reste) */
+.nh-crest,.gc-crest,.sb-space,.prep-badge{display:none!important;}
 
 /* le nom d'équipe devient l'identifiant principal, plus grand & net */
 .nh-tname{font-size:15px; font-weight:600;}
@@ -1020,3 +1026,64 @@ input[type="text"],input[type="email"],textarea,select{
   .tb-brand{display:flex;}
   .tb-title{display:none;}       /* juste le logo en haut à gauche ; le titre est déjà dans le contenu */
 }
+
+/* ================================================================
+   Finition Coach — sidebar épurée, ClubLogo, profil, Match Live
+   (visuel uniquement)
+   ================================================================ */
+/* -- sidebar : plus d'icônes déco, plus d'air, actif minimaliste -- */
+.sb-nav .sb-ico{display:none!important;}
+.sb-nav{padding:10px 12px 12px;}
+.sb-item{padding:13px 14px; margin-bottom:5px; gap:0; font-size:15.5px; font-weight:500; color:var(--t2); border-radius:14px;}
+.sb-item:hover{background:rgba(255,106,0,0.06); color:var(--orange);}
+.sb-item.active{background:rgba(255,106,0,0.09); color:var(--orange); font-weight:700; box-shadow:none;}
+.sb-group{margin-top:12px; padding-bottom:4px;}
+
+/* -- ClubLogo : composant réutilisable, dynamique (couleur + initiales,
+      ou image réelle via --club-img si un logo est fourni) -- */
+.club-logo{
+  width:40px; height:40px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--sans); font-weight:800; font-size:13px; letter-spacing:-0.02em; color:#fff;
+  background:var(--club-color,#5A6B7A);
+  background-image:var(--club-img,none); background-size:cover; background-position:center;
+  box-shadow:0 2px 7px rgba(28,22,16,0.18), inset 0 1px 0 rgba(255,255,255,0.35);
+  overflow:hidden;
+}
+.club-logo.hb{background:linear-gradient(150deg,var(--orange-vif),var(--orange-deep));}
+.sb-club{align-items:center; gap:12px; margin:2px 8px 14px; padding:6px 6px;}
+.sb-club-name{color:var(--t1); font-weight:700; font-size:15px; line-height:1.2;}
+.sb-club-meta{color:var(--t3); font-size:12px; margin-top:2px;}
+
+/* -- profil coach (bas de sidebar), sans carte -- */
+.sb-foot .account{gap:12px; align-items:center;}
+.account-avatar{
+  width:38px; height:38px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  background:linear-gradient(150deg,var(--orange-vif),var(--orange-deep));
+  color:#fff; font-weight:800; font-size:13px; letter-spacing:-0.01em;
+  box-shadow:0 2px 7px rgba(255,106,0,0.30), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.account-name{color:var(--t1); font-weight:700; font-size:15px;}
+.account-role{color:var(--t3); font-size:12px;}
+
+/* -- Match Live : lv-crest ré-affiché en badge club dynamique -- */
+.lv-crest{
+  border-radius:50%!important; width:46px!important; height:46px!important;
+  font-weight:800; color:#fff!important;
+  background:var(--club-color,#5A6B7A)!important;
+  box-shadow:0 2px 7px rgba(28,22,16,0.18), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.lv-crest.home{background:linear-gradient(150deg,var(--orange-vif),var(--orange-deep))!important;}
+
+/* -- couleur : liens & boutons secondaires en orange ; blanc sur fond orange -- */
+a{color:var(--orange);}
+.btn-secondary{color:var(--orange);}
+.lv-player.selected .lv-pnum,.lv-player.selected .lv-pname,
+.lv-sub-player.picked .lv-pnum,.lv-sub-player.picked .lv-pname,
+.lv-act.pressed,.lv-bb.pressed,.lv-pop-chip:hover{color:#fff!important;}
+.lv-act.pressed .ic,.lv-bb.pressed .ic{color:#fff!important;}
+
+/* cartes de contenu bien solides (le verre reste au chrome) */
+.card,.card-elevated,.panel,.metric-card,.table-card,.leader-card,.session-card{-webkit-backdrop-filter:none;backdrop-filter:none;}
+.card-elevated{background:#FFFFFF;}
