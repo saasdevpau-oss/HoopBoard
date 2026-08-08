@@ -992,7 +992,7 @@ input[type="text"],input[type="email"],textarea,select{
    Épuration Apple Health : moins de logos, typographie plus grande
    ================================================================ */
 /* crests / badges "logo" redondants (le nom d'équipe reste) */
-.nh-crest,.gc-crest,.lv-crest,.sb-club-crest,.sb-space{display:none!important;}
+.nh-crest,.gc-crest,.lv-crest,.sb-club-crest,.sb-space,.prep-badge{display:none!important;}
 
 /* le nom d'équipe devient l'identifiant principal, plus grand & net */
 .nh-tname{font-size:15px; font-weight:600;}
@@ -1008,3 +1008,15 @@ input[type="text"],input[type="email"],textarea,select{
 .account-name{font-size:14px;}
 .breadcrumb{font-size:13.5px;}
 .empty-state{font-size:14px;}
+
+/* Logo ballon de basket moderne (haut-gauche) */
+.brand-logo{flex-shrink:0; display:flex; filter:drop-shadow(0 3px 9px rgba(255,106,0,0.38));}
+.brand-logo svg{display:block;}
+.sb-brand .brand-name{font-size:18px; font-weight:700; letter-spacing:-0.02em; color:var(--t1);}
+.sb-brand{padding:18px 16px 16px; gap:11px;}
+.tb-brand{display:none; align-items:center; flex-shrink:0; margin-left:-4px; filter:drop-shadow(0 3px 8px rgba(255,106,0,0.32));}
+.tb-brand svg{display:block;}
+@media(max-width:1080px){
+  .tb-brand{display:flex;}
+  .tb-title{display:none;}       /* juste le logo en haut à gauche ; le titre est déjà dans le contenu */
+}
