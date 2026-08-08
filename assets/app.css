@@ -438,6 +438,30 @@ input[type="text"],input[type="email"],textarea,select{
 .hbc-debug-id{font:8px/1 monospace;fill:#fff;paint-order:stroke;stroke:#000;stroke-width:2px;}
 .hbc-readout{margin-top:8px;font:12px/1.4 monospace;color:var(--orange);}
 
+/* ---- Terrain COMPLET double-côté (HoopCourt.renderFull) — Match Live ---- */
+.hbcf-root{width:100%;}
+.hbcf-svg{width:100%;height:auto;display:block;touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
+.hbcf-bg{fill:rgba(241,235,224,0.03);}
+.hbcf-ln{stroke:rgba(241,235,224,0.86);stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round;}
+.hbcf-bounds{stroke:rgba(241,235,224,0.92);stroke-width:2.6;}
+.hbcf-mid{stroke:rgba(241,235,224,0.5);stroke-width:2;}
+.hbcf-soft{stroke:rgba(241,235,224,0.5);}
+.hbcf-dash{stroke-dasharray:8 8;opacity:.5;}
+.hbcf-board{stroke:#E8E2D2;stroke-width:3.4;}
+.hbcf-rim{stroke:var(--orange);stroke-width:2.6;filter:drop-shadow(0 0 3px rgba(228,104,42,0.45));}
+.hbcf-guide{stroke:rgba(241,235,224,0.11);stroke-width:1;}
+.hbcf-dim{fill:rgba(6,5,4,0.52);pointer-events:none;transition:opacity .38s ease;}
+.hbcf-svg.hbcf-home .hbcf-dim-home,.hbcf-svg.hbcf-away .hbcf-dim-away{opacity:0;}
+.hbcf-svg.hbcf-home .hbcf-dim-away,.hbcf-svg.hbcf-away .hbcf-dim-home{opacity:1;}
+.hbcf-hit{cursor:crosshair;outline:none;}
+.hbcf-zonehi{fill:rgba(228,104,42,0.24);stroke:rgba(228,104,42,0.6);stroke-width:1.5;opacity:0;transition:opacity .18s ease;pointer-events:none;}
+.hbcf-zonehi.on{opacity:1;}
+.hbcf-marks{pointer-events:none;}
+.hbcf-marks .mkf-made .ring{fill:none;stroke:var(--win);stroke-width:2.4;}
+.hbcf-marks .mkf-made .core{fill:var(--win);}
+.hbcf-marks .mkf-miss line{stroke:var(--loss);stroke-width:2.6;stroke-linecap:round;}
+.hbcf-marks .mkf-foul circle{fill:var(--gold);opacity:.85;}
+
 /* ---- état vide / erreur / chargement réutilisable (section 22) ---- */
 .hb-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:14px;padding:clamp(40px,8vw,80px) 24px;color:var(--t3);min-height:40vh;}
 .hb-empty svg{opacity:.55;color:var(--t4);}

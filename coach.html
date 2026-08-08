@@ -307,6 +307,17 @@
 .lv-court-card{padding:var(--space-6);}
 .lv-courtwrap{position:relative; display:flex; align-items:center; justify-content:center;}
 .lv-courtwrap.armed{cursor:crosshair;}
+/* terrain complet double-côté */
+.lv-fullcourt{display:block; width:100%; max-width:860px; margin:0 auto; touch-action:manipulation;}
+/* repères de côté (Notre équipe / Adversaire) */
+.lv-court-sides{display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); max-width:860px; margin:0 auto var(--space-4); padding:0 4px;}
+.lv-court-side{display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--t4); transition:color .3s ease, opacity .3s ease; opacity:.6;}
+.lv-court-side.active{opacity:1;}
+.lv-court-side.home.active{color:var(--orange);}
+.lv-court-side.away.active{color:var(--t1);}
+.lv-cs-dot{width:9px; height:9px; border-radius:50%; background:currentColor; box-shadow:0 0 0 3px rgba(228,104,42,0); transition:box-shadow .3s ease;}
+.lv-court-side.active .lv-cs-dot{box-shadow:0 0 8px 1px currentColor;}
+.lv-court-mid{font-family:var(--mono); color:var(--t4); font-size:14px; opacity:.5;}
 .lv-court{display:block; width:100%; max-width:640px; touch-action:manipulation;}
 .lv-court .ln{stroke:rgba(241,235,224,0.85); stroke-width:1.5; fill:none;}
 .lv-court .ln-soft{stroke:rgba(241,235,224,0.45); stroke-width:1; fill:none;}
@@ -1477,36 +1488,15 @@
       <div class="lv-card lv-court-card">
         <div class="lv-card-head">
           <span class="lv-card-title">Terrain</span>
-          <span class="lv-card-sub">Touchez une zone pour enregistrer le tir</span>
+          <span class="lv-card-sub">Touchez le bon côté du terrain pour enregistrer le tir</span>
+        </div>
+        <div class="lv-court-sides" aria-hidden="true">
+          <span class="lv-court-side home active" id="lvSideHome"><span class="lv-cs-dot"></span>Notre équipe</span>
+          <span class="lv-court-mid">›‹</span>
+          <span class="lv-court-side away" id="lvSideAway">Adversaire<span class="lv-cs-dot"></span></span>
         </div>
         <div class="lv-courtwrap" id="lvCourtWrap">
-          <svg class="lv-court" id="lvCourt" viewBox="0 0 500 372" role="img" aria-label="Demi-terrain de basket. Touchez l'emplacement d'un tir pour le localiser et déterminer sa valeur.">
-            <defs>
-              <clipPath id="lvClip"><rect x="6" y="6" width="488" height="360" rx="18"/></clipPath>
-            </defs>
-            <g clip-path="url(#lvClip)">
-              <rect x="6" y="6" width="488" height="360" rx="18" fill="rgba(241,235,224,0.03)"/>
-              <line class="ln-div" x1="223" y1="6" x2="223" y2="191"/>
-              <line class="ln-div" x1="277" y1="6" x2="277" y2="191"/>
-              <line class="ln-div" x1="309.1" y1="72.5" x2="481" y2="143.8"/>
-              <line class="ln-div" x1="274.5" y1="107.1" x2="345.8" y2="279"/>
-              <line class="ln-div" x1="225.5" y1="107.1" x2="154.2" y2="279"/>
-              <line class="ln-div" x1="190.9" y1="72.5" x2="19" y2="143.8"/>
-              <circle id="lvZoneHi" class="lv-zonehi" r="30" cx="-100" cy="-100"/>
-              <rect class="ln" x="6" y="6" width="488" height="360" rx="18"/>
-              <rect class="ln" x="169" y="6" width="162" height="185"/>
-              <circle class="ln-soft" cx="250" cy="191" r="58"/>
-              <path class="ln" d="M212 48 A40 40 0 0 0 288 48"/>
-              <line class="ln" x1="32" y1="6" x2="32" y2="90"/>
-              <line class="ln" x1="468" y1="6" x2="468" y2="90"/>
-              <path class="ln" d="M32 90 A222 222 0 0 0 468 90"/>
-              <line class="ln" x1="228" y1="40" x2="272" y2="40"/>
-              <line class="rim" x1="250" y1="40" x2="250" y2="46"/>
-              <circle class="rim" cx="250" cy="50" r="7"/>
-            </g>
-            <g id="lvMarks"></g>
-            <rect class="lv-hit" id="lvHit" x="6" y="6" width="488" height="300"/>
-          </svg>
+          <div class="lv-fullcourt" id="lvCourt" role="img" aria-label="Terrain de basket complet. Touchez le côté de l'équipe active pour localiser un tir et déterminer sa valeur."></div>
         </div>
         <div class="lv-legend">
           <span><span class="lv-lg-made"></span>Réussi</span>
@@ -3115,7 +3105,8 @@ selectAction(0);
    Deux équipes (notre équipe / adversaire), coords de tir en pourcentages. */
 (function initLive(){
   const $ = id => document.getElementById(id);
-  const court = $('lvCourt'); if(!court) return;
+  const courtMount = $('lvCourt'); if(!courtMount) return;
+  let courtApi = null;   // terrain complet double-côté (HoopCourt.renderFull)
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   const other = t => t==='zal' ? 'opp' : 'zal';
 
@@ -3153,30 +3144,9 @@ selectAction(0);
   let lock = false;
   let redo = null, redoTimer = null;
 
-  /* ---- 15 zones (géométrie réelle, hoop 250,48) ---- */
-  const ZN = {
-    'near-left':'Cercle gauche','near-center':'Centre du cercle','near-right':'Cercle droit',
-    'paint-left':'Raquette gauche','paint-right':'Raquette droite',
-    'mid-left-baseline':'Baseline gauche 2pts','mid-left-wing':'Aile gauche 2pts','mid-center':'Axe central 2pts',
-    'mid-right-wing':'Aile droite 2pts','mid-right-baseline':'Baseline droite 2pts',
-    'three-left-corner':'Corner gauche 3pts','three-left-wing':'Aile gauche 3pts','three-center':'Axe central 3pts',
-    'three-right-wing':'Aile droite 3pts','three-right-corner':'Corner droit 3pts',
-  };
-  function classify(x,y){
-    const dx=x-250, dy=y-48, d=Math.hypot(dx,dy);
-    let a=Math.atan2(dy,dx)*180/Math.PI; if(a<0) a+=360;
-    if(x<=32 && y<=150) return Z('three-left-corner',3);
-    if(x>=468 && y<=150) return Z('three-right-corner',3);
-    if(d>222){ if(a<70) return Z('three-right-wing',3); if(a<=110) return Z('three-center',3); return Z('three-left-wing',3); } // sur la ligne = 2 pts (cohérent court.js)
-    if(d<=45){ if(x<235) return Z('near-left',2); if(x<=265) return Z('near-center',2); return Z('near-right',2); }
-    if(x>=169 && x<=331 && y<=191) return x<250 ? Z('paint-left',2) : Z('paint-right',2);
-    if(a<30) return Z('mid-right-baseline',2);
-    if(a<70) return Z('mid-right-wing',2);
-    if(a<=110) return Z('mid-center',2);
-    if(a<150) return Z('mid-left-wing',2);
-    return Z('mid-left-baseline',2);
-    function Z(id,p){ return {zoneId:id, zoneName:ZN[id], points:p}; }
-  }
+  /* Zones & valeur des tirs : désormais fournies par le composant terrain
+     complet (HoopCourt.getCourtZone / getShotValue via renderFull) — plus
+     de classification maison ici (logique unique, cf. onCourtZone). */
 
   /* ---- état dérivé ---- */
   function recompute(){
@@ -3207,7 +3177,7 @@ selectAction(0);
       players: ROSTER[t].filter(p=>(s.pts[key(t,p.num)]||0)>0 || (s.fouls[key(t,p.num)]||0)>0 || TEAM[t].court.indexOf(p.num)!==-1)
         .map(p=>({num:p.num, name:p.name, pts:s.pts[key(t,p.num)]||0, fa:s.fouls[key(t,p.num)]||0}))
         .sort((a,b)=>b.pts-a.pts) });
-    const shots = events.filter(e=>e.actionType==='shot' && e.x!=null).map(e=>({x:e.x, y:e.y, result:e.result}));
+    const shots = events.filter(e=>e.actionType==='shot' && e.x!=null && e.teamId==='zal').map(e=>({x:e.x, y:e.y, result:e.result}));
     window.HoopStore.setLiveResult({
       match:{ id:'live', competition:'Match live — session de saisie', date:null, status:'final',
         home:{name:TEAM.zal.name, code:TEAM.zal.code, score:s.scores.zal},
@@ -3304,15 +3274,12 @@ selectAction(0);
   }
 
   function renderMarkers(){
-    const g=$('lvMarks'); g.innerHTML='';
-    events.filter(e=>e.actionType==='shot' && e.teamId==='zal').forEach(e=>{
-      const cx=e.x/100*500, cy=e.y/100*372, ns='http://www.w3.org/2000/svg';
-      const grp=document.createElementNS(ns,'g');
-      if(e.result==='made'){ grp.setAttribute('class','mk mk-made'); grp.innerHTML=`<circle class="ring" cx="${cx}" cy="${cy}" r="7"></circle><circle class="core" cx="${cx}" cy="${cy}" r="2.6"></circle>`; }
-      else if(e.subKind==='shooting-foul'){ grp.setAttribute('class','mk mk-foul'); grp.innerHTML=`<circle cx="${cx}" cy="${cy}" r="5.5"></circle>`; }
-      else { grp.setAttribute('class','mk mk-miss'); const s=5; grp.innerHTML=`<line x1="${cx-s}" y1="${cy-s}" x2="${cx+s}" y2="${cy+s}"></line><line x1="${cx+s}" y1="${cy-s}" x2="${cx-s}" y2="${cy+s}"></line>`; }
-      g.appendChild(grp);
-    });
+    if(!courtApi) return;
+    // chaque équipe voit ses tirs sur SA moitié (home = notre équipe, away = adversaire)
+    const shots=events.filter(e=>e.actionType==='shot' && e.x!=null).map(e=>({
+      side: e.teamId==='zal' ? 'home' : 'away', x:e.x, y:e.y, result:e.result, subKind:e.subKind
+    }));
+    courtApi.renderMarks(shots);
   }
 
   function renderContext(){
@@ -3333,7 +3300,15 @@ selectAction(0);
   function selectPlayer(num){ selBy[activeTeam]=(selBy[activeTeam]===num)?null:num; if(armedShot&&selBy[activeTeam]==null) disarm(); render(); }
   function setTeam(t){ if(t===activeTeam) return; activeTeam=t; disarm(); closePop();
     document.querySelectorAll('.lv-teamseg button').forEach(b=>{ const a=b.dataset.team===t; b.classList.toggle('active',a); b.setAttribute('aria-selected',a); });
+    syncCourtSide();
     render();
+  }
+  function syncCourtSide(){
+    const side = activeTeam==='zal' ? 'home' : 'away';
+    if(courtApi) courtApi.setActiveSide(side);
+    const h=$('lvSideHome'), a=$('lvSideAway');
+    if(h) h.classList.toggle('active', side==='home');
+    if(a) a.classList.toggle('active', side==='away');
   }
 
   /* ---- popover partagé ---- */
@@ -3353,16 +3328,17 @@ selectAction(0);
   function disarm(){ armedShot=false; pendingShot=null; $('lvCourtWrap').classList.remove('armed'); pressMain('shot',false); renderContext(); }
   function pressMain(kind,on){ document.querySelectorAll(`[data-main="${kind}"]`).forEach(b=>b.classList.toggle('pressed',on)); }
 
-  function svgPoint(evt){ const pt=court.createSVGPoint(), t=('changedTouches'in evt&&evt.changedTouches[0])?evt.changedTouches[0]:evt; pt.x=t.clientX; pt.y=t.clientY; const m=court.getScreenCTM(); if(!m) return null; const p=pt.matrixTransform(m.inverse()); return {x:p.x,y:p.y}; }
-
-  $('lvHit').addEventListener('click', evt=>{
+  /* Clic sur le terrain complet : la moitié active (équipe sélectionnée)
+     est classée par court.js (mêmes zones et valeur 2/3 pts que le demi-terrain). */
+  function onCourtZone(info, evt){
     if(ended) return;
-    const p=svgPoint(evt); if(!p) return;
-    const c=classify(p.x,p.y); c.cx=Math.round(p.x); c.cy=Math.round(p.y);
-    c.xp=+(c.cx/500*100).toFixed(1); c.yp=+(c.cy/372*100).toFixed(1);
-    pendingShot=c; highlightZone(c.cx,c.cy);
+    const c={ zoneId:info.zoneId, zoneName:info.zoneName, points:info.value, side:info.side,
+      xp:+info.pos.x.toFixed(1), yp:+info.pos.y.toFixed(1) };
+    pendingShot=c;
+    if(courtApi) courtApi.highlight(info);
     openShotPop(evt, c);
-  });
+  }
+  function onCourtInactive(info){ toast('neutral', info.side==='home' ? 'Sélectionnez « Notre équipe » pour ce côté' : 'Sélectionnez « Adversaire » pour ce côté'); }
 
   function openShotPop(evt, c){
     const n=selNum();
@@ -3399,7 +3375,6 @@ selectAction(0);
     toast('foul','Faute sur tir — lancers à venir');
   }
 
-  function highlightZone(cx,cy){ const z=$('lvZoneHi'); z.setAttribute('cx',cx); z.setAttribute('cy',cy); z.classList.add('on'); setTimeout(()=>z.classList.remove('on'), reduce?150:600); }
 
   /* ---- rebond / faute (popovers d'action) ---- */
   function openReboundPop(anchor){ if(selNum()==null){ toast('neutral','Sélectionnez un joueur'); return; }
@@ -3560,6 +3535,16 @@ selectAction(0);
 
   $('lvCancel').addEventListener('click', disarm);
   document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(armedShot)disarm(); closePop(); closeDrawer(); closeSheet(); closeFeed(); } });
+
+  /* ---- terrain COMPLET double-côté (composant réutilisable court.js) ---- */
+  if(window.HoopCourt && HoopCourt.renderFull){
+    courtApi = HoopCourt.renderFull(courtMount, {
+      active: activeTeam==='zal' ? 'home' : 'away',
+      onZone: onCourtZone,
+      onInactive: onCourtInactive
+    });
+  }
+  syncCourtSide();
 
   render();
 })();

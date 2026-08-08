@@ -447,6 +447,141 @@
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
 
   /* ================================================================
+     5b. renderFull(container, props) — TERRAIN COMPLET (deux moitiés)
+     ----------------------------------------------------------------
+     Terrain paysage complet = deux demi-terrains FIBA en miroir autour de
+     la ligne médiane. Réutilise EXACTEMENT la même logique de zones et de
+     valeur des tirs (getCourtZone / getShotValue) que le demi-terrain :
+     chaque clic est ramené au repère local (0..100) de la moitié touchée,
+     puis classé. Les deux côtés sont donc parfaitement symétriques.
+
+       props:
+         active: 'home' | 'away'        (moitié « armée » pour la saisie)
+         onZone(info, evt)              (clic sur la moitié active)
+         onInactive(info, evt)          (clic sur l'autre moitié — optionnel)
+       info = { side, pos:{x,y}, zoneId, zoneName, value, group }
+              pos = repère normalisé LOCAL de la moitié (comme le demi-terrain)
+
+     API : { svg, setActiveSide, highlight(info), renderMarks(shots),
+             screenToInfo, destroy }
+       shots = [{ side, x, y, result:'made'|'missed', subKind? }]
+     ================================================================ */
+  function renderFull(container, props) {
+    if (typeof document === 'undefined') throw new Error('HoopCourt.renderFull nécessite un DOM');
+    props = props || {};
+    const SC = 32, MG = 16, LEN = 2 * G.L, WID = G.W;      // 28m × 15m
+    const FW = LEN * SC, FH = WID * SC, MID = LEN / 2;
+    const B = G.basket;                                     // { x:7.5, y:1.575 }
+    const state = { active: props.active === 'away' ? 'away' : 'home' };
+
+    // repère interne (cx = largeur 0..15, cy = profondeur 0..14) -> écran
+    function TS(cx, cy, side) { return { x: (side === 'home' ? cy : (LEN - cy)) * SC, y: cx * SC }; }
+    function screenToInfo(sx, sy) {
+      const fx = sx / SC, fy = sy / SC, side = fx <= MID ? 'home' : 'away';
+      const cy = side === 'home' ? fx : (LEN - fx), cx = fy;
+      const pos = { x: clamp(cx / WID * 100, 0, 100), y: clamp(cy / G.L * 100, 0, 100) };
+      const z = getCourtZone(pos);
+      return { side: side, pos: pos, zoneId: z.id, zoneName: z.label, value: getShotValue(pos), group: z.group };
+    }
+    // échantillonnage d'arcs (repère interne)
+    function arcCS(bx, by, r, t0, t1, n) { const p = []; for (let i = 0; i <= n; i++) { const t = t0 + (t1 - t0) * i / n; p.push([bx + r * Math.cos(t), by + r * Math.sin(t)]); } return p; }
+    function arcPhi(bx, by, r, f0, f1, n) { const p = []; for (let i = 0; i <= n; i++) { const f = f0 + (f1 - f0) * i / n; p.push([bx + r * Math.sin(f), by + r * Math.cos(f)]); } return p; }
+    function seg(cx1, cy1, cx2, cy2, side, cls) { const a = TS(cx1, cy1, side), b = TS(cx2, cy2, side); return el('line', { class: cls || 'hbcf-ln', x1: a.x.toFixed(1), y1: a.y.toFixed(1), x2: b.x.toFixed(1), y2: b.y.toFixed(1) }); }
+    function poly(pts, side, cls) { const d = pts.map((p) => { const s = TS(p[0], p[1], side); return s.x.toFixed(1) + ',' + s.y.toFixed(1); }).join(' '); return el('polyline', { class: cls || 'hbcf-ln', points: d }); }
+    function circM(cx, cy, r, side, cls) { const c = TS(cx, cy, side); return el('circle', { class: cls || 'hbcf-ln', cx: c.x.toFixed(1), cy: c.y.toFixed(1), r: (r * SC).toFixed(1) }); }
+
+    const PHI = Math.acos((G.cornerJunctionY - B.y) / G.threeR);   // ½ ouverture de l'arc 3 pts
+    function buildHalf(g, side) {
+      // raquette (3 côtés + ligne des lancers)
+      g.appendChild(poly([[G.lane.x0, 0], [G.lane.x0, G.lane.yLine], [G.lane.x1, G.lane.yLine], [G.lane.x1, 0]], side));
+      // demi-cercle de non-charge + montants
+      g.appendChild(poly(arcCS(B.x, B.y, G.restrictedR, 0, Math.PI, 22), side));
+      g.appendChild(seg(B.x - G.restrictedR, B.y, B.x - G.restrictedR, G.backboardY, side));
+      g.appendChild(seg(B.x + G.restrictedR, B.y, B.x + G.restrictedR, G.backboardY, side));
+      // cercle des lancers : moitié pleine (côté fond) + moitié pointillée
+      g.appendChild(poly(arcCS(B.x, G.lane.yLine, G.ftCircleR, Math.PI, 2 * Math.PI, 26), side));
+      g.appendChild(poly(arcCS(B.x, G.lane.yLine, G.ftCircleR, 0, Math.PI, 26), side, 'hbcf-ln hbcf-dash'));
+      // ligne à 3 points : corners droits + arc
+      g.appendChild(seg(G.cornerLeftX, 0, G.cornerLeftX, G.cornerJunctionY, side));
+      g.appendChild(seg(G.cornerRightX, 0, G.cornerRightX, G.cornerJunctionY, side));
+      g.appendChild(poly(arcPhi(B.x, B.y, G.threeR, -PHI, PHI, 44), side));
+      // panneau + cercle
+      g.appendChild(seg(B.x - G.backboardHalf, G.backboardY, B.x + G.backboardHalf, G.backboardY, side, 'hbcf-ln hbcf-board'));
+      g.appendChild(seg(B.x, G.backboardY, B.x, B.y - G.rimR, side, 'hbcf-ln hbcf-rim'));
+      g.appendChild(circM(B.x, B.y, G.rimR, side, 'hbcf-ln hbcf-rim'));
+      // guides de zones (repères d'ailes/corners, très discrets)
+      [24, 66, -24, -66].forEach((deg) => {
+        const b = deg * Math.PI / 180, r0 = 2.0, r1 = G.threeR;
+        g.appendChild(seg(B.x + r0 * Math.sin(b), B.y + r0 * Math.cos(b), B.x + r1 * Math.sin(b), B.y + r1 * Math.cos(b), side, 'hbcf-ln hbcf-guide'));
+      });
+    }
+
+    container.innerHTML = '';
+    container.classList.add('hbcf-root');
+    const svg = el('svg', { class: 'hbcf-svg hbcf-' + state.active, viewBox: (-MG) + ' ' + (-MG) + ' ' + (FW + 2 * MG) + ' ' + (FH + 2 * MG), role: 'img', 'aria-label': 'Terrain de basket complet — notre moitié et celle de l’adversaire' });
+    svg.appendChild(el('rect', { class: 'hbcf-bg', x: 0, y: 0, width: FW, height: FH, rx: 16 }));
+    const gl = el('g', { class: 'hbcf-lines', fill: 'none' });
+    gl.appendChild(el('rect', { class: 'hbcf-ln hbcf-bounds', x: 0, y: 0, width: FW, height: FH, rx: 16 }));
+    gl.appendChild(el('line', { class: 'hbcf-ln hbcf-mid', x1: MID * SC, y1: 0, x2: MID * SC, y2: FH }));
+    gl.appendChild(el('circle', { class: 'hbcf-ln hbcf-soft', cx: MID * SC, cy: (WID / 2) * SC, r: G.ftCircleR * SC }));
+    buildHalf(gl, 'home'); buildHalf(gl, 'away');
+    svg.appendChild(gl);
+    const marks = el('g', { class: 'hbcf-marks' }); svg.appendChild(marks);
+    const dimHome = el('rect', { class: 'hbcf-dim hbcf-dim-home', x: 0, y: 0, width: FW / 2, height: FH });
+    const dimAway = el('rect', { class: 'hbcf-dim hbcf-dim-away', x: FW / 2, y: 0, width: FW / 2, height: FH });
+    svg.appendChild(dimHome); svg.appendChild(dimAway);
+    const zonehi = el('circle', { class: 'hbcf-zonehi', r: 42, cx: -300, cy: -300 }); svg.appendChild(zonehi);
+    const hit = el('rect', { class: 'hbcf-hit', x: -MG, y: -MG, width: FW + 2 * MG, height: FH + 2 * MG, fill: 'transparent' });
+    svg.appendChild(hit);
+    container.appendChild(svg);
+
+    function eventToSvg(evt) { const pt = svg.createSVGPoint(), t = (evt.changedTouches && evt.changedTouches[0]) || evt; pt.x = t.clientX; pt.y = t.clientY; const m = svg.getScreenCTM(); if (!m) return null; const p = pt.matrixTransform(m.inverse()); return { x: p.x, y: p.y }; }
+    hit.addEventListener('click', (evt) => {
+      const p = eventToSvg(evt); if (!p) return;
+      const info = screenToInfo(p.x, p.y);
+      if (info.side !== state.active) { if (typeof props.onInactive === 'function') props.onInactive(info, evt); return; }
+      if (typeof props.onZone === 'function') props.onZone(info, evt);
+    });
+
+    function applyActive() { svg.setAttribute('class', 'hbcf-svg hbcf-' + state.active); }
+    applyActive();
+
+    const api = {
+      svg: svg,
+      screenToInfo: screenToInfo,
+      setActiveSide: function (side) { state.active = side === 'away' ? 'away' : 'home'; applyActive(); },
+      highlight: function (info) {
+        const cx = info.pos.x / 100 * WID, cy = info.pos.y / 100 * G.L, s = TS(cx, cy, info.side);
+        zonehi.setAttribute('cx', s.x.toFixed(1)); zonehi.setAttribute('cy', s.y.toFixed(1));
+        zonehi.classList.remove('on'); void zonehi.getBBox; requestAnimationFrame(() => zonehi.classList.add('on'));
+        clearTimeout(api._hl); api._hl = setTimeout(() => zonehi.classList.remove('on'), 620);
+      },
+      renderMarks: function (shots) {
+        marks.innerHTML = '';
+        (shots || []).forEach((sh) => {
+          if (sh.x == null || sh.y == null) return;
+          const cx = sh.x / 100 * WID, cy = sh.y / 100 * G.L, s = TS(cx, cy, sh.side || 'home');
+          if (sh.result === 'made') {
+            const gmk = el('g', { class: 'mkf mkf-made' });
+            gmk.appendChild(el('circle', { class: 'ring', cx: s.x.toFixed(1), cy: s.y.toFixed(1), r: 7 }));
+            gmk.appendChild(el('circle', { class: 'core', cx: s.x.toFixed(1), cy: s.y.toFixed(1), r: 2.6 }));
+            marks.appendChild(gmk);
+          } else if (sh.subKind === 'shooting-foul') {
+            const gmk = el('g', { class: 'mkf mkf-foul' }); gmk.appendChild(el('circle', { cx: s.x.toFixed(1), cy: s.y.toFixed(1), r: 5.5 })); marks.appendChild(gmk);
+          } else {
+            const gmk = el('g', { class: 'mkf mkf-miss' }), d = 5.2;
+            gmk.appendChild(el('line', { x1: (s.x - d).toFixed(1), y1: (s.y - d).toFixed(1), x2: (s.x + d).toFixed(1), y2: (s.y + d).toFixed(1) }));
+            gmk.appendChild(el('line', { x1: (s.x + d).toFixed(1), y1: (s.y - d).toFixed(1), x2: (s.x - d).toFixed(1), y2: (s.y + d).toFixed(1) }));
+            marks.appendChild(gmk);
+          }
+        });
+      },
+      destroy: function () { container.innerHTML = ''; },
+    };
+    return api;
+  }
+
+  /* ================================================================
      6. API publique
      ================================================================ */
   return {
@@ -460,6 +595,7 @@
     toMeters: toMeters,
     toPercent: toPercent,
     render: render,
+    renderFull: renderFull,
     _internals: { distM: distM, bearingDeg: bearingDeg, toSvg: toSvg, SVG_W: SVG_W, SVG_H: SVG_H }
   };
 });
