@@ -33,10 +33,10 @@
   --field-bg:rgba(120,110,98,0.09);
 
   /* texte — orange HoopBoard en primaire (marque), neutre chaud en secondaire */
-  --t1:#D2551E;                 /* principal = orange profond lisible (titres, noms, scores, valeurs) */
-  --t2:rgba(58,46,36,0.72);     /* secondaire — neutre chaud, calme, lisible */
-  --t3:rgba(58,46,36,0.55);     /* tertiaire */
-  --t4:rgba(58,46,36,0.42);     /* meta / neutre sans jugement */
+  --t1:rgba(20,18,15,0.95);     /* principal = quasi-noir lisible (contenu) */
+  --t2:rgba(20,18,15,0.62);     /* secondaire = gris foncé */
+  --t3:rgba(20,18,15,0.47);     /* tertiaire */
+  --t4:rgba(20,18,15,0.35);     /* meta / neutre sans jugement */
 
   /* traits */
   --hair:rgba(28,22,16,0.10);
@@ -50,7 +50,7 @@
   --orange:var(--hb-orange);
   --orange-vif:#FF7E24;
   --orange-soft:rgba(255,106,0,0.10);
-  --orange-deep:#D2551E;        /* orange profond lisible (texte de marque) */
+  --orange-deep:#E85F00;        /* orange profond (dégradés boutons / actifs) */
   --gold:#B0812C;
   --gold-soft:rgba(176,129,44,0.13);
   /* sémantique data : une couleur = un sens, partout */
@@ -283,12 +283,12 @@ main{position:relative; z-index:10; flex:1; width:100%;}
 
 .page-head{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; margin-bottom:26px; flex-wrap:wrap;}
 h2.page-title,h1.page-title{
-  font-family:var(--sans); font-size:clamp(29px,5.6vw,38px); font-weight:700; letter-spacing:-0.03em;
-  color:var(--t1); line-height:1.06;
+  font-family:var(--sans); font-size:clamp(32px,6vw,42px); font-weight:800; letter-spacing:-0.02em;
+  text-transform:uppercase; color:var(--orange); line-height:1.05;
 }
 .page-title .serif{color:var(--orange); font-weight:700;}
 .page-meta{font-size:14.5px; color:var(--t3); margin-top:7px;}
-.eyebrow{font-family:var(--sans); font-size:12.5px; font-weight:600; letter-spacing:0.01em; color:var(--orange);}
+.eyebrow{font-family:var(--sans); font-size:12.5px; font-weight:600; letter-spacing:0.01em; color:var(--t3);}
 .section-label{
   display:flex; align-items:center; gap:12px;
   font-family:var(--sans); font-size:22px; font-weight:700; letter-spacing:-0.025em;
@@ -1018,7 +1018,7 @@ input[type="text"],input[type="email"],textarea,select{
 /* Logo ballon de basket moderne (haut-gauche) */
 .brand-logo{flex-shrink:0; display:flex; filter:drop-shadow(0 3px 9px rgba(255,106,0,0.38));}
 .brand-logo svg{display:block;}
-.sb-brand .brand-name{font-size:18px; font-weight:700; letter-spacing:-0.02em; color:var(--t1);}
+.sb-brand .brand-name{font-size:18px; font-weight:800; letter-spacing:0.02em; text-transform:uppercase; color:var(--orange);}
 .sb-brand{padding:18px 16px 16px; gap:11px;}
 .tb-brand{display:none; align-items:center; flex-shrink:0; margin-left:-4px; filter:drop-shadow(0 3px 8px rgba(255,106,0,0.32));}
 .tb-brand svg{display:block;}
@@ -1033,11 +1033,19 @@ input[type="text"],input[type="email"],textarea,select{
    ================================================================ */
 /* -- sidebar : plus d'icônes déco, plus d'air, actif minimaliste -- */
 .sb-nav .sb-ico{display:none!important;}
-.sb-nav{padding:10px 12px 12px;}
-.sb-item{padding:13px 14px; margin-bottom:5px; gap:0; font-size:15.5px; font-weight:500; color:var(--t2); border-radius:14px;}
-.sb-item:hover{background:rgba(255,106,0,0.06); color:var(--orange);}
-.sb-item.active{background:rgba(255,106,0,0.09); color:var(--orange); font-weight:700; box-shadow:none;}
-.sb-group{margin-top:12px; padding-bottom:4px;}
+.sb-nav{padding:14px 12px 12px;}
+.sb-item{
+  padding:15px 16px; margin-bottom:8px; gap:0; border-radius:14px;
+  font-size:16px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase;
+  color:var(--t1);
+}
+.sb-item:hover{background:rgba(255,106,0,0.07); color:var(--orange);}
+.sb-item.active{
+  background:linear-gradient(180deg,var(--orange-vif),var(--orange));
+  color:var(--text-on-orange); font-weight:800;
+  box-shadow:0 6px 16px rgba(255,106,0,0.30), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.sb-group{display:none!important;}  /* plus de catégories intermédiaires */
 
 /* -- ClubLogo : composant réutilisable, dynamique (couleur + initiales,
       ou image réelle via --club-img si un logo est fourni) -- */

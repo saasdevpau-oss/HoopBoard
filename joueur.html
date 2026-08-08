@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Training Hub, Game Center et HoopFeed de Sylvain Francisco, meneur du Žalgiris Kaunas en EuroLeague 2025–26.">
 <title>HoopBoard — Espace Joueur (démo)</title>
-<link rel="stylesheet" href="/assets/app.css?v=liquid5">
+<link rel="stylesheet" href="/assets/app.css?v=liquid6">
 </head>
 <body>
 <style>
@@ -35,17 +35,23 @@
 
 /* ---------- Onglets (déplacés dans la sidebar) ---------- */
 .sb-nav .ptab{
-  display:flex; align-items:center; gap:11px; width:100%; text-align:left;
-  padding:9px 10px; border-radius:4px; border-left:2px solid transparent;
-  font-size:13.5px; font-weight:500; color:var(--t3);
-  transition:background .14s, color .14s;
+  display:flex; align-items:center; gap:0; width:100%; text-align:left;
+  padding:15px 16px; margin-bottom:8px; border-radius:14px;
+  font-size:16px; font-weight:700; letter-spacing:0.04em; text-transform:uppercase;
+  color:var(--t1);
+  transition:background .16s ease, color .16s ease;
 }
-.sb-nav .ptab:hover{color:var(--t1); background:var(--hair-soft);}
-.sb-nav .ptab.active{color:var(--t1); background:var(--orange-soft); border-left-color:var(--orange);}
-.ptab-ico{width:18px; height:18px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
-.sb-nav .ptab.active .ptab-ico{color:var(--orange);}
-.ptab-label{display:flex; flex-direction:column; line-height:1.2;}
-.ptab-sub{font-family:var(--mono); font-size:8.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--t4); margin-top:1px;}
+.sb-nav .ptab:hover{color:var(--orange); background:rgba(255,106,0,0.07);}
+.sb-nav .ptab.active{
+  color:var(--text-on-orange);
+  background:linear-gradient(180deg,var(--orange-vif),var(--orange));
+  box-shadow:0 6px 16px rgba(255,106,0,0.30), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.ptab-ico{display:none;}
+.sb-nav .ptab.active .ptab-ico{color:var(--text-on-orange);}
+.ptab-label{display:flex; flex-direction:column; line-height:1.25;}
+.ptab-sub{font-family:var(--sans); font-size:11px; letter-spacing:0.02em; text-transform:none; font-weight:500; color:var(--t3); margin-top:2px;}
+.sb-nav .ptab.active .ptab-sub{color:rgba(255,255,255,0.85);}
 
 /* transitions de vues (fonctionnelles : changement d'onglet) */
 .pview{display:none;}
@@ -63,7 +69,7 @@
 @keyframes riseIn{to{opacity:1; transform:translateY(0);}}
 
 .view-head{display:flex; align-items:flex-end; justify-content:space-between; gap:14px; margin-bottom:22px; flex-wrap:wrap;}
-h2.view-title{font-family:var(--cond); font-size:24px; font-weight:700; letter-spacing:0.02em; text-transform:uppercase; color:var(--t1);}
+h2.view-title{font-family:var(--sans); font-size:clamp(30px,5.6vw,40px); font-weight:800; letter-spacing:-0.02em; text-transform:uppercase; color:var(--orange); line-height:1.05;}
 h2.view-title .serif{color:var(--orange);}
 .view-sub{font-size:12px; color:var(--t3);}
 
