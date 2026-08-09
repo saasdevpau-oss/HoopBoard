@@ -3719,7 +3719,7 @@ selectAction(0);
 
   /* ---------------- état dérivé ----------------
      Score et statistiques joueur recalculés depuis les événements. */
-  const BLANK = { pts:0, fgm:0, fga:0, reb:0, ast:0, stl:0, blk:0, to:0, fa:0 };
+  const BLANK = { pts:0, fgm:0, fga:0, ftm:0, fta:0, reb:0, ast:0, stl:0, blk:0, to:0, fa:0, fd:0 };
   function derive(){
     const scores = { home:0, away:0 }, stats = {};
     const S = (t, n) => (stats[t + '|' + n] || (stats[t + '|' + n] = Object.assign({}, BLANK)));
@@ -3730,12 +3730,23 @@ selectAction(0);
           if(s) s.fga++;
           if(e.result === 'made'){ scores[e.teamId] += e.points; if(s){ s.pts += e.points; s.fgm++; } }
           break;
+        /* lancer franc : 1 point, compté séparément des tirs du terrain */
+        case 'ft':
+          if(s) s.fta++;
+          if(e.result === 'made'){ scores[e.teamId] += 1; if(s){ s.pts += 1; s.ftm++; } }
+          break;
         case 'rebound':  if(s) s.reb++; break;
         case 'assist':   if(s) s.ast++; break;
         case 'steal':    if(s) s.stl++; break;
         case 'block':    if(s) s.blk++; break;
         case 'turnover': if(s) s.to++;  break;
-        case 'foul':     if(s && e.subKind !== 'foul-drawn') s.fa++; break;
+        /* une faute porte les DEUX joueurs : celui qui la commet (fa) et
+           celui qui la provoque (fd). `foul-drawn` = ancien format, gardé
+           pour ne pas fausser un match déjà en cours. */
+        case 'foul':
+          if(s && e.subKind !== 'foul-drawn') s.fa++;
+          if(e.drawnBy && e.drawnBy.playerId != null) S(e.drawnBy.teamId, e.drawnBy.playerId).fd++;
+          break;
         default: break;
       }
     });
@@ -4072,8 +4083,7 @@ selectAction(0);
     'steal':      { lab:'Interception',    cls:'' },
     'block':      { lab:'Contre',          cls:'' },
     'turnover':   { lab:'Perte de balle',  cls:'warn' },
-    'foul':       { lab:'Faute',           cls:'warn' },
-    'foul-drawn': { lab:'Faute provoquée', cls:'' }
+    'foul':       { lab:'Faute',           cls:'warn' }
   };
   /* Chaque moitié de terrain est le panier qu'une équipe ATTAQUE. L'action dit
      ensuite de quel côté du ballon on se trouve : un rebond offensif revient à
@@ -4103,7 +4113,7 @@ selectAction(0);
     /* on annonce l'équipe attribuée : le rebond défensif change de camp */
     html += b('reb-def', z ? M[otherSide(t)].name : null) + b('reb-off', z ? M[t].name : null);
     html += b('assist', lm ? 'sur le panier de ' + pLabel(t, lm.playerId) : null, lm ? 'wide' : '');
-    html += b('steal') + b('block') + b('turnover') + b('foul') + b('foul-drawn');
+    html += b('steal') + b('block') + b('turnover') + b('foul');
     html += '</div>';
     if(!z){
       html += `<div class="lv2-acts sec">
@@ -4141,6 +4151,141 @@ selectAction(0);
       '<div class="lv2-acts sec"><button class="lv2-act wide" data-noassist="1">Pas de passeur</button></div>');
   }
 
+  /* --- FAUTE : un seul bouton, un parcours guidé -------------------------
+     FAUTE → TYPE → JOUEURS → (sur tir) RÉSULTAT → LANCERS FRANCS.
+     La valeur 2/3 pts vient TOUJOURS de la zone touchée sur le terrain :
+     le coach ne la saisit jamais. Une faute sur tir est par définition
+     commise par la défense — l'autre côté que le panier attaqué. */
+  let pendingFoul = null;   // { kind, value, zone, zoneName, byTeam, byNum, onTeam, onNum, ft }
+
+  function zoneMeta(){
+    const z = pending && pending.zone;
+    return z ? { zoneId:z.zoneId, zoneName:z.zoneName, x:z.x, y:z.y } : {};
+  }
+
+  /* --- FAUTE 1 : simple, ou sur tir ? --- */
+  function sheetFoulType(){
+    const z = pending.zone, t = pending.team;
+    pendingFoul = null;
+    let html = '<div class="lv2-acts">'
+      + '<button class="lv2-act big wide" data-foul="simple">Faute simple</button>';
+    if(z){
+      html += `<button class="lv2-act big wide" data-foul="shot">Faute sur tir / lancers francs<span class="lv2-act-n">${z.value} pts · ${esc(z.zoneName)}</span></button>`;
+    }
+    html += '</div>';
+    if(!z){
+      html += '<p class="lv2-empty-inline">Touchez le terrain à l’endroit du tir pour enregistrer une faute sur tir : la zone donne 2 ou 3 lancers.</p>';
+    }
+    openSheet('Faute', z ? z.zoneName + ' · attaque ' + M[t].name : M[t].name, html);
+  }
+
+  /* --- FAUTE 2 : qui commet la faute ? --- */
+  function sheetFoulBy(kind){
+    const z = pending.zone;
+    /* défaut = la défense (l'autre camp que le panier attaqué) : le cas de
+       loin le plus fréquent. Sur une faute simple le coach peut basculer. */
+    pendingFoul = {
+      kind: kind,
+      value: z ? z.value : null,
+      zoneName: z ? z.zoneName : null,
+      byTeam: z ? otherSide(pending.team) : pending.team,
+      byNum: null, onTeam: null, onNum: null, ft: 0
+    };
+    renderFoulBy();
+  }
+  function renderFoulBy(){
+    const f = pendingFoul;
+    let html = '';
+    if(f.kind === 'simple'){
+      html += `<div class="lv2-teamseg" role="group" aria-label="Équipe qui commet la faute">
+        ${['home','away'].map(s => `<button class="lv2-seg${f.byTeam === s ? ' on' : ''}" data-foulteam="${s}">${esc(M[s].name)}</button>`).join('')}</div>`;
+    }
+    html += fiveButtons(f.byTeam, 'data-foulon');
+    const sub = f.kind === 'shot'
+      ? 'Faute sur tir à ' + f.value + ' pts · ' + f.zoneName + ' · défense ' + M[f.byTeam].name
+      : 'Faute simple · ' + M[f.byTeam].name;
+    openSheet('Qui commet la faute ?', sub, html);
+  }
+
+  /* --- FAUTE 3 : qui la provoque ? (sur tir : le tireur) --- */
+  function sheetFoulOn(num){
+    const f = pendingFoul;
+    f.byNum = num;
+    f.onTeam = otherSide(f.byTeam);
+    openSheet(f.kind === 'shot' ? 'Qui subit la faute ?' : 'Qui provoque la faute ?',
+      pLabel(f.byTeam, f.byNum) + ' commet la faute · ' + (f.kind === 'shot' ? 'le tireur — ' : '') + M[f.onTeam].name,
+      fiveButtons(f.onTeam, 'data-fouldrawn'));
+  }
+
+  /* --- enregistrement de la faute : les deux joueurs, une seule action --- */
+  function recordFoul(num){
+    const f = pendingFoul;
+    f.onNum = num;
+    push(Object.assign({
+      teamId: f.byTeam, playerId: f.byNum, actionType: 'foul',
+      subKind: f.kind === 'shot' ? 'shooting' : 'perso',
+      drawnBy: { teamId: f.onTeam, playerId: f.onNum },
+      label: (f.kind === 'shot' ? 'Faute sur tir à ' + f.value + ' pts' : 'Faute')
+        + ' — provoquée par ' + pLabel(f.onTeam, f.onNum)
+    }, zoneMeta()));
+    if(f.kind === 'simple'){
+      toast('warn', pLabel(f.byTeam, f.byNum) + ' · faute sur ' + pLabel(f.onTeam, f.onNum));
+      pendingFoul = null; closeSheet(); return;
+    }
+    sheetFoulShot();
+  }
+
+  /* --- FAUTE 4 (sur tir) : le tir est-il rentré ? --- */
+  function sheetFoulShot(){
+    const f = pendingFoul;
+    openSheet('Résultat du tir', pLabel(f.onTeam, f.onNum) + ' · ' + f.zoneName + ' · ' + f.value + ' pts',
+      '<div class="lv2-acts">'
+      + `<button class="lv2-act big miss wide" data-fres="miss">Tir manqué<span class="lv2-act-n">${f.value} lancers francs</span></button>`
+      + `<button class="lv2-act big made wide" data-fres="made">Tir réussi + faute<span class="lv2-act-n">+${f.value} pts · 1 lancer franc</span></button>`
+      + '</div>');
+  }
+  /* Tir manqué avec faute : aucune tentative de tir n'est comptée (règle
+     officielle), seuls les lancers francs le sont. Tir réussi : le panier
+     compte selon la zone, plus un lancer franc supplémentaire. */
+  function foulShotResult(res){
+    const f = pendingFoul;
+    if(res === 'made'){
+      push(Object.assign({ teamId:f.onTeam, playerId:f.onNum, actionType:'shot', result:'made', points:f.value,
+        label:'Tir à ' + f.value + ' pts marqué + faute — ' + f.zoneName }, zoneMeta()));
+      toast('made', pLabel(f.onTeam, f.onNum) + ' · +' + f.value + ' pts + faute');
+      sheetFT(1);
+    } else {
+      sheetFT(f.value);
+    }
+  }
+
+  /* --- FAUTE 5 : combien de lancers marqués ? (une seule pression) --- */
+  function sheetFT(n){
+    const f = pendingFoul;
+    f.ft = n;
+    /* 2 LF → 3 boutons sur une ligne ; 3 LF → 4 boutons en 2×2 : jamais un
+       bouton orphelin en bas de grille, le pouce trouve la case du premier coup. */
+    let html = `<div class="lv2-ftgrid" style="grid-template-columns:repeat(${n === 2 ? 3 : 2},minmax(0,1fr))">`;
+    for(let i = 0; i <= n; i++){
+      const cls = n === 1 ? (i ? 'made wide' : 'miss wide') : (i === n ? 'made' : (i === 0 ? 'miss' : ''));
+      const lab = n === 1 ? (i ? 'Lancer réussi' : 'Lancer manqué') : i + ' / ' + n;
+      html += `<button class="lv2-act big ${cls}" data-ftmade="${i}">${lab}</button>`;
+    }
+    html += '</div>';
+    openSheet(n === 1 ? 'Lancer franc' : n + ' lancers francs',
+      pLabel(f.onTeam, f.onNum) + ' · ' + (n === 1 ? 'réussi ou manqué ?' : 'combien de lancers marqués ?'), html);
+  }
+  function recordFT(made){
+    const f = pendingFoul, n = f.ft;
+    for(let i = 0; i < n; i++){
+      const ok = i < made;
+      push({ teamId:f.onTeam, playerId:f.onNum, actionType:'ft', result: ok ? 'made' : 'missed',
+        points: ok ? 1 : 0, label: 'Lancer franc ' + (i + 1) + '/' + n + (ok ? ' réussi' : ' manqué') });
+    }
+    toast(made ? 'made' : 'miss', pLabel(f.onTeam, f.onNum) + ' · ' + made + '/' + n + ' lancer' + (n > 1 ? 's' : '') + ' franc' + (n > 1 ? 's' : ''));
+    pendingFoul = null; closeSheet();
+  }
+
   /* --- enregistrement : dernière pression, aucune validation à suivre
          (sauf panier marqué, qui enchaîne sur le choix du passeur) --- */
   function record(k, num){
@@ -4164,10 +4309,6 @@ selectAction(0);
       push(Object.assign({ teamId:t, playerId:num, actionType:'assist', assistOf: lm ? lm.id : null,
         label: 'Passe décisive' + (lm ? ' — panier de ' + pLabel(t, lm.playerId) : '') }, zone));
       toast('neutral', pLabel(t, num) + ' · passe décisive');
-    } else if(k === 'foul' || k === 'foul-drawn'){
-      push(Object.assign({ teamId:t, playerId:num, actionType:'foul', subKind: k === 'foul-drawn' ? 'foul-drawn' : 'perso',
-        label: k === 'foul-drawn' ? 'Faute provoquée' : 'Faute personnelle' }, zone));
-      toast('warn', pLabel(t, num) + ' · ' + ACTIONS[k].lab.toLowerCase());
     } else {
       const map = { steal:'steal', block:'block', turnover:'turnover' };
       push(Object.assign({ teamId:t, playerId:num, actionType: map[k], label: ACTIONS[k].lab }, zone));
@@ -4306,7 +4447,7 @@ selectAction(0);
     sheet.classList.remove('open'); scrim.classList.remove('open');
     sheet.setAttribute('aria-hidden', 'true');
     $('lv2SheetBody').innerHTML = '';
-    subOut = null; pendingShot = null;
+    subOut = null; pendingShot = null; pendingFoul = null;
   }
   if(sheet){
     $('lv2SheetClose').addEventListener('click', closeSheet);
@@ -4315,7 +4456,20 @@ selectAction(0);
     sheet.addEventListener('click', e => {
       if(!M) return;
       const act = e.target.closest('[data-act]');
-      if(act){ sheetPlayer(act.dataset.act); return; }
+      /* la faute a son propre parcours (type → joueurs → tir → lancers) */
+      if(act){ if(act.dataset.act === 'foul') sheetFoulType(); else sheetPlayer(act.dataset.act); return; }
+      const ft = e.target.closest('[data-foul]');
+      if(ft){ sheetFoulBy(ft.dataset.foul); return; }
+      const fteam = e.target.closest('[data-foulteam]');
+      if(fteam){ pendingFoul.byTeam = fteam.dataset.foulteam; renderFoulBy(); return; }
+      const fon = e.target.closest('[data-foulon]');
+      if(fon){ sheetFoulOn(+fon.dataset.foulon); return; }
+      const fdr = e.target.closest('[data-fouldrawn]');
+      if(fdr){ recordFoul(+fdr.dataset.fouldrawn); return; }
+      const fres = e.target.closest('[data-fres]');
+      if(fres){ foulShotResult(fres.dataset.fres); return; }
+      const fmade = e.target.closest('[data-ftmade]');
+      if(fmade){ recordFT(+fmade.dataset.ftmade); return; }
       const pl = e.target.closest('[data-player]');
       if(pl){ record(pendingAction, +pl.dataset.player); return; }
       const pa = e.target.closest('[data-passer]');

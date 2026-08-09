@@ -1846,6 +1846,8 @@ a{color:var(--orange);}
 .lv2-act.miss:hover{background:var(--loss); color:#fff;}
 .lv2-act.warn{color:var(--t2);}
 .lv2-act-n{font-family:var(--mono); font-size:10.5px; font-weight:500; opacity:0.8; text-transform:none; letter-spacing:0.04em;}
+/* lancers francs : 0/2 … 2/2, une pression et c'est saisi (colonnes en ligne) */
+.lv2-ftgrid{display:grid; gap:8px;}
 
 /* choix du joueur : cinq gros boutons */
 .lv2-players{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px;}
