@@ -577,27 +577,6 @@ h2.view-title .serif{color:var(--orange);}
 .info-cell .k{font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--t4);}
 .info-cell .v{font-size:14px; font-weight:600; color:var(--t1); margin-top:3px;}
 
-/* ---------- Hero identité (dashboard + profil) ---------- */
-.id-hero{display:flex; align-items:center; gap:20px; background:linear-gradient(120deg,rgba(255,106,0,0.14),var(--surface-2) 55%); border:1px solid rgba(255,106,0,0.28); border-radius:14px; padding:22px 24px; flex-wrap:wrap;}
-.id-photo{width:82px; height:82px; border-radius:16px; background:linear-gradient(150deg,var(--orange),var(--gold)); display:flex; align-items:center; justify-content:center; flex-shrink:0; position:relative;}
-.id-photo .init{font-family:var(--cond); font-weight:700; font-size:34px; color:#fff;}
-.id-photo .num{position:absolute; bottom:-6px; right:-6px; width:30px; height:30px; border-radius:9px; background:var(--void,#141110); border:2px solid var(--surface-2); display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:13px; color:var(--orange-vif);}
-.id-meta{flex:1; min-width:180px;}
-.id-name{font-size:24px; font-weight:700; color:var(--t1); letter-spacing:-.02em;}
-.id-role{font-size:13px; color:var(--t3); margin-top:3px;}
-.id-tags{display:flex; gap:7px; margin-top:10px; flex-wrap:wrap;}
-.id-tag{font-size:11px; font-weight:600; padding:3px 10px; border-radius:20px; background:var(--surface-1); border:1px solid var(--hair); color:var(--t2);}
-.id-tag.hot{background:var(--orange-soft); border-color:rgba(255,106,0,0.4); color:var(--orange-vif);}
-
-/* ---------- Bandeau prochain rendez-vous compact ---------- */
-.next-strip{display:flex; align-items:center; gap:14px; background:var(--surface-1); border:1px solid var(--hair); border-left:3px solid var(--orange); border-radius:10px; padding:14px 16px;}
-.next-strip .ns-ico{width:40px; height:40px; border-radius:10px; background:var(--orange-soft); color:var(--orange); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
-.next-strip .ns-eyebrow{font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:.07em; color:var(--orange);}
-.next-strip .ns-title{font-size:14px; font-weight:600; color:var(--t1); margin-top:2px;}
-.next-strip .ns-meta{font-size:12px; color:var(--t3);}
-.next-strip .ns-when{margin-left:auto; text-align:right; font-family:var(--mono);}
-.next-strip .ns-when b{font-size:15px; color:var(--orange-vif);} .next-strip .ns-when span{display:block; font-size:10px; color:var(--t4); text-transform:uppercase;}
-
 /* ---------- Section label + lien ---------- */
 .sec-head{display:flex; align-items:center; justify-content:space-between; gap:12px; margin:26px 0 14px;}
 .sec-head:first-child{margin-top:0;}
@@ -635,7 +614,6 @@ h2.view-title .serif{color:var(--orange);}
   .tiles{grid-template-columns:repeat(2,1fr);}
   .pcts{grid-template-columns:repeat(2,1fr);}
   .grid-3{grid-template-columns:1fr 1fr;}
-  .id-name{font-size:21px;}
   .sheet-score{font-size:28px;}
   .cmp-row{grid-template-columns:92px 1fr; grid-template-rows:auto auto;}
   .cmp-row .cmp-vals{grid-column:2;}
@@ -762,6 +740,156 @@ h2.view-title .serif{color:var(--orange);}
   .pt-sec{font-size:18px; margin:22px 0 10px;}
   .pt-ov-val{font-size:36px;}
   .pt-sess{padding:14px;}
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   DASHBOARD (espace joueur) — namespace .pd-*
+   La page reprend la logique visuelle de la page SAISON du coach :
+   un grand hero centré plein cadre (.tr2-hero, défini dans app.css),
+   puis des blocs empilés — grande photo de profil, statistiques
+   principales, UN graphique d'évolution, activité récente.
+   Mobile-first : tout est en une colonne, la grille s'élargit ensuite.
+   Aucun contenu HoopFeed ici : le social vit dans son propre onglet.
+   ═══════════════════════════════════════════════════════════════════ */
+.pd-hero{padding-top:clamp(4px,1.5vw,18px);}
+.pd-hero .sep{color:var(--t4); margin:0 8px;}
+.pd-hero b{font-weight:600; color:var(--t1);}
+
+/* ---------- Grande photo de profil ---------- */
+.pd-id{
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  gap:clamp(16px,3vw,22px);
+  background:var(--glass-bg); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
+  border:1px solid var(--glass-brd); border-radius:var(--card-radius);
+  box-shadow:var(--shadow-md), var(--glass-hi);
+  padding:clamp(22px,4vw,36px) clamp(16px,3vw,30px);
+}
+.pd-photo{
+  position:relative; flex:0 0 auto; overflow:hidden;
+  width:clamp(148px,44vw,210px); aspect-ratio:1/1;
+  border-radius:clamp(30px,8vw,44px);
+  background:linear-gradient(150deg,var(--orange-vif) 4%,var(--orange) 46%,var(--gold));
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:var(--shadow-orange), inset 0 1px 0 rgba(255,255,255,0.45);
+}
+.pd-photo-bg{position:absolute; left:-8%; top:-8%; width:116%; height:116%; opacity:.5;}
+.pd-photo-init{
+  position:relative; font-family:var(--cond); font-weight:700; line-height:1;
+  font-size:clamp(56px,17vw,80px); letter-spacing:.02em; color:var(--hb-white);
+  text-shadow:0 2px 14px rgba(28,22,16,0.22);
+}
+.pd-photo-num{
+  position:absolute; right:10px; bottom:10px; min-width:40px; height:40px; padding:0 10px;
+  display:flex; align-items:center; justify-content:center; border-radius:14px;
+  background:rgba(255,255,255,0.94); color:var(--orange-deep);
+  font-family:var(--mono); font-size:16px; font-weight:700;
+  box-shadow:0 4px 14px rgba(28,22,16,0.18);
+}
+.pd-idmeta{min-width:0; width:100%;}
+.pd-name{
+  font-family:var(--cond); font-weight:700; text-transform:uppercase;
+  font-size:clamp(28px,7vw,44px); line-height:1.02; letter-spacing:.01em; color:var(--t1);
+}
+.pd-role{margin-top:6px; font-size:clamp(12.5px,1.4vw,15px); color:var(--t2);}
+.pd-role .sep{color:var(--t4); margin:0 7px;}
+.pd-tags{display:flex; flex-wrap:wrap; justify-content:center; gap:7px; margin-top:14px;}
+.pd-tag{font-size:12px; font-weight:600; color:var(--t2); background:var(--field-bg); border-radius:999px; padding:6px 13px;}
+.pd-tag.hot{background:var(--orange-soft); color:var(--orange);}
+
+/* prochain rendez-vous, dans la carte d'identité */
+.pd-next{
+  margin-top:18px; padding-top:16px; border-top:1px solid var(--hair-soft);
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+}
+.pd-next-lab{font-family:var(--cond); font-size:11.5px; font-weight:700; letter-spacing:.18em; text-transform:uppercase; color:var(--orange);}
+.pd-next-t{font-size:15px; font-weight:600; color:var(--t1);}
+.pd-next-m{font-size:12px; color:var(--t3); line-height:1.5;}
+
+/* ---------- Titres de section (calqués sur .sn-h2 de la page Saison) ---------- */
+.pd-h2{
+  font-family:var(--cond); font-weight:700; text-transform:uppercase;
+  font-size:clamp(22px,2.4vw,30px); letter-spacing:.08em; line-height:1.05;
+  color:var(--orange); margin:clamp(30px,4.5vw,56px) 0 4px;
+}
+.pd-h2-note{font-size:12.5px; color:var(--t3); line-height:1.5; margin:0 0 16px;}
+
+/* ---------- Statistiques principales ---------- */
+.pd-stats{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
+.pd-stats-sec{margin-top:10px;}
+.pd-stat{
+  min-width:0; padding:16px 15px 14px; border-radius:var(--radius);
+  background:var(--card-bg); border:1px solid var(--hair-soft); box-shadow:var(--shadow-xs);
+}
+.pd-stat-v{
+  font-family:var(--cond); font-weight:700; line-height:.95; letter-spacing:-.005em;
+  font-size:clamp(38px,11vw,54px); color:var(--t1);
+}
+.pd-stat-v i{font-style:normal; font-size:.4em; color:var(--t3); margin-left:3px; letter-spacing:0;}
+.pd-stats:not(.pd-stats-sec) .pd-stat:first-child .pd-stat-v{color:var(--orange);}
+.pd-stat-l{margin-top:9px; font-size:12.5px; font-weight:600; color:var(--t2);}
+.pd-stat-s{margin-top:4px; min-height:16px; font-size:11.5px; color:var(--t4); display:flex; align-items:baseline; gap:5px; flex-wrap:wrap;}
+.pd-stat-d{font-family:var(--mono); font-weight:600;}
+.pd-stat-d.up{color:var(--win);} .pd-stat-d.down{color:var(--loss);} .pd-stat-d.flat{color:var(--t4);}
+
+/* ---------- Graphique d'évolution (un seul, avec sélecteur) ---------- */
+.pd-panel{margin-top:16px;}
+.pd-picks{display:flex; flex-direction:column; gap:9px; margin-bottom:16px; min-width:0;}
+.pd-svg{width:100%; height:auto; display:block;}
+.pd-line{fill:none; stroke:var(--orange); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
+.pd-dot{fill:var(--card-bg); stroke:var(--orange); stroke-width:2.2;}
+.pd-dot.hi{fill:var(--orange); stroke:var(--card-bg); stroke-width:3;}
+.pd-avg{stroke:var(--t4); stroke-width:1.2; stroke-dasharray:5 5;}
+.pd-avg-l{fill:var(--t4); font-family:var(--mono); font-size:11px; text-anchor:end;}
+.pd-last{fill:var(--orange); font-family:var(--cond); font-weight:700; font-size:19px; text-anchor:middle;}
+
+/* ---------- Activité récente (matchs · séances · performances) ---------- */
+.pd-actfil{margin-bottom:14px;}
+.pd-acts{display:flex; flex-direction:column; gap:10px;}
+.pd-act{
+  display:flex; align-items:flex-start; gap:12px; width:100%; text-align:left; cursor:pointer;
+  background:var(--card-bg); border:1px solid var(--hair-soft); border-radius:var(--radius);
+  padding:14px; box-shadow:var(--shadow-xs);
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.pd-act:hover{border-color:rgba(255,106,0,0.35); box-shadow:var(--shadow-sm); transform:translateY(-1px);}
+.pd-act:active{transform:scale(.995);}
+.pd-act-ico{
+  flex:0 0 auto; width:36px; height:36px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  background:var(--field-bg); color:var(--t3);
+}
+.pd-act-ico.match{background:var(--orange-soft); color:var(--orange);}
+.pd-act-body{flex:1 1 auto; min-width:0; display:flex; flex-direction:column; gap:3px;}
+.pd-act-head{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;}
+.pd-act-kind{font-family:var(--cond); font-size:11.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--orange);}
+.pd-act-date{font-family:var(--mono); font-size:11px; color:var(--t4);}
+.pd-act-t{font-size:14.5px; font-weight:600; color:var(--t1); line-height:1.3;}
+.pd-act-m{font-size:12px; color:var(--t3);}
+.pd-act-chips{display:flex; flex-wrap:wrap; gap:6px; margin-top:7px;}
+.pd-act-badge{
+  flex:0 0 auto; align-self:flex-start; white-space:nowrap;
+  font-family:var(--mono); font-size:13px; font-weight:600;
+  padding:5px 11px; border-radius:999px; background:var(--field-bg); color:var(--t2);
+}
+.pd-act-badge.win{background:var(--win-soft); color:var(--win);}
+.pd-act-badge.loss{background:var(--loss-soft); color:var(--loss);}
+
+/* ---------- Responsive ---------- */
+@media(min-width:640px){
+  .pd-stats{grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px;}
+  .pd-stats-sec{margin-top:14px;}
+}
+@media(max-width:640px){
+  /* le sélecteur de statistique défile horizontalement plutôt que
+     d'empiler quatre rangées de puces sur un écran de téléphone */
+  .pd-picks>.tr2-chips:first-child{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px;}
+  .pd-picks>.tr2-chips:first-child::-webkit-scrollbar{display:none;}
+  .pd-picks>.tr2-chips:first-child>.tr2-chip{flex:0 0 auto;}
+}
+@media(max-width:420px){
+  .pd-act{padding:13px 12px; gap:10px;}
+  .pd-act-ico{width:32px; height:32px; border-radius:11px;}
+  .pd-act-badge{font-size:12px; padding:4px 9px;}
 }
 
 /* ═══════════════════════════════════════════════════════════════════
