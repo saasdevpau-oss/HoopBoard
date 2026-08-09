@@ -3034,15 +3034,48 @@ document.addEventListener('click', e => {
 
   /* --- Effectif (#/effectif) : liste + recherche + filtre poste + ajout --- */
   const POSTES = ['Meneur','Arrière','Ailier','Ailier-fort','Intérieur','Pivot'];
+  /* Adresse (%2pts, %3pts, %LF) : mêmes chiffres que la fiche joueur.
+     getPlayerProfile est lourd (log de matchs + zones) → mémoïsé par joueur
+     pour que la recherche/le filtre restent instantanés. */
+  const _efTirCache = {};
+  function efTir(id){
+    if(!(id in _efTirCache)){
+      let t=null;
+      try{ const pr=window.HoopStore.getPlayerProfile(id); if(pr&&pr.header) t={p2:pr.header.p2,p3:pr.header.p3,lf:pr.header.lf}; }
+      catch(err){ t=null; }
+      _efTirCache[id]=t;
+    }
+    return _efTirCache[id];
+  }
+  function efStat(label,val,cls){
+    const vide = (val==null||val==='');
+    return `<div class="ef2-stat${cls?' '+cls:''}"><span class="ef2-sv${vide?' none':''}">${vide?'—':val}</span><span class="ef2-sl">${esc(label)}</span></div>`;
+  }
   function efRow(p){
-    const s = p.season;
-    return `<tr>
-      <td class="c">${p.num==null?'—':p.num}</td>
-      <td class="l"><span class="fs-pname">${esc(p.name)}</span>${p.user?' <span class="ef-tag">ajouté</span>':''}${p.status==='indispo'?' <span class="ef-tag off">indispo</span>':''}</td>
-      <td class="l">${esc(p.poste||'—')}</td><td class="c">${esc(p.taille||'—')}</td>
-      <td class="c">${s?s.mj:'—'}</td><td class="c">${s?s.min:'—'}</td><td class="c">${s?s.pts:'—'}</td>
-      <td class="c">${s?s.reb:'—'}</td><td class="c">${s?s.pd:'—'}</td><td class="c strong">${s?s.eva:'—'}</td>
-      <td class="c"><button class="btn-view" data-route="#/joueurs/${p.id}">Fiche</button></td></tr>`;
+    const s = p.season, t = s ? efTir(p.id) : null;
+    /* photo si un jour l'effectif en porte une, sinon médaillon initiales */
+    const photo = p.photo
+      ? `<img src="${esc(p.photo)}" alt="" loading="lazy">`
+      : `<span class="ef2-init">${esc(fInitials(p.name))}</span>`;
+    const meta = [esc(p.poste||'—')];
+    if(p.taille) meta.push(esc(p.taille));
+    return `<article class="ef2-row${p.status==='indispo'?' off':''}">
+      <div class="ef2-id">
+        <div class="ef2-photo">${photo}${p.num!=null?`<span class="ef2-num">${p.num}</span>`:''}</div>
+        <div class="ef2-idtxt">
+          <div class="ef2-name">${esc(p.name)}</div>
+          <div class="ef2-meta">${meta.join('<span class="sep">·</span>')}${p.user?'<span class="ef-tag">ajouté</span>':''}${p.status==='indispo'?'<span class="ef-tag off">indispo</span>':''}</div>
+        </div>
+      </div>
+      <div class="ef2-stats">
+        ${efStat('MJ',    s?s.mj  :null)}${efStat('MIN',   s?s.min :null)}
+        ${efStat('PTS',   s?s.pts :null)}${efStat('REB',   s?s.reb :null)}
+        ${efStat('AST',   s?s.pd  :null)}${efStat('STL',   s?s.int :null)}
+        ${efStat('%2PTS', t?t.p2  :null)}${efStat('%3PTS', t?t.p3  :null)}
+        ${efStat('%LF',   t?t.lf  :null)}${efStat('ÉVAL',  s?s.eva :null,'key')}
+      </div>
+      <div class="ef2-actions"><button class="btn-view" data-route="#/joueurs/${p.id}">Fiche</button></div>
+    </article>`;
   }
   function renderEffectif(){
     const el=document.getElementById('page-effectif'); if(!el) return;
@@ -3051,9 +3084,13 @@ document.addEventListener('click', e => {
       const users=Store.getUserPlayers().map(u=>({id:u.id,num:(u.num!=null&&u.num!=='')?+u.num:null,name:((u.prenom?u.prenom+' ':'')+(u.nom||'')).trim()||'Sans nom',poste:u.poste,taille:u.taille,status:u.status||'actif',season:null,user:true}));
       return Store.getPlayers().concat(users);
     }
-    el.innerHTML = `<div class="page-head"><div><h2 class="page-title">Effectif</h2>
-        <div class="page-meta">${esc(Store.getClub().nom)} · EuroLeague 2025–26</div></div>
-        <button class="btn btn-primary" id="efAdd">+ Ajouter un joueur</button></div>
+    const club=Store.getClub(), tournoi=Store.getTournoi()||{};
+    el.innerHTML = `
+      <div class="ef2-topbar"><button class="btn btn-secondary sm" id="efAdd">+ Ajouter un joueur</button></div>
+      <header class="ef2-hero">
+        <h1 class="ef2-hero-t">Effectif</h1>
+        <p class="ef2-hero-s"><b>${esc(club.nom)}</b><span class="sep">·</span>Saison ${esc(tournoi.saison||'')}</p>
+      </header>
       <form class="ef-form" id="efForm" hidden><div class="ef-grid">
         <label>Prénom<input name="prenom" class="mc-input" required></label>
         <label>Nom<input name="nom" class="mc-input" required></label>
@@ -3063,16 +3100,14 @@ document.addEventListener('click', e => {
         <label>Statut<select name="status" class="mc-input"><option value="actif">Actif</option><option value="indispo">Indisponible</option></select></label>
         <label class="ef-full">Notes<input name="notes" class="mc-input" placeholder="facultatif"></label>
       </div><div class="ef-form-actions"><button type="submit" class="btn btn-primary sm">Enregistrer</button><button type="button" class="btn btn-secondary sm" id="efCancel">Annuler</button></div></form>
-      <div class="mc-filters"><input type="search" id="efSearch" class="mc-input" placeholder="Rechercher un joueur…" aria-label="Rechercher un joueur">
+      <div class="ef2-filters"><input type="search" id="efSearch" class="mc-input" placeholder="Rechercher un joueur…" aria-label="Rechercher un joueur">
         <select id="efPoste" class="mc-input" aria-label="Filtrer par poste"><option value="">Tous les postes</option>${POSTES.map(p=>`<option>${p}</option>`).join('')}</select></div>
-      <div class="table-card card-elevated"><div class="fs-scroll"><table class="fs-box">
-        <thead><tr><th class="c">№</th><th class="l">Joueur</th><th class="l">Poste</th><th class="c">Taille</th><th class="c">MJ</th><th class="c">Min</th><th class="c">Pts</th><th class="c">Reb</th><th class="c">PD</th><th class="c">Éval</th><th class="c"></th></tr></thead>
-        <tbody id="efBody"></tbody></table></div></div>`;
+      <div class="ef2-list" id="efBody"></div>`;
     const body=el.querySelector('#efBody'), search=el.querySelector('#efSearch'), poste=el.querySelector('#efPoste');
     function apply(){
       const q=(search.value||'').toLowerCase().trim(), ps=poste.value;
       const list=allPlayers().filter(p=>(!ps||p.poste===ps)&&(!q||p.name.toLowerCase().indexOf(q)!==-1));
-      body.innerHTML = list.length ? list.map(efRow).join('') : `<tr><td colspan="11" style="padding:22px;color:var(--t3);text-align:center;">Aucun joueur ne correspond à ces critères.</td></tr>`;
+      body.innerHTML = list.length ? list.map(efRow).join('') : `<div class="ef2-empty">Aucun joueur ne correspond à ces critères.</div>`;
     }
     search.addEventListener('input',apply); poste.addEventListener('change',apply); apply();
     const form=el.querySelector('#efForm');

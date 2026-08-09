@@ -1469,3 +1469,114 @@ a{color:var(--orange);}
 /* cartes de contenu bien solides (le verre reste au chrome) */
 .card,.card-elevated,.panel,.metric-card,.table-card,.leader-card,.session-card{-webkit-backdrop-filter:none;backdrop-filter:none;}
 .card-elevated{background:#FFFFFF;}
+
+/* ============================================================
+   Page EFFECTIF (#/effectif) — grandes bandes horizontales
+   Namespace .ef2-* : réservé à la refonte visuelle de l'effectif.
+   Le formulaire d'ajout (.ef-form, .ef-grid) et les badges (.ef-tag)
+   existants ne sont pas touchés.
+   Hero calqué sur .sn-head (Saison) et .tr2-hero (Entraînement).
+   ============================================================ */
+
+.ef2-topbar{display:flex; justify-content:flex-end; margin-bottom:6px;}
+
+.ef2-hero{text-align:center; padding:clamp(14px,3vw,34px) 0 clamp(22px,3.4vw,40px);}
+.ef2-hero-t{
+  font-family:var(--cond); color:var(--orange);
+  font-size:clamp(48px,8.5vw,104px); font-weight:700; line-height:0.94;
+  letter-spacing:0.04em; text-transform:uppercase; margin:0;
+}
+.ef2-hero-s{margin-top:14px; font-size:clamp(12.5px,1.3vw,15px); color:var(--t2); letter-spacing:0.02em;}
+.ef2-hero-s b{font-weight:600; color:var(--t1);}
+.ef2-hero-s .sep{color:var(--t4); margin:0 8px;}
+
+/* recherche + filtre poste : discrets, centrés sous le hero */
+.ef2-filters{display:flex; justify-content:center; gap:10px; flex-wrap:wrap; margin-bottom:clamp(18px,2.4vw,30px);}
+.ef2-filters .mc-input{min-width:210px;}
+
+/* ---- la liste : une grande bande pleine largeur par joueur ---- */
+.ef2-list{display:flex; flex-direction:column; gap:clamp(12px,1.4vw,18px);}
+.ef2-row{
+  display:grid; grid-template-columns:minmax(230px,300px) minmax(0,1fr) auto;
+  align-items:center; gap:clamp(16px,2.4vw,40px);
+  background:var(--card-bg); border:1px solid var(--hair-soft);
+  border-radius:var(--card-radius); box-shadow:var(--shadow-xs);
+  padding:clamp(18px,2vw,26px) clamp(20px,2.4vw,32px);
+  transition:box-shadow .18s ease, transform .18s ease;
+}
+.ef2-row:hover{box-shadow:var(--shadow-sm); transform:translateY(-1px);}
+.ef2-row.off{opacity:0.72;}
+
+/* identité — point d'entrée visuel de la ligne */
+.ef2-id{display:flex; align-items:center; gap:clamp(14px,1.5vw,20px); min-width:0;}
+.ef2-photo{
+  position:relative; flex:0 0 auto; width:clamp(64px,5.6vw,84px); aspect-ratio:1;
+  border-radius:50%; overflow:visible;
+  background:var(--surface-2); border:1px solid var(--hair);
+  display:flex; align-items:center; justify-content:center;
+}
+.ef2-photo img{width:100%; height:100%; border-radius:50%; object-fit:cover; display:block;}
+.ef2-init{
+  font-family:var(--cond); font-weight:700; text-transform:uppercase; color:var(--orange);
+  font-size:clamp(22px,2vw,30px); letter-spacing:0.03em; line-height:1;
+}
+.ef2-num{
+  position:absolute; right:-3px; bottom:-3px; min-width:27px; height:27px; padding:0 7px;
+  border-radius:999px; background:var(--orange); color:var(--text-on-orange);
+  font-family:var(--cond); font-weight:700; font-size:14.5px; line-height:27px;
+  text-align:center; box-shadow:0 2px 6px rgba(255,106,0,0.34);
+}
+.ef2-idtxt{min-width:0;}
+.ef2-name{
+  font-family:var(--cond); font-size:clamp(22px,2.1vw,30px); font-weight:700;
+  text-transform:uppercase; letter-spacing:0.01em; line-height:1.06;
+  color:var(--t1); overflow-wrap:anywhere;
+}
+.ef2-meta{margin-top:6px; font-size:13px; color:var(--t3); display:flex; align-items:center; gap:7px; flex-wrap:wrap;}
+.ef2-meta .sep{color:var(--t4);}
+
+/* statistiques — au centre, larges et alignées */
+.ef2-stats{display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:clamp(6px,0.9vw,16px); min-width:0;}
+.ef2-stat{text-align:center; min-width:0;}
+.ef2-sv{
+  display:block; font-family:var(--cond); font-weight:700; color:var(--t1);
+  font-size:clamp(19px,1.7vw,26px); line-height:1;
+}
+.ef2-sv.none{color:var(--t4);}
+.ef2-stat.key .ef2-sv{color:var(--orange);}
+.ef2-sl{
+  display:block; margin-top:7px; font-family:var(--mono); font-size:8.5px;
+  letter-spacing:0.08em; text-transform:uppercase; color:var(--t4); white-space:nowrap;
+}
+
+/* actions — à droite */
+.ef2-actions{display:flex; align-items:center; justify-content:flex-end; gap:8px; flex-shrink:0;}
+
+.ef2-empty{
+  background:var(--card-bg); border:1px solid var(--hair-soft); border-radius:var(--card-radius);
+  box-shadow:var(--shadow-xs); padding:34px 24px; text-align:center; color:var(--t3); font-size:14px;
+}
+
+/* --- tablette large : les stats passent sur deux rangs, l'esprit reste horizontal --- */
+@media(max-width:1180px){
+  .ef2-stats{grid-template-columns:repeat(5,minmax(0,1fr)); gap:16px 10px;}
+}
+/* --- tablette : identité + actions sur la première ligne, stats en dessous --- */
+@media(max-width:940px){
+  .ef2-row{grid-template-columns:minmax(0,1fr) auto; gap:18px 16px;}
+  .ef2-id{grid-area:1/1/2/2;}
+  .ef2-actions{grid-area:1/2/2/3;}
+  .ef2-stats{grid-area:2/1/3/3; grid-template-columns:repeat(5,minmax(0,1fr));}
+}
+/* --- mobile : empilement, photo toujours visible, zones cliquables pleines --- */
+@media(max-width:620px){
+  .ef2-hero{padding:6px 0 26px;}
+  .ef2-filters{margin-bottom:18px;}
+  .ef2-filters .mc-input{min-width:0; flex:1 1 140px;}
+  .ef2-row{grid-template-columns:1fr; gap:18px; padding:18px;}
+  .ef2-id,.ef2-actions{grid-area:auto;}
+  .ef2-stats{grid-area:auto; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px 8px;}
+  .ef2-sv{font-size:20px;}
+  .ef2-actions{justify-content:stretch;}
+  .ef2-actions .btn-view{flex:1; min-height:44px; padding:0 18px;}
+}
