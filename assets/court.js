@@ -472,7 +472,12 @@
     const SC = 32, MG = 16, LEN = 2 * G.L, WID = G.W;      // 28m × 15m
     const FW = LEN * SC, FH = WID * SC, MID = LEN / 2;
     const B = G.basket;                                     // { x:7.5, y:1.575 }
-    const state = { active: props.active === 'away' ? 'away' : 'home' };
+    /* active : 'home' | 'away' (moitié armée pour la saisie) — ou 'both',
+       qui n'assombrit aucun côté (lecture d'une carte de tir de saison). */
+    const state = {
+      active: props.active === 'away' ? 'away' : (props.active === 'both' ? 'both' : 'home'),
+      sel: null, hov: null,
+    };
 
     // repère interne (cx = largeur 0..15, cy = profondeur 0..14) -> écran
     function TS(cx, cy, side) { return { x: (side === 'home' ? cy : (LEN - cy)) * SC, y: cx * SC }; }
@@ -489,6 +494,39 @@
     function seg(cx1, cy1, cx2, cy2, side, cls) { const a = TS(cx1, cy1, side), b = TS(cx2, cy2, side); return el('line', { class: cls || 'hbcf-ln', x1: a.x.toFixed(1), y1: a.y.toFixed(1), x2: b.x.toFixed(1), y2: b.y.toFixed(1) }); }
     function poly(pts, side, cls) { const d = pts.map((p) => { const s = TS(p[0], p[1], side); return s.x.toFixed(1) + ',' + s.y.toFixed(1); }).join(' '); return el('polyline', { class: cls || 'hbcf-ln', points: d }); }
     function circM(cx, cy, r, side, cls) { const c = TS(cx, cy, side); return el('circle', { class: cls || 'hbcf-ln', cx: c.x.toFixed(1), cy: c.y.toFixed(1), r: (r * SC).toFixed(1) }); }
+
+    /* ---- remplissage des zones (carte de tir) ----
+       Les cellules sont échantillonnées avec getCourtZone — la même fonction
+       que le clic — puis fusionnées en bandes horizontales : les contours
+       collent donc exactement aux zones, pour ~300 rectangles par moitié au
+       lieu de plusieurs milliers. */
+    function buildZoneLayer(side, map) {
+      const g = el('g', { class: 'hbcf-zonefill hbcf-zf-' + side, 'pointer-events': 'none' });
+      const stepY = 0.35, stepX = 0.30;                    // mètres
+      for (let cy = 0; cy < G.L - 1e-9; cy += stepY) {
+        const h = Math.min(stepY, G.L - cy);
+        let runStart = null, runZone = null;
+        const flush = (cxEnd) => {
+          if (runStart != null && runZone != null && map[runZone] != null) {
+            const v = map[runZone];
+            const a = TS(runStart, cy, side), b = TS(cxEnd, cy + h, side);
+            g.appendChild(el('rect', {
+              x: (Math.min(a.x, b.x) - 0.3).toFixed(1), y: (Math.min(a.y, b.y) - 0.3).toFixed(1),
+              width: (Math.abs(b.x - a.x) + 0.6).toFixed(1), height: (Math.abs(b.y - a.y) + 0.6).toFixed(1),
+              fill: heatColor(typeof v === 'object' ? v.value : v), 'data-zone': runZone,
+            }));
+          }
+          runStart = null; runZone = null;
+        };
+        for (let cx = 0; cx <= WID + 1e-9; cx += stepX) {
+          const z = cx > WID ? null : getCourtZone({ x: (cx / WID) * 100, y: ((cy + h / 2) / G.L) * 100 });
+          const id = (z && z.id !== OUT_OF_BOUNDS.id) ? z.id : null;
+          if (id !== runZone) { flush(cx); runStart = cx; runZone = id; }
+        }
+        flush(WID);
+      }
+      return g;
+    }
 
     const PHI = Math.acos((G.cornerJunctionY - B.y) / G.threeR);   // ½ ouverture de l'arc 3 pts
     function buildHalf(g, side) {
@@ -520,6 +558,7 @@
     container.classList.add('hbcf-root');
     const svg = el('svg', { class: 'hbcf-svg hbcf-' + state.active, viewBox: (-MG) + ' ' + (-MG) + ' ' + (FW + 2 * MG) + ' ' + (FH + 2 * MG), role: 'img', 'aria-label': 'Terrain de basket complet — notre moitié et celle de l’adversaire' });
     svg.appendChild(el('rect', { class: 'hbcf-bg', x: 0, y: 0, width: FW, height: FH, rx: 16 }));
+    const zoneLayer = el('g', { class: 'hbcf-zones' }); svg.appendChild(zoneLayer);
     const gl = el('g', { class: 'hbcf-lines', fill: 'none' });
     gl.appendChild(el('rect', { class: 'hbcf-ln hbcf-bounds', x: 0, y: 0, width: FW, height: FH, rx: 16 }));
     gl.appendChild(el('line', { class: 'hbcf-ln hbcf-mid', x1: MID * SC, y1: 0, x2: MID * SC, y2: FH }));
@@ -531,6 +570,8 @@
     const dimAway = el('rect', { class: 'hbcf-dim hbcf-dim-away', x: FW / 2, y: 0, width: FW / 2, height: FH });
     svg.appendChild(dimHome); svg.appendChild(dimAway);
     const zonehi = el('circle', { class: 'hbcf-zonehi', r: 42, cx: -300, cy: -300 }); svg.appendChild(zonehi);
+    /* libellés discrets de chaque moitié (ex. NOTRE ÉQUIPE / ADVERSAIRES) */
+    const labels = el('g', { class: 'hbcf-sides', 'pointer-events': 'none' }); svg.appendChild(labels);
     const hit = el('rect', { class: 'hbcf-hit', x: -MG, y: -MG, width: FW + 2 * MG, height: FH + 2 * MG, fill: 'transparent' });
     svg.appendChild(hit);
     container.appendChild(svg);
@@ -539,17 +580,75 @@
     hit.addEventListener('click', (evt) => {
       const p = eventToSvg(evt); if (!p) return;
       const info = screenToInfo(p.x, p.y);
-      if (info.side !== state.active) { if (typeof props.onInactive === 'function') props.onInactive(info, evt); return; }
+      if (state.active !== 'both' && info.side !== state.active) {
+        if (typeof props.onInactive === 'function') props.onInactive(info, evt);
+        return;
+      }
       if (typeof props.onZone === 'function') props.onZone(info, evt);
     });
+    /* survol : on ne repeint que si la zone change réellement */
+    hit.addEventListener('mousemove', (evt) => {
+      if (!props.hoverZones) return;
+      const p = eventToSvg(evt); if (!p) return;
+      const info = screenToInfo(p.x, p.y);
+      const key = info.side + '|' + info.zoneId;
+      if (key === state.hov) return;
+      state.hov = key;
+      mark('data-hov', info.side, info.zoneId);
+    });
+    hit.addEventListener('mouseleave', () => { state.hov = null; mark('data-hov', null, null); });
 
-    function applyActive() { svg.setAttribute('class', 'hbcf-svg hbcf-' + state.active); }
+    /** Marque les cellules d'une zone d'un côté donné (sélection / survol). */
+    function mark(attr, side, zoneId) {
+      const sel = zoneLayer.querySelectorAll('rect[' + attr + ']');
+      for (let i = 0; i < sel.length; i++) sel[i].removeAttribute(attr);
+      if (!side || !zoneId) return;
+      const grp = zoneLayer.querySelector('.hbcf-zf-' + side);
+      if (!grp) return;
+      const cells = grp.querySelectorAll('rect[data-zone="' + zoneId + '"]');
+      for (let i = 0; i < cells.length; i++) cells[i].setAttribute(attr, '1');
+    }
+
+    function applyActive() {
+      svg.setAttribute('class', 'hbcf-svg hbcf-' + state.active + (state.sel ? ' has-sel' : ''));
+    }
     applyActive();
 
     const api = {
       svg: svg,
       screenToInfo: screenToInfo,
-      setActiveSide: function (side) { state.active = side === 'away' ? 'away' : 'home'; applyActive(); },
+      setActiveSide: function (side) {
+        state.active = side === 'away' ? 'away' : (side === 'both' ? 'both' : 'home');
+        applyActive();
+      },
+      /**
+       * Peint les zones de chaque moitié : { home:{zoneId:0..1}, away:{…} }.
+       * La valeur est un rendement normalisé (0 = faible, 1 = très efficace).
+       */
+      paintZones: function (maps) {
+        zoneLayer.innerHTML = '';
+        state.sel = null; applyActive();
+        if (!maps) return;
+        if (maps.home) zoneLayer.appendChild(buildZoneLayer('home', maps.home));
+        if (maps.away) zoneLayer.appendChild(buildZoneLayer('away', maps.away));
+      },
+      /** Met une zone en avant (les autres reculent) ; null pour tout rétablir. */
+      selectZone: function (side, zoneId) {
+        state.sel = (side && zoneId) ? side + '|' + zoneId : null;
+        mark('data-sel', side, zoneId);
+        applyActive();
+      },
+      /** Libellés de moitié : setSideLabels('NOTRE ÉQUIPE', 'ADVERSAIRES'). */
+      setSideLabels: function (homeText, awayText) {
+        labels.innerHTML = '';
+        const add = (text, cx) => {
+          if (!text) return;
+          const t = el('text', { class: 'hbcf-side-label', x: cx.toFixed(1), y: (FH - 10).toFixed(1), 'text-anchor': 'middle' });
+          t.textContent = text;
+          labels.appendChild(t);
+        };
+        add(homeText, FW * 0.25); add(awayText, FW * 0.75);
+      },
       highlight: function (info) {
         const cx = info.pos.x / 100 * WID, cy = info.pos.y / 100 * G.L, s = TS(cx, cy, info.side);
         zonehi.setAttribute('cx', s.x.toFixed(1)); zonehi.setAttribute('cy', s.y.toFixed(1));

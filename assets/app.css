@@ -514,7 +514,19 @@ input[type="text"],input[type="email"],textarea,select{
 .hbcf-dim{fill:rgba(238,237,233,0.6);pointer-events:none;transition:opacity .38s ease;}
 .hbcf-svg.hbcf-home .hbcf-dim-home,.hbcf-svg.hbcf-away .hbcf-dim-away{opacity:0;}
 .hbcf-svg.hbcf-home .hbcf-dim-away,.hbcf-svg.hbcf-away .hbcf-dim-home{opacity:1;}
+.hbcf-svg.hbcf-both .hbcf-dim{opacity:0;}          /* lecture : aucun côté en retrait */
 .hbcf-hit{cursor:crosshair;outline:none;}
+
+/* carte de tir par zone (paintZones) — vert = rentable, rouge = faible */
+.hbcf-zones{pointer-events:none;}
+.hbcf-zonefill rect{opacity:.42;transition:opacity .22s ease;shape-rendering:crispEdges;}
+.hbcf-zonefill rect[data-hov]{opacity:.62;}
+.hbcf-svg.has-sel .hbcf-zonefill rect{opacity:.16;}
+.hbcf-svg.has-sel .hbcf-zonefill rect[data-sel]{opacity:.78;}
+.hbcf-side-label{
+  fill:rgba(46,34,22,0.42);font-family:var(--cond),sans-serif;font-size:15px;font-weight:600;
+  letter-spacing:0.22em;text-transform:uppercase;
+}
 .hbcf-zonehi{fill:rgba(255,106,0,0.24);stroke:rgba(255,106,0,0.6);stroke-width:1.5;opacity:0;transition:opacity .18s ease;pointer-events:none;}
 .hbcf-zonehi.on{opacity:1;}
 .hbcf-marks{pointer-events:none;}
