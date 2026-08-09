@@ -52,17 +52,17 @@
 .sn-top{display:grid; grid-template-columns:1fr 1.7fr 1fr; gap:24px; align-items:stretch;}
 .sn-card{
   background:var(--surface-1); border:1px solid var(--hair-soft);
-  border-radius:var(--card-radius); padding:22px 24px;
+  border-radius:var(--card-radius); padding:20px 22px;
   display:flex; flex-direction:column; box-shadow:var(--shadow-xs);
 }
 .sn-card-lab{
   font-family:var(--cond); font-size:11px; font-weight:600; color:var(--t4);
-  letter-spacing:0.18em; text-transform:uppercase; margin-bottom:18px;
+  letter-spacing:0.18em; text-transform:uppercase; margin-bottom:14px;
 }
-.sn-card-foot{margin-top:auto; padding-top:18px;}
+.sn-card-foot{margin-top:auto; padding-top:14px;}
 
 /* duel : deux écussons + score */
-.sn-duel{display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:16px;}
+.sn-duel{display:flex; align-items:center; justify-content:center; gap:14px; margin-bottom:12px;}
 .sn-crest{
   width:46px; height:46px; border-radius:50%; flex-shrink:0;
   display:flex; align-items:center; justify-content:center;
@@ -75,15 +75,15 @@
 .sn-teams{text-align:center; font-size:12.5px; color:var(--t2); line-height:1.6;}
 .sn-teams b{color:var(--t1); font-weight:600;}
 .sn-outcome{
-  display:inline-flex; align-self:center; margin-top:14px;
-  font-family:var(--cond); font-size:12.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase;
-  padding:5px 12px 4px; border-radius:100px;
+  display:inline-flex; align-self:center; margin-top:10px;
+  font-family:var(--cond); font-size:12px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase;
+  padding:4px 11px 3px; border-radius:100px;
 }
 .sn-outcome.win{background:var(--win-soft); color:var(--win);}
 .sn-outcome.loss{background:var(--loss-soft); color:var(--loss);}
 .sn-meta{
-  text-align:center; margin-top:12px;
-  font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--t4);
+  text-align:center; margin-top:9px;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--t4); line-height:1.5;
 }
 .sn-btn{
   display:inline-flex; align-items:center; justify-content:center; gap:7px; width:100%;
@@ -99,24 +99,24 @@
 /* bloc central : bilan de saison */
 .sn-bilan{background:var(--surface-2); border-color:var(--hair);}
 .sn-record{display:flex; align-items:baseline; justify-content:center; gap:10px; flex-wrap:wrap;}
-.sn-record-main{font-family:var(--cond); font-size:clamp(46px,6vw,66px); font-weight:700; line-height:1; color:var(--t1);}
+.sn-record-main{font-family:var(--cond); font-size:clamp(40px,5vw,56px); font-weight:700; line-height:1; color:var(--t1);}
 .sn-record-main .l{color:var(--t3);}
 .sn-record-main .sep{color:var(--t4); font-weight:300; margin:0 4px;}
 .sn-record-pct{font-family:var(--cond); font-size:22px; font-weight:700; color:var(--orange);}
 .sn-record-line{
-  text-align:center; margin-top:10px;
-  font-family:var(--mono); font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--t4);
+  text-align:center; margin-top:8px;
+  font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--t4);
 }
 .sn-stats{
-  margin-top:26px; padding-top:24px; border-top:1px solid var(--hair-soft);
-  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:24px 18px;
+  margin-top:auto; padding-top:20px; border-top:1px solid var(--hair-soft);
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px 16px;
 }
 .sn-stat{min-width:0;}
 .sn-stat-lab{
   font-family:var(--cond); font-size:10.5px; font-weight:600; color:var(--t4);
   letter-spacing:0.14em; text-transform:uppercase; margin-bottom:5px; line-height:1.35;
 }
-.sn-stat-val{font-family:var(--cond); font-size:26px; font-weight:700; color:var(--t1); line-height:1;}
+.sn-stat-val{font-family:var(--cond); font-size:28px; font-weight:700; color:var(--t1); line-height:1;}
 .sn-stat-val .u{font-size:14px; color:var(--t3); font-weight:600;}
 
 /* --- impact players --- */
@@ -2104,7 +2104,7 @@ document.addEventListener('click', e => {
       <div class="sn-duel">${crest(S.club.tag, true)}
         <span class="sn-score">${g.us}<span class="dash">–</span>${g.them}</span>
         ${crest(g.code)}</div>
-      <div class="sn-teams"><b>${esc(S.club.nom)}</b><br>${esc(g.opponent)}</div>
+      <div class="sn-teams"><b>${esc(S.club.nom)}</b> · ${esc(g.opponent)}</div>
       <span class="sn-outcome ${win?'win':'loss'}">${win?'Victoire':'Défaite'}</span>
       <div class="sn-meta">${esc(dateShort(g.date))} · ${esc(g.competition)} · ${g.dom?'Domicile':'Extérieur'}</div>
       <div class="sn-card-foot">${voir}</div>
@@ -2124,19 +2124,14 @@ document.addEventListener('click', e => {
         <span class="sn-record-pct">${fr(r.pct)} %</span>
       </div>
       <div class="sn-record-line">${r.played} matchs joués · ${r.rank}ᵉ sur ${r.rankOf} · ${esc(r.qualification)}</div>
+      <!-- 4 repères et pas un de plus : attaque, défense, bilan net, adresse.
+           Le détail (rebonds, passes, pertes, %2/%3/LF) vit dans l'analyse de
+           saison plus bas — le bilan doit se lire d'un coup d'œil. -->
       <div class="sn-stats">
         ${stat('Points / match', p.pts)}
         ${stat('Encaissés / match', p.ptsContre)}
         ${stat('Différentiel', signed(p.diff))}
-        ${stat('Rebonds / match', p.reb)}
-        ${stat('Passes / match', p.pd)}
-        ${stat('Pertes / match', p.bp)}
-        ${stat('Interceptions', p.int)}
-        ${stat('Fautes / match', p.fa)}
-        ${stat('2 points', p.p2Pct, ' %')}
-        ${stat('3 points', p.p3Pct, ' %')}
-        ${stat('Lancers francs', p.lfPct, ' %')}
-        ${stat('Possessions / match', p.pace != null ? p.pace : S.pace)}
+        ${stat('Adresse aux tirs', p.fgPct, ' %')}
       </div>
     </div>`;
   }
@@ -2155,9 +2150,9 @@ document.addEventListener('click', e => {
       <div class="sn-duel">${crest(S.club.tag, true)}
         <span class="sn-score" style="font-size:20px;">VS</span>
         ${crest(m.away.code)}</div>
-      <div class="sn-teams"><b>${esc(m.away.name)}</b><br>${esc(m.competition)}</div>
+      <div class="sn-teams"><b>${esc(m.away.name)}</b></div>
       <span class="sn-outcome" style="background:var(--orange-soft);color:var(--orange);">${dom?'Domicile':'Extérieur'}</span>
-      <div class="sn-meta">${esc(m.lieu || S.club.court)}</div>
+      <div class="sn-meta">${esc(m.competition)} · ${esc(m.lieu || S.club.court)}</div>
       <div class="sn-card-foot">${prep}</div>
     </div>`;
   }
