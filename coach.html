@@ -445,283 +445,7 @@
 #marker .pulse{position:absolute; width:100%; height:100%; border-radius:50%; opacity:0.35; animation:pulse 1.6s ease-out infinite;}
 @keyframes pulse{0%{transform:scale(0.6); opacity:0.5;} 100%{transform:scale(2.2); opacity:0;}}
 
-/* ---------- Live (v4 — calme, minimal, tablette-first) ---------- */
-:root{
-  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px;
-  --space-5:24px; --space-6:32px; --space-7:48px; --space-8:64px;
-  --lv-surface:#FFFFFF;
-  --lv-surface-2:#F2F1ED;
-  --lv-radius:22px; --lv-radius-sm:16px;
-  --lv-shadow:var(--shadow-sm);
-}
-#page-live.page{padding-left:0; padding-right:0;}
-.lv{max-width:1440px; margin:0 auto; padding-inline:clamp(20px,4vw,56px);
-  display:flex; flex-direction:column; gap:var(--space-6);}
-
-/* ===== bandeau épuré ===== */
-.lv-board{
-  position:sticky; top:46px; z-index:40;
-  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:var(--space-5);
-  min-height:96px; padding:var(--space-5) var(--space-6);
-  border-radius:var(--lv-radius); background:var(--lv-surface-2); box-shadow:var(--lv-shadow);
-}
-.lv-side{display:flex; align-items:center; gap:var(--space-4); min-width:0;}
-.lv-side.away{flex-direction:row-reverse; text-align:right;}
-.lv-crest{
-  width:40px; height:40px; border-radius:12px; flex-shrink:0;
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--cond); font-size:14px; font-weight:600; color:var(--t3); background:var(--lv-surface);
-}
-.lv-crest.home{background:var(--orange-soft); color:var(--orange);}
-.lv-team-name{font-size:16px; font-weight:500; color:var(--t2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.lv-score{font-family:var(--cond); font-size:clamp(40px,4.4vw,48px); font-weight:700; line-height:1; color:var(--t1); font-variant-numeric:tabular-nums;}
-.lv-score.flash{animation:lvFlash .4s ease;}
-@keyframes lvFlash{0%{color:var(--orange);} 100%{color:var(--t1);}}
-.lv-center{display:flex; flex-direction:column; align-items:center; gap:var(--space-2); padding:0 var(--space-2);}
-.lv-clockrow{display:flex; align-items:center; gap:var(--space-3);}
-.lv-quarter{font-size:14px; font-weight:600; color:var(--t3);}
-.lv-clock{font-family:var(--cond); font-size:clamp(28px,3vw,32px); font-weight:600; color:var(--t2); font-variant-numeric:tabular-nums; letter-spacing:0.01em;}
-.lv-clock.paused{color:var(--t4);}
-.lv-ctrlrow{display:flex; align-items:center; gap:var(--space-2);}
-.lv-status{display:none;}
-.lv-livedot{width:6px; height:6px; border-radius:50%; background:var(--orange); flex-shrink:0;}
-.lv-livedot.run{animation:blink 1.6s infinite;}
-.lv-boardbtn{
-  height:40px; min-width:40px; padding:0 var(--space-3); border-radius:12px;
-  display:inline-flex; align-items:center; justify-content:center; gap:var(--space-2); color:var(--t2);
-  font-size:13px; font-weight:500; background:var(--lv-surface); transition:background .14s, color .14s, transform .14s;
-}
-.lv-boardbtn:hover{background:var(--lv-surface-2); color:var(--t1);}
-.lv-boardbtn:active{transform:scale(0.97);}
-.lv-menu{position:relative;}
-.lv-menu-pop{
-  position:absolute; right:0; top:calc(100% + var(--space-2)); z-index:60; min-width:236px;
-  background:var(--surface-1); border:1px solid var(--hair); border-radius:var(--lv-radius-sm); padding:var(--space-2);
-  box-shadow:var(--shadow-lg); display:none;
-}
-.lv-menu-pop.open{display:block;}
-.lv-menu-pop button{display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); width:100%; padding:var(--space-3) var(--space-3); border-radius:10px; font-size:14px; color:var(--t2); text-align:left; transition:.12s;}
-.lv-menu-pop button:hover{background:var(--lv-surface-2); color:var(--t1);}
-.lv-menu-pop .sep{height:1px; background:var(--hair-soft); margin:var(--space-1) var(--space-2);}
-.lv-menu-pop button.danger:hover{color:var(--loss);}
-
-/* ===== rangée de joueurs (simple : n° + nom) ===== */
-.lv-playersrow{display:flex; flex-direction:column; gap:var(--space-3);}
-.lv-players-head{display:flex; align-items:center; justify-content:space-between; gap:var(--space-3);}
-.lv-players-title{font-size:13px; font-weight:500; color:var(--t3);}
-.lv-teamseg{display:inline-flex; background:var(--lv-surface); border-radius:11px; padding:3px;}
-.lv-teamseg button{
-  padding:6px 14px; border-radius:9px; display:flex; align-items:center; gap:var(--space-2);
-  font-size:12.5px; font-weight:500; color:var(--t3); transition:.14s;
-}
-.lv-teamseg button .tag{display:none;}
-.lv-teamseg button.active{background:var(--lv-surface-2); color:var(--t1);}
-.lv-teamseg button.active[data-team="zal"]{color:var(--orange);}
-.lv-lineup{display:grid; grid-template-columns:repeat(5,1fr); gap:var(--space-3);}
-.lv-player{
-  min-height:64px; text-align:left; display:flex; align-items:center; gap:var(--space-3);
-  padding:0 var(--space-4); border-radius:18px; background:var(--lv-surface);
-  transition:background .14s, transform .12s, box-shadow .14s;
-}
-.lv-player:hover{background:var(--lv-surface-2);}
-.lv-player:active{transform:scale(0.98);}
-.lv-player.selected{background:var(--orange); box-shadow:0 4px 16px rgba(255,106,0,0.28);}
-.lv-pnum{
-  font-family:var(--cond); font-size:20px; font-weight:700; color:var(--t2); flex-shrink:0; min-width:24px;
-  font-variant-numeric:tabular-nums;
-}
-.lv-player.selected .lv-pnum{color:#180D06;}
-.lv-player.fouled-out .lv-pnum{color:var(--loss);}
-.lv-pname{font-size:15px; font-weight:500; color:var(--t1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.lv-player.selected .lv-pname{color:#180D06;}
-
-/* ===== disposition principale ===== */
-.lv-main{display:grid; grid-template-columns:minmax(0,1.7fr) minmax(320px,0.9fr); gap:var(--space-7); align-items:start;}
-.lv-card{background:var(--lv-surface); border-radius:var(--lv-radius); box-shadow:var(--lv-shadow); padding:var(--space-5);}
-.lv-card-head{display:flex; align-items:baseline; justify-content:space-between; gap:var(--space-3); margin-bottom:var(--space-5);}
-.lv-card-title{font-size:20px; font-weight:600; color:var(--t1);}
-.lv-card-sub{font-size:14px; color:var(--t3);}
-
-/* terrain */
-.lv-court-card{padding:var(--space-6);}
-.lv-courtwrap{position:relative; display:flex; align-items:center; justify-content:center;}
-.lv-courtwrap.armed{cursor:crosshair;}
-/* terrain complet double-côté */
-.lv-fullcourt{display:block; width:100%; max-width:860px; margin:0 auto; touch-action:manipulation;}
-/* repères de côté (Notre équipe / Adversaire) */
-.lv-court-sides{display:flex; align-items:center; justify-content:space-between; gap:var(--space-3); max-width:860px; margin:0 auto var(--space-4); padding:0 4px;}
-.lv-court-side{display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--t4); transition:color .3s ease, opacity .3s ease; opacity:.6;}
-.lv-court-side.active{opacity:1;}
-.lv-court-side.home.active{color:var(--orange);}
-.lv-court-side.away.active{color:var(--t1);}
-.lv-cs-dot{width:9px; height:9px; border-radius:50%; background:currentColor; box-shadow:0 0 0 3px rgba(255,106,0,0); transition:box-shadow .3s ease;}
-.lv-court-side.active .lv-cs-dot{box-shadow:0 0 8px 1px currentColor;}
-.lv-court-mid{font-family:var(--mono); color:var(--t4); font-size:14px; opacity:.5;}
-.lv-court{display:block; width:100%; max-width:640px; touch-action:manipulation;}
-.lv-court .ln{stroke:rgba(46,34,22,0.60); stroke-width:1.5; fill:none;}
-.lv-court .ln-soft{stroke:rgba(46,34,22,0.34); stroke-width:1; fill:none;}
-.lv-court .ln-div{stroke:rgba(46,34,22,0.12); stroke-width:1; fill:none;}
-.lv-court .rim{stroke:var(--orange); stroke-width:2; fill:none;}
-.lv-hit{fill:transparent; cursor:crosshair;}
-.lv-zonehi{fill:rgba(255,106,0,0.14); opacity:0; pointer-events:none; transition:opacity .14s;}
-.lv-zonehi.on{opacity:1;}
-.mk-made circle.core{fill:var(--win);} .mk-made circle.ring{fill:none; stroke:var(--win); stroke-width:1.8;}
-.mk-miss line{stroke:var(--loss); stroke-width:2.4; stroke-linecap:round;}
-.mk-foul circle{fill:none; stroke:var(--warn); stroke-width:2;}
-.mk{animation:mkin .16s ease both;}
-@keyframes mkin{from{opacity:0;} to{opacity:1;}}
-.lv-legend{display:flex; align-items:center; gap:var(--space-4); margin-top:var(--space-5); font-size:12px; color:var(--t4);}
-.lv-legend span{display:flex; align-items:center; gap:var(--space-2);}
-.lv-lg-made{width:9px; height:9px; border-radius:50%; background:var(--win);}
-.lv-lg-miss{color:var(--loss); font-weight:700; font-size:12px; line-height:1;}
-
-/* ===== colonne latérale ===== */
-.lv-side-col{display:flex; flex-direction:column; gap:var(--space-5);}
-.lv-current{
-  display:flex; align-items:center; gap:var(--space-3);
-  padding:var(--space-4); border-radius:var(--lv-radius-sm); background:var(--lv-surface-2);
-  margin-bottom:var(--space-5); min-height:56px;
-}
-.lv-current-dot{width:8px; height:8px; border-radius:50%; background:var(--orange); flex-shrink:0;}
-.lv-current-dot.idle{background:var(--t4);}
-.lv-current-text{font-size:15px; color:var(--t2);}
-.lv-current-text b{color:var(--t1); font-weight:600;}
-.lv-cancel{display:none; margin-left:auto; align-items:center; gap:var(--space-2); font-size:12px; font-weight:500; color:var(--loss); padding:var(--space-2) var(--space-3); border-radius:10px; background:var(--loss-soft); transition:.14s;}
-.lv-cancel:hover{filter:brightness(1.1);}
-.lv-cancel.show{display:inline-flex;}
-.lv-actiongrid{display:grid; grid-template-columns:1fr 1fr; gap:var(--space-4);}
-.lv-act{
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:var(--space-2);
-  min-height:72px; padding:var(--space-4); border-radius:20px; background:var(--lv-surface-2);
-  font-size:15px; font-weight:500; color:var(--t1); white-space:nowrap; text-align:center;
-  transition:background .14s, transform .12s, box-shadow .14s;
-}
-.lv-act:hover{background:rgba(28,22,16,0.06);}
-.lv-act:active{transform:scale(0.98);}
-.lv-act[disabled]{opacity:0.35; cursor:not-allowed;} .lv-act[disabled]:active{transform:none;}
-.lv-act .ic{width:22px; height:22px; color:var(--t3);}
-.lv-act.pressed{background:var(--orange); color:#180D06;} .lv-act.pressed .ic{color:#180D06;}
-.lv-act.accent .ic{color:var(--orange);}
-.lv-act.foul .ic{color:var(--warn);}
-/* variantes compactes (popover / feuille) */
-.lv-act.row{flex-direction:row; min-height:56px; gap:var(--space-2); font-size:15px; border-radius:14px;}
-.lv-act.row .ic{width:18px; height:18px;}
-.lv-act.made.row{color:var(--win);} .lv-act.made.row .ic{color:var(--win);} .lv-act.made.row:hover{background:var(--win-soft);}
-.lv-act.miss.row{color:var(--loss);} .lv-act.miss.row .ic{color:var(--loss);} .lv-act.miss.row:hover{background:var(--loss-soft);}
-.lv-act.foul.row{color:var(--warn);} .lv-act.foul.row:hover{background:rgba(201,158,99,0.12);}
-
-/* bloc dernière action */
-.lv-last{display:flex; align-items:center; gap:var(--space-3); min-height:52px;}
-.lv-last-dot{width:26px; height:26px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--lv-surface-2); color:var(--t3);}
-.lv-last-dot.made{background:var(--win-soft); color:var(--win);} .lv-last-dot.miss{background:var(--loss-soft); color:var(--loss);} .lv-last-dot.foul{background:rgba(201,158,99,0.14); color:var(--warn);}
-.lv-last-main{flex:1; min-width:0;}
-.lv-last-lab{font-size:14px; color:var(--t1); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.lv-last-lab b{font-weight:600;}
-.lv-last-time{font-family:var(--mono); font-size:11px; color:var(--t4); margin-top:2px;}
-.lv-last-empty{font-size:14px; color:var(--t4);}
-.lv-undo{display:inline-flex; align-items:center; gap:var(--space-2); font-size:13px; font-weight:500; color:var(--t2); padding:var(--space-2) var(--space-3); border-radius:11px; background:var(--lv-surface-2); flex-shrink:0; transition:.14s;}
-.lv-undo:hover{background:rgba(241,235,224,0.10); color:var(--t1);} .lv-undo:active{transform:scale(0.97);}
-.lv-undo[disabled]{opacity:0.35; cursor:not-allowed;}
-.lv-redo{display:none;}
-.lv-feed-open{width:100%; margin-top:var(--space-1); padding:var(--space-4); border-radius:var(--lv-radius-sm); background:var(--lv-surface); font-size:14px; font-weight:500; color:var(--t2); display:flex; align-items:center; justify-content:center; gap:var(--space-2); transition:.14s;}
-.lv-feed-open:hover{background:var(--lv-surface-2); color:var(--t1);}
-
-/* ===== popover (tir / rebond / faute / correction / édition) ===== */
-.lv-pop{position:fixed; z-index:70; display:none; flex-direction:column; gap:var(--space-2); min-width:200px;
-  background:var(--surface-1); border:1px solid var(--hair); border-radius:var(--lv-radius-sm); padding:var(--space-3); box-shadow:var(--shadow-lg);}
-.lv-pop.open{display:flex;}
-.lv-pop-head{font-size:12px; color:var(--t4); padding:var(--space-1) var(--space-1) var(--space-2); text-align:center;}
-.lv-pop-chips{display:flex; gap:var(--space-2); flex-wrap:wrap; justify-content:center; padding-bottom:var(--space-2);}
-.lv-pop-chip{width:40px; height:40px; border-radius:11px; background:var(--lv-surface-2); font-family:var(--cond); font-size:16px; font-weight:700; color:var(--t2); transition:.12s;}
-.lv-pop-chip:hover{background:var(--orange); color:#180D06;}
-
-/* ===== panneaux glissants (drawer / feuille / fil) ===== */
-.lv-overlay-root{position:fixed; inset:0; z-index:120; overflow:hidden; pointer-events:none;}
-.lv-scrim{position:absolute; inset:0; background:rgba(20,16,12,0.32); -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px); opacity:0; pointer-events:none; transition:opacity .25s;}
-.lv-scrim.open{opacity:1; pointer-events:auto;}
-.lv-drawer{position:absolute; top:0; right:0; bottom:0; width:min(400px,92vw); background:var(--surface-1); box-shadow:var(--shadow-lg); border-radius:24px 0 0 24px; transform:translateX(100%); transition:transform .28s cubic-bezier(.32,.72,0,1); display:flex; flex-direction:column; pointer-events:auto;}
-.lv-drawer.open{transform:translateX(0);}
-.lv-drawer-head{display:flex; align-items:center; justify-content:space-between; padding:var(--space-5) var(--space-5) var(--space-4);}
-.lv-drawer-title{font-size:18px; font-weight:600; color:var(--t1);}
-.lv-drawer-sub{padding:0 var(--space-5) var(--space-3); font-size:13px; color:var(--t3); line-height:1.5;}
-.lv-drawer-list{flex:1; overflow-y:auto; padding:var(--space-2) var(--space-4) var(--space-5);}
-.lv-drawer-group{font-size:12px; font-weight:500; color:var(--t4); padding:var(--space-4) var(--space-2) var(--space-2);}
-.lv-sub-player{display:flex; align-items:center; gap:var(--space-3); width:100%; text-align:left; padding:var(--space-3); border-radius:14px; min-height:56px; transition:.12s;}
-.lv-sub-player:hover{background:var(--lv-surface-2);}
-.lv-sub-player.picked{background:var(--orange); color:#180D06;}
-.lv-sub-player.picked .lv-pnum,.lv-sub-player.picked .lv-pname{color:#180D06;}
-/* stats secondaires (dans le panneau fil) */
-.lv-stats{display:flex; gap:var(--space-5); padding:0 var(--space-5) var(--space-4); flex-wrap:wrap;}
-.lv-stat{font-size:12.5px; color:var(--t3); display:flex; align-items:center; gap:var(--space-2);}
-.lv-stat.bonus{color:var(--loss);}
-.lv-timeouts{display:inline-flex; gap:3px;}
-.lv-to-dot{width:6px; height:6px; border-radius:50%; background:var(--t3);}
-.lv-poss{display:inline-flex;}
-.lv-poss .arrow{color:var(--orange); opacity:0; font-size:12px;}
-.lv-poss.home .arrow.l,.lv-poss.away .arrow.r{opacity:1;}
-/* fil */
-.lv-feed{flex:1; overflow-y:auto; padding:0 var(--space-3) var(--space-4);}
-.lv-ev{display:grid; grid-template-columns:auto auto 1fr auto auto auto; align-items:center; gap:var(--space-3); width:100%; padding:var(--space-3) var(--space-2); border-top:1px solid var(--hair-soft);}
-.lv-ev:first-child{border-top:none;}
-.lv-ev.last{background:var(--lv-surface); border-radius:12px;}
-.lv-ev.opp{opacity:0.85;}
-.lv-ev-time{font-family:var(--mono); font-size:10px; color:var(--t4); line-height:1.3; white-space:nowrap;}
-.lv-ev-dot{width:22px; height:22px; border-radius:7px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
-.lv-ev-dot.made{background:var(--win-soft); color:var(--win);} .lv-ev-dot.miss{background:var(--loss-soft); color:var(--loss);}
-.lv-ev-dot.neutral{background:var(--lv-surface-2); color:var(--t3);} .lv-ev-dot.foul{background:rgba(201,158,99,0.14); color:var(--warn);} .lv-ev-dot.admin{background:var(--lv-surface-2); color:var(--t4);}
-.lv-ev-main{min-width:0; overflow:hidden;}
-.lv-ev-lab{font-size:13px; color:var(--t2); line-height:1.35; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-.lv-ev-lab b{color:var(--t1); font-weight:500;}
-.lv-ev-score{font-family:var(--cond); font-size:13px; font-weight:700; color:var(--t3); white-space:nowrap;}
-.lv-ev-btn{width:26px; height:26px; border-radius:8px; display:inline-flex; align-items:center; justify-content:center; color:var(--t4); opacity:0.6; transition:.12s;}
-.lv-ev:hover .lv-ev-btn{opacity:1;}
-.lv-ev-btn:hover{background:var(--lv-surface-2); color:var(--t2);}
-.lv-ev-btn.del:hover{color:var(--loss);}
-.lv-feed-empty{padding:var(--space-6) var(--space-4); text-align:center; font-size:13px; color:var(--t4);}
-
-/* feuille "Plus" */
-.lv-sheet{position:absolute; left:0; right:0; bottom:0; background:var(--surface-1); box-shadow:var(--shadow-lg); border-radius:24px 24px 0 0; transform:translateY(100%); transition:transform .28s cubic-bezier(.32,.72,0,1); pointer-events:auto; max-height:80vh; overflow-y:auto;}
-.lv-sheet.open{transform:translateY(0);}
-.lv-sheet.side{left:auto; right:0; top:0; bottom:0; width:min(400px,92vw); border-radius:24px 0 0 24px; transform:translateX(100%);}
-.lv-sheet.side.open{transform:translateX(0);}
-.lv-sheet-head{display:flex; align-items:center; justify-content:space-between; padding:var(--space-5) var(--space-5) var(--space-4);}
-.lv-sheet-body{padding:0 var(--space-5) var(--space-6); display:grid; grid-template-columns:1fr 1fr; gap:var(--space-3);}
-
-/* barre d'actions mobile */
-.lv-bottombar{display:none; position:fixed; left:0; right:0; bottom:0; z-index:100; grid-template-columns:repeat(4,1fr); gap:var(--space-2); padding:var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom)); background:var(--glass-bg); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur); box-shadow:0 -0.5px 0 var(--hair), 0 -8px 24px rgba(28,22,16,0.06);}
-.lv-bb{display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; min-height:56px; border-radius:14px; background:var(--lv-surface); color:var(--t1); font-size:12px; font-weight:500;}
-.lv-bb .ic{width:20px; height:20px; color:var(--t3);}
-.lv-bb.pressed{background:var(--orange); color:#180D06;} .lv-bb.pressed .ic{color:#180D06;}
-
-/* toast */
-.lv-toast{position:fixed; left:50%; bottom:var(--space-6); transform:translateX(-50%) translateY(14px); z-index:130; display:flex; align-items:center; gap:var(--space-2); padding:var(--space-3) var(--space-5); border-radius:14px; background:var(--glass-bg); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur); border:1px solid var(--hair); box-shadow:var(--shadow-lg); font-size:14px; color:var(--t1); opacity:0; pointer-events:none; transition:opacity .14s, transform .14s;}
-.lv-toast.show{opacity:1; transform:translateX(-50%) translateY(0);}
-.lv-toast .tk{width:20px; height:20px; border-radius:6px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
-.lv-toast .tk.made{background:var(--win-soft); color:var(--win);} .lv-toast .tk.miss{background:var(--loss-soft); color:var(--loss);} .lv-toast .tk.neutral{background:var(--orange-soft); color:var(--orange);} .lv-toast .tk.foul{background:rgba(201,158,99,0.16); color:var(--warn);}
-
-/* portrait : conseil paysage */
-.lv-rotate{display:none;}
-
-/* ===== responsive ===== */
-@media(max-width:1080px){ .lv-board{top:54px;} .lv-main{grid-template-columns:1fr; gap:var(--space-6);} }
-@media(max-width:760px){
-  .lv-board{min-height:0; padding:var(--space-4) var(--space-4);}
-  .lv-lineup{grid-template-columns:repeat(5,minmax(96px,1fr)); overflow-x:auto;}
-  .lv-actiongrid{gap:var(--space-3);}
-  .lv-sheet-body{grid-template-columns:1fr 1fr;}
-}
-@media (orientation:portrait) and (max-width:620px){
-  .lv-rotate{display:flex; align-items:center; gap:var(--space-2); padding:var(--space-3) var(--space-4); border-radius:var(--lv-radius-sm); background:var(--lv-surface-2); font-size:13px; color:var(--t3);}
-}
-@media (orientation:landscape) and (max-height:560px){
-  .lv-board{position:static; min-height:0;}
-  .lv-main{grid-template-columns:1fr;}
-  .lv-side-col{display:none;}
-  .lv-lineup{grid-template-columns:repeat(5,minmax(88px,1fr)); overflow-x:auto;}
-  main{padding-bottom:76px !important;}
-  .lv-bottombar{display:grid;}
-}
-@media (prefers-reduced-motion: reduce){ .lv-livedot.run{animation:none;} }
+/* Le Match Live (#/live) vit désormais dans /assets/app.css, namespace .lv2-* */
 
 /* ---------- Entraînement ---------- */
 .metrics-grid{display:grid; grid-template-columns:repeat(4,1fr); gap:14px;}
@@ -938,6 +662,15 @@
     <div class="sb-group">Club</div>
     <button class="tab sb-item" data-goto="effectif"><span class="sb-ico"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5a3.5 3.5 0 010 7M21 20c0-2.6-1.6-4.8-4-5.6"/></svg></span>Effectif</button>
   </nav>
+  <!-- Accès Match Live : bloc à part, volontairement hors de la navigation -->
+  <div class="sb-live">
+    <button class="sb-live-now" id="sbLiveNow" data-route="#/live" hidden>
+      <span class="sb-live-tag"><span class="sb-live-dot"></span>Live</span>
+      <span class="sb-live-score" id="sbLiveScore"></span>
+      <span class="sb-live-time" id="sbLiveTime"></span>
+    </button>
+    <button class="sb-live-btn" data-route="#/live">Match live</button>
+  </div>
   <div class="sb-foot">
     <div class="account">
       <span class="account-avatar" aria-hidden="true">TV</span>
@@ -1551,120 +1284,12 @@
 <!-- ============================================================
      PAGE 5 — MATCH LIVE
 ============================================================ -->
-<section class="page" id="page-live">
-  <div class="lv">
+<section class="page" id="page-live"></section>
 
-    <!-- ===== BANDEAU (épuré) ===== -->
-    <div class="lv-board" role="group" aria-label="Score du match">
-      <div class="lv-side home">
-        <span class="lv-crest home mono">ZAL</span>
-        <div class="lv-team-name">Žalgiris</div>
-        <div class="lv-score mono" id="lvScoreHome" aria-live="polite">66</div>
-      </div>
-      <div class="lv-center">
-        <div class="lv-clockrow">
-          <span class="lv-quarter" id="lvQuarter">Q3</span>
-          <span class="lv-clock mono" id="lvClock" role="timer" aria-label="Chronomètre">06:00</span>
-        </div>
-        <div class="lv-ctrlrow">
-          <span class="lv-status"><span class="lv-livedot run" id="lvDot"></span><span id="lvStatusText">En cours</span></span>
-          <button class="lv-boardbtn" id="lvPause" aria-label="Pause ou reprise"><svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" id="lvPauseIco"><path d="M7 5h4v14H7zM13 5h4v14h-4z"/></svg><span>Pause</span></button>
-          <div class="lv-menu">
-            <button class="lv-boardbtn" id="lvMenuBtn" aria-label="Plus d'options" aria-haspopup="true" aria-expanded="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
-            <div class="lv-menu-pop" id="lvMenu" role="menu">
-              <button role="menuitem" data-mact="end-q">Fin du quart-temps</button>
-              <button role="menuitem" data-mact="poss">Changer la possession</button>
-              <div class="sep"></div>
-              <button role="menuitem" data-mact="prev-q">Quart-temps précédent</button>
-              <button role="menuitem" data-mact="next-q">Quart-temps suivant</button>
-              <div class="sep"></div>
-              <button role="menuitem" class="danger" data-mact="end">Terminer le match…</button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="lv-side away">
-        <span class="lv-crest mono">HTA</span>
-        <div class="lv-team-name">Hapoel Tel Aviv</div>
-        <div class="lv-score mono" id="lvScoreAway">40</div>
-      </div>
-    </div>
-
-    <!-- conseil portrait -->
-    <div class="lv-rotate"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 4l3 3-3 3M4 12a8 8 0 018-8h8"/></svg>Tournez l'appareil en paysage pour plus de confort.</div>
-
-    <!-- ===== JOUEURS (n° + nom) ===== -->
-    <div class="lv-playersrow">
-      <div class="lv-players-head">
-        <span class="lv-players-title">Cinq sur le terrain</span>
-        <div class="lv-teamseg" role="tablist" aria-label="Équipe active">
-          <button data-team="zal" class="active" role="tab" aria-selected="true"><span class="tag"></span>Notre équipe</button>
-          <button data-team="opp" role="tab" aria-selected="false"><span class="tag"></span>Adversaire</button>
-        </div>
-      </div>
-      <div class="lv-lineup" id="lvLineup" role="listbox" aria-label="Joueurs sur le terrain"></div>
-    </div>
-
-    <!-- ===== TERRAIN | COMMANDES ===== -->
-    <div class="lv-main">
-      <!-- terrain -->
-      <div class="lv-card lv-court-card">
-        <div class="lv-card-head">
-          <span class="lv-card-title">Terrain</span>
-          <span class="lv-card-sub">Touchez le bon côté du terrain pour enregistrer le tir</span>
-        </div>
-        <div class="lv-court-sides" aria-hidden="true">
-          <span class="lv-court-side home active" id="lvSideHome"><span class="lv-cs-dot"></span>Notre équipe</span>
-          <span class="lv-court-mid">›‹</span>
-          <span class="lv-court-side away" id="lvSideAway">Adversaire<span class="lv-cs-dot"></span></span>
-        </div>
-        <div class="lv-courtwrap" id="lvCourtWrap">
-          <div class="lv-fullcourt" id="lvCourt" role="img" aria-label="Terrain de basket complet. Touchez le côté de l'équipe active pour localiser un tir et déterminer sa valeur."></div>
-        </div>
-        <div class="lv-legend">
-          <span><span class="lv-lg-made"></span>Réussi</span>
-          <span><span class="lv-lg-miss">✕</span>Manqué</span>
-        </div>
-      </div>
-
-      <!-- commandes -->
-      <div class="lv-side-col">
-        <div class="lv-card">
-          <div class="lv-card-head"><span class="lv-card-title">Action</span></div>
-          <div class="lv-current">
-            <span class="lv-current-dot idle" id="lvCurrentDot"></span>
-            <span class="lv-current-text" id="lvContext">Sélectionnez un joueur</span>
-            <button class="lv-cancel" id="lvCancel"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M6 6l12 12M18 6L6 18"/></svg>Annuler</button>
-          </div>
-          <div class="lv-actiongrid">
-            <button class="lv-act accent" data-main="shot"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 000 18M3 12h18"/></svg></span>Tir</button>
-            <button class="lv-act" data-main="rebound"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M5 10l7-7 7 7M5 14l7 7 7-7"/></svg></span>Rebond</button>
-            <button class="lv-act foul" data-main="foul"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg></span>Faute</button>
-            <button class="lv-act" id="lvMoreBtn" aria-haspopup="true"><span class="ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>Plus</button>
-          </div>
-        </div>
-
-        <div class="lv-card">
-          <div class="lv-card-head"><span class="lv-card-title">Dernière action</span>
-            <button class="lv-undo" id="lvUndo" disabled><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a6 6 0 010 12h-3"/></svg>Annuler</button>
-          </div>
-          <div class="lv-last" id="lvLast"><span class="lv-last-empty">Aucune action enregistrée</span></div>
-          <button class="lv-redo" id="lvRedo">Rétablir</button>
-        </div>
-
-        <button class="lv-feed-open" id="lvFeedOpen"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg>Voir le fil du match</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- barre d'actions mobile (téléphone paysage) -->
-  <nav class="lv-bottombar" aria-label="Actions rapides">
-    <button class="lv-bb" data-main="shot"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/></svg></span>Tir</button>
-    <button class="lv-bb" data-main="rebound"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M5 10l7-7 7 7"/></svg></span>Rebond</button>
-    <button class="lv-bb foul" data-main="foul"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg></span>Faute</button>
-    <button class="lv-bb" id="lvMoreMobile"><span class="ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></span>Plus</button>
-  </nav>
-</section>
+<!-- ============================================================
+     PAGE — NOUVEAU MATCH LIVE (création express)
+============================================================ -->
+<section class="page" id="page-live-new"></section>
 
 
 
@@ -1938,52 +1563,19 @@
   <button class="tab" data-goto="effectif" aria-label="Effectif"><span class="tab-ico"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6M16 5a3.5 3.5 0 010 7M21 20c0-2.6-1.6-4.8-4-5.6"/></svg></span>Effectif</button>
 </nav>
 <div class="scrim" id="appScrim"></div>
-<!-- overlays Match Live (hors de <main> pour passer au-dessus de la topbar) -->
-<!-- popover partagé -->
-  <div class="lv-pop" id="lvPop" role="dialog" aria-label="Choix"></div>
-<!-- overlays -->
-  <div class="lv-overlay-root">
-    <!-- changement -->
-    <div class="lv-scrim" id="lvDrawerScrim"></div>
-    <aside class="lv-drawer" id="lvDrawer" aria-label="Changement de joueur" aria-hidden="true">
-      <div class="lv-drawer-head"><span class="lv-drawer-title">Changement</span><button class="lv-boardbtn" id="lvDrawerClose" aria-label="Fermer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-      <div class="lv-drawer-sub" id="lvDrawerSub">1. Choisissez le joueur qui sort.</div>
-      <div class="lv-drawer-list" id="lvDrawerList"></div>
-    </aside>
-
-    <!-- feuille "Plus" -->
-    <div class="lv-scrim" id="lvSheetScrim"></div>
-    <div class="lv-sheet" id="lvSheet" aria-label="Plus d'actions" aria-hidden="true">
-      <div class="lv-sheet-head"><span class="lv-drawer-title">Plus d'actions</span><button class="lv-boardbtn" id="lvSheetClose" aria-label="Fermer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-      <div class="lv-sheet-body">
-        <button class="lv-act row" data-ev="assist" data-lab="Passe décisive">Passe déc.</button>
-        <button class="lv-act row" data-ev="steal" data-lab="Interception">Interception</button>
-        <button class="lv-act row" data-ev="block" data-lab="Contre">Contre</button>
-        <button class="lv-act row" data-ev="turnover" data-lab="Perte de balle">Perte de balle</button>
-        <button class="lv-act row" data-foul="foul-drawn" data-lab="Faute provoquée">F. provoquée</button>
-        <button class="lv-act row" data-admin="timeout">Temps-mort</button>
-        <button class="lv-act row" data-admin="sub">Remplacement</button>
-        <button class="lv-act row" data-admin="score-adj">Correction</button>
-      </div>
-    </div>
-
-    <!-- fil du match -->
-    <div class="lv-scrim" id="lvFeedScrim"></div>
-    <div class="lv-sheet side" id="lvFeedPanel" aria-label="Fil du match" aria-hidden="true">
-      <div class="lv-sheet-head"><span class="lv-drawer-title">Fil du match</span>
-        <span style="display:flex; gap:8px; align-items:center;">
-          <button class="lv-undo" id="lvUndo2"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a6 6 0 010 12h-3"/></svg>Annuler</button>
-          <button class="lv-boardbtn" id="lvFeedClose" aria-label="Fermer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
-        </span>
-      </div>
-      <div class="lv-stats">
-        <span class="lv-stat"><span id="lvTfHome">Fautes : 3</span><span class="lv-timeouts" id="lvToHome"></span><span class="lv-poss" id="lvPossHome"><span class="arrow l">◄</span></span></span>
-        <span class="lv-stat"><span id="lvTfAway">Fautes : 2</span><span class="lv-timeouts" id="lvToAway"></span><span class="lv-poss" id="lvPossAway"><span class="arrow r">►</span></span></span>
-      </div>
-      <div class="lv-feed" id="lvFeed"></div>
-    </div>
+<!-- Match Live : bottom sheet unique (action → joueur → remplacement) + toast.
+     Hors de <main> pour passer au-dessus de la topbar. -->
+<div class="lv2-scrim" id="lv2Scrim"></div>
+<aside class="lv2-sheet" id="lv2Sheet" role="dialog" aria-modal="true" aria-hidden="true" aria-labelledby="lv2SheetTitle">
+  <div class="lv2-sheet-grip" aria-hidden="true"></div>
+  <div class="lv2-sheet-head">
+    <h2 class="lv2-sheet-title" id="lv2SheetTitle"></h2>
+    <button class="lv2-sheet-close" id="lv2SheetClose" aria-label="Fermer"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
   </div>
-<div class="lv-toast" id="lvToast" role="status" aria-live="polite"></div>
+  <p class="lv2-sheet-sub" id="lv2SheetSub"></p>
+  <div class="lv2-sheet-body" id="lv2SheetBody"></div>
+</aside>
+<div class="lv2-toast" id="lv2Toast" role="status" aria-live="polite"></div>
 
 
 <!-- Modèle de données unique (source de vérité UI) : vraies données Žalgiris
@@ -2011,6 +1603,7 @@ const ROUTES = [
   ['^/matchs/([^/]+)/live/?$',         'live',           ['matchId']],
   ['^/matchs/nouveau/?$',              'match-new'],
   ['^/matchs/([^/]+)/?$',              'match',          ['matchId']],
+  ['^/live/nouveau/?$',                'live-new'],
   ['^/live/?$',                        'live'],
   ['^/joueurs/([^/]+)/matchs/([^/]+)/?$', 'joueur-match',  ['playerId','gameId']],
   ['^/joueurs/([^/]+)/?$',             'joueur',         ['playerId']],
@@ -2024,9 +1617,9 @@ const ROUTES = [
   ['^/entrainements/?$',               'training']
 ];
 /* vues disposant déjà d'une section ; les autres -> placeholder « en construction » */
-const VIEW_SECTION = { saison:'page-saison', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', rapport:'page-rapport', preparation:'page-preparation', live:'page-live', joueur:'page-joueur', 'joueur-match':'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail', 'training-collectifs':'page-training-collectifs', 'training-tir':'page-training-tir', 'training-perso':'page-training-perso' };
-const VIEW_TAB     = { saison:'saison', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', rapport:'gamecenter', preparation:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', 'joueur-match':'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training', 'training-collectifs':'training', 'training-tir':'training', 'training-perso':'training' };
-const VIEW_TITLE   = { saison:'Saison', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', rapport:'Analyse du match', preparation:'Préparation du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', 'joueur-match':'Match du joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', 'training-collectifs':'Entraînements collectifs', 'training-tir':'Entraînements tir', 'training-perso':'Séances personnalisées', notfound:'Page introuvable' };
+const VIEW_SECTION = { saison:'page-saison', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', rapport:'page-rapport', preparation:'page-preparation', live:'page-live', 'live-new':'page-live-new', joueur:'page-joueur', 'joueur-match':'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail', 'training-collectifs':'page-training-collectifs', 'training-tir':'page-training-tir', 'training-perso':'page-training-perso' };
+const VIEW_TAB     = { saison:'saison', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', rapport:'gamecenter', preparation:'gamecenter', 'match-new':'gamecenter', joueur:'effectif', 'joueur-match':'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training', 'training-collectifs':'training', 'training-tir':'training', 'training-perso':'training' };
+const VIEW_TITLE   = { saison:'Saison', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', rapport:'Analyse du match', preparation:'Préparation du match', 'match-new':'Nouveau match', live:'Match live', 'live-new':'Nouveau match live', joueur:'Fiche joueur', 'joueur-match':'Match du joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', 'training-collectifs':'Entraînements collectifs', 'training-tir':'Entraînements tir', 'training-perso':'Séances personnalisées', notfound:'Page introuvable' };
 const PLACEHOLDER  = { 'match-new':'Nouveau match' };
 /* boutons hérités data-goto -> hash (les ids réels arriveront via data-route) */
 const GOTO_HASH = { saison:'#/saison', dashboard:'#/saison', gamecenter:'#/matchs', effectif:'#/effectif', training:'#/entrainements', live:'#/live', joueur:'#/joueurs/sylvain-francisco', match:'#/matchs/hapoel' };
@@ -2477,8 +2070,8 @@ document.addEventListener('click', e => {
     if(!R){ el.innerHTML=emptyState('Aucune feuille live','Terminez un match dans le Match Live pour générer sa feuille.','#/live','Aller au Match Live'); return; }
     const m=R.match;
     const teamTable=(td)=>`<div class="fs-card"><h3 class="fs-h3">${esc(td.name)} <span class="fs-badge">${td.score} pts</span></h3>
-      <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="c">№</th><th class="l">Joueur</th><th class="c">Points</th><th class="c">Fautes</th></tr></thead>
-      <tbody>${td.players.map(p=>`<tr><td class="c">${p.num}</td><td class="l"><span class="fs-pname">${esc(p.name)}</span></td><td class="c strong">${p.pts}</td><td class="c">${p.fa}</td></tr>`).join('')||'<tr><td colspan="4" style="padding:16px;color:var(--t3);text-align:center;">Aucune action enregistrée.</td></tr>'}</tbody></table></div></div>`;
+      <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="c">№</th><th class="l">Joueur</th><th class="c">Points</th><th class="c">Reb</th><th class="c">PD</th><th class="c">Int</th><th class="c">Fautes</th></tr></thead>
+      <tbody>${td.players.map(p=>`<tr><td class="c">${p.num}</td><td class="l"><span class="fs-pname">${esc(p.name)}</span></td><td class="c strong">${p.pts}</td><td class="c">${p.reb||0}</td><td class="c">${p.ast||0}</td><td class="c">${p.stl||0}</td><td class="c">${p.fa}</td></tr>`).join('')||'<tr><td colspan="7" style="padding:16px;color:var(--t3);text-align:center;">Aucune action enregistrée.</td></tr>'}</tbody></table></div></div>`;
     let html=`<div class="page-head fs-head"><div>
         <button class="fs-back" data-route="#/live">${backSvg}Retour au Match Live</button>
         <h2 class="page-title">Feuille de match — session live</h2>
@@ -4075,454 +3668,656 @@ function selectAction(i){
 }
 selectAction(0);
 
-/* ============ PAGE LIVE (v3 — outil de saisie temps réel) ============
-   Démo client : `events` = source de vérité. Score, fautes (perso + collectives),
-   points, marqueurs, temps-morts et fil sont dérivés via recompute().
-   Deux équipes (notre équipe / adversaire), coords de tir en pourcentages. */
-(function initLive(){
+/* ============ MATCH LIVE (v4 — le terrain d'abord) =========================
+   Parcours de saisie : TERRAIN → ACTION → JOUEUR. Trois pressions, pas une de
+   plus. Le côté du terrain touché DÉTERMINE l'équipe (plus de sélecteur
+   « notre équipe / adversaire »), la zone touchée donne coordonnées, zone et
+   valeur 2/3 pts via court.js — le coach ne choisit jamais la valeur du tir.
+
+   `events` reste la source de vérité : score, statistiques joueur, marqueurs
+   et feuille de match en sont TOUS dérivés (derive()), donc « annuler »
+   recalcule l'ensemble sans traitement particulier.
+
+   Le match en cours est persisté (localStorage, clé hb_live_match) : la
+   sidebar affiche son score et son chrono, et la saisie survit à un
+   rafraîchissement de la page.
+   ========================================================================= */
+(function initLiveV4(){
   const $ = id => document.getElementById(id);
-  const courtMount = $('lvCourt'); if(!courtMount) return;
-  let courtApi = null;   // terrain complet double-côté (HoopCourt.renderFull)
+  const KEY = 'live_match';
+  const QUARTER_SEC = 10 * 60;
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const other = t => t==='zal' ? 'opp' : 'zal';
 
-  /* ---- config équipes ---- */
-  const ROSTER = {
-    zal: [
-      {num:3,name:'Sylvain Francisco',short:'S. Francisco',f0:1,p0:15},
-      {num:1,name:'Nigel Williams-Goss',short:'N. Williams-Goss',f0:0,p0:10},
-      {num:7,name:'Moses Wright',short:'M. Wright',f0:2,p0:18},
-      {num:12,name:'Maodo Lô',short:'M. Lô',f0:0,p0:13},
-      {num:10,name:'Ąžuolas Tubelis',short:'Ą. Tubelis',f0:1,p0:10},
-      {num:9,name:'Ignas Brazdeikis',short:'I. Brazdeikis',f0:0,p0:5},
-      {num:8,name:'Dustin Sleva',short:'D. Sleva',f0:1,p0:5},
-      {num:6,name:'Edgaras Ulanovas',short:'E. Ulanovas',f0:0,p0:4},
-      {num:5,name:'Arnas Butkevičius',short:'A. Butkevičius',f0:0,p0:2},
-      {num:13,name:'Laurynas Birutis',short:'L. Birutis',f0:0,p0:0},
-    ],
-    opp: [4,5,6,7,8,9,10,11].map(n => ({num:n,name:'Adversaire',short:'HTA',f0:0,p0:0})),
-  };
-  const TEAM = {
-    zal:{name:'Žalgiris', code:'ZAL', open:66, openTF:3, openTO:2, court:[3,1,7,12,10]},
-    opp:{name:'Hapoel Tel Aviv', code:'HTA', open:40, openTF:2, openTO:3, court:[4,5,6,7,8]},
-  };
-  const byNum = (t,n) => ROSTER[t].find(p => p.num===n);
-  const key = (t,n) => t+'-'+n;
-  const FOUL_LIMIT = 5;
+  let M = null;            // match en cours ({} / null = aucun)
+  let courtApi = null;     // terrain complet (HoopCourt.renderFull)
+  let pending = null;      // { team, zone|null } en cours de saisie
+  let redoEv = null, redoTimer = null;
+  let subTeam = 'home', subOut = null;
+  let tick = 0;
 
-  /* ---- état ---- */
-  let events = []; let uid = 1;
-  let activeTeam = 'zal';
-  const selBy = {zal:null, opp:null};
-  let quarter = 3, clock = 6*60, running = true, ended = false;
-  let possession = 'zal';
-  let armedShot = false, pendingShot = null;
-  let lock = false;
-  let redo = null, redoTimer = null;
+  /* ---------------- persistance ---------------- */
+  const coll = () => (window.HoopStore && window.HoopStore._coll) || null;
+  function load(){ const c = coll(); if(!c) return null; const m = c.readObj(KEY); return (m && m.id) ? m : null; }
+  function save(){ const c = coll(); if(c) c.writeObj(KEY, M || {}); }
+  function wipe(){ const c = coll(); if(c) c.writeObj(KEY, {}); M = null; }
 
-  /* Zones & valeur des tirs : désormais fournies par le composant terrain
-     complet (HoopCourt.getCourtZone / getShotValue via renderFull) — plus
-     de classification maison ici (logique unique, cf. onCourtZone). */
+  /* ---------------- helpers ---------------- */
+  const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' }[c]));
+  const emptyState = (title, msg, hash, label) =>
+    `<div class="hb-empty"><svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <h3>${esc(title)}</h3><p>${esc(msg)}</p>
+      <button class="btn btn-primary" data-route="${hash || '#/saison'}">${esc(label || 'Retour')}</button></div>`;
+  const pad = n => String(n).padStart(2, '0');
+  const fmtClock = s => { s = Math.max(0, Math.round(s)); return pad(Math.floor(s / 60)) + ':' + pad(s % 60); };
+  const qLabel = m => (m.quarter <= 4 ? 'Q' + m.quarter : 'P' + (m.quarter - 4));
+  const otherSide = t => (t === 'home' ? 'away' : 'home');
+  function lastName(n){ const a = String(n || '').trim().split(/\s+/); return (a.length > 1 ? a[a.length - 1] : a[0] || '').toUpperCase(); }
+  function player(team, num){ return (M.roster[team] || []).find(p => p.num === num) || { num: num, name: null }; }
+  /* « #8 FRANCISCO » ; pour un adversaire saisi au numéro seul : « #8 ». */
+  function pLabel(team, num){ const p = player(team, num); return '#' + num + (p.name ? ' ' + lastName(p.name) : ''); }
+  function teamOf(t){ return M[t]; }
 
-  /* ---- état dérivé ---- */
-  function recompute(){
-    const scores={zal:TEAM.zal.open, opp:TEAM.opp.open};
-    const TF={zal:TEAM.zal.openTF, opp:TEAM.opp.openTF};
-    const TO={zal:TEAM.zal.openTO, opp:TEAM.opp.openTO};
-    const fouls={}, pts={};
-    ['zal','opp'].forEach(t => ROSTER[t].forEach(p => { fouls[key(t,p.num)]=p.f0; pts[key(t,p.num)]=p.p0; }));
-    events.forEach(e => {
-      if(e.result==='made' && (e.actionType==='shot'||e.actionType==='freethrow')){
-        scores[e.teamId]+=e.points; if(e.playerId!=null) pts[key(e.teamId,e.playerId)]+=e.points;
+  /* ---------------- état dérivé ----------------
+     Score et statistiques joueur recalculés depuis les événements. */
+  const BLANK = { pts:0, fgm:0, fga:0, reb:0, ast:0, stl:0, blk:0, to:0, fa:0 };
+  function derive(){
+    const scores = { home:0, away:0 }, stats = {};
+    const S = (t, n) => (stats[t + '|' + n] || (stats[t + '|' + n] = Object.assign({}, BLANK)));
+    (M.events || []).forEach(e => {
+      const s = e.playerId != null ? S(e.teamId, e.playerId) : null;
+      switch(e.actionType){
+        case 'shot':
+          if(s) s.fga++;
+          if(e.result === 'made'){ scores[e.teamId] += e.points; if(s){ s.pts += e.points; s.fgm++; } }
+          break;
+        case 'rebound':  if(s) s.reb++; break;
+        case 'assist':   if(s) s.ast++; break;
+        case 'steal':    if(s) s.stl++; break;
+        case 'block':    if(s) s.blk++; break;
+        case 'turnover': if(s) s.to++;  break;
+        case 'foul':     if(s && e.subKind !== 'foul-drawn') s.fa++; break;
+        default: break;
       }
-      if(e.actionType==='score-adj') scores[e.teamId]+=e.points;
-      if(e.actionType==='foul'){
-        if(e.subKind==='foul-drawn'){ TF[other(e.teamId)]++; }
-        else { if(e.playerId!=null) fouls[key(e.teamId,e.playerId)]++; TF[e.teamId]++; }
+    });
+    return { scores: scores, statOf: (t, n) => stats[t + '|' + n] || BLANK };
+  }
+  /* dernier panier marqué d'une équipe, pour rattacher une passe décisive */
+  function lastMade(team){
+    for(let i = (M.events || []).length - 1; i >= 0; i--){
+      const e = M.events[i];
+      if(e.actionType === 'shot' && e.result === 'made' && e.teamId === team) return e;
+    }
+    return null;
+  }
+
+  /* ================= ACCÈS SIDEBAR ================= */
+  function renderSidebarLive(){
+    const btn = $('sbLiveNow'); if(!btn) return;
+    const live = M || load();
+    const main = document.querySelector('.sb-live-btn');
+    if(main) main.classList.toggle('on', currentRoute.view === 'live' || currentRoute.view === 'live-new');
+    if(!live || live.ended){ btn.hidden = true; return; }
+    btn.hidden = false;
+    const d = deriveOf(live);
+    $('sbLiveScore').textContent = live.home.code + ' ' + d.scores.home + ' — ' + d.scores.away + ' ' + live.away.code;
+    $('sbLiveTime').textContent = qLabel(live) + ' · ' + fmtClock(live.clock);
+  }
+  /* derive() travaille sur M ; pour la sidebar on peut viser un autre objet */
+  function deriveOf(m){ const keep = M; M = m; const d = derive(); M = keep; return d; }
+
+  /* ================= CRÉATION EXPRESS (#/live/nouveau) ================= */
+  function ourSquad(){
+    const S = window.HoopStore; if(!S) return [];
+    const users = S.getUserPlayers().map(u => ({
+      num: (u.num != null && u.num !== '') ? +u.num : null,
+      name: ((u.prenom ? u.prenom + ' ' : '') + (u.nom || '')).trim() || 'Sans nom'
+    }));
+    return S.getPlayers().map(p => ({ num: p.num, name: p.name })).concat(users);
+  }
+  function parseNums(str){
+    const seen = {}, out = [];
+    String(str || '').split(/[^0-9]+/).forEach(t => {
+      if(t === '') return;
+      const n = +t;
+      if(n >= 0 && n <= 99 && !seen[n]){ seen[n] = 1; out.push(n); }
+    });
+    return out;
+  }
+
+  const newState = { oppName:'', oppNums:[], dispo:[], startHome:[], startAway:[] };
+
+  function renderLiveNew(){
+    const el = $('page-live-new'); if(!el) return;
+    const S = window.HoopStore;
+    if(!S){ el.innerHTML = emptyState('Données indisponibles', 'Le modèle de données n’a pas pu être chargé.', '#/'); return; }
+    const squad = ourSquad(), numbered = squad.filter(p => p.num != null);
+    const running = load();
+
+    /* première ouverture : tout le monde disponible, cinq de départ pré-remplis */
+    if(!newState.dispo.length){
+      newState.dispo = numbered.slice(0, 12).map(p => p.num);
+      newState.startHome = newState.dispo.slice(0, 5);
+    }
+
+    el.innerHTML = `
+      <header class="lv2-hero">
+        <h1 class="lv2-hero-t">Match live</h1>
+        <p class="lv2-hero-s">Trois champs, et c’est parti. Les noms adverses peuvent attendre.</p>
+      </header>
+      ${running ? `<div class="lv2-resume">
+        <div><b>Un match est déjà en cours</b><span>${esc(running.home.name)} — ${esc(running.away.name)} · ${qLabel(running)}</span></div>
+        <div class="lv2-resume-act">
+          <button class="btn btn-primary sm" data-route="#/live">Reprendre</button>
+          <button class="btn btn-secondary sm" id="lvnDrop">Abandonner</button>
+        </div></div>` : ''}
+
+      <form class="lv2-new" id="lvnForm" novalidate>
+        <section class="lv2-nblock">
+          <h2 class="lv2-nh">Adversaire</h2>
+          <input class="mc-input lv2-ninput" id="lvnOpp" name="opp" placeholder="Nom de l’équipe adverse" autocomplete="off" value="${esc(newState.oppName)}">
+        </section>
+
+        <section class="lv2-nblock">
+          <h2 class="lv2-nh">Numéros adverses</h2>
+          <p class="lv2-nhint">Tapez les numéros séparés par des virgules — les noms pourront être ajoutés plus tard.</p>
+          <input class="mc-input lv2-ninput mono" id="lvnNums" name="nums" placeholder="4, 7, 11, 15, 21, 24, 32, 44" inputmode="numeric" autocomplete="off" value="${esc(newState.oppNums.join(', '))}">
+          <div class="lv2-chips" id="lvnAwayFive"></div>
+        </section>
+
+        <section class="lv2-nblock">
+          <h2 class="lv2-nh">Notre équipe</h2>
+          <p class="lv2-nhint">Touchez un joueur pour le retirer de la feuille. <span id="lvnDispoCount"></span></p>
+          <div class="lv2-chips" id="lvnDispo"></div>
+        </section>
+
+        <section class="lv2-nblock">
+          <h2 class="lv2-nh">Cinq de départ</h2>
+          <div class="lv2-chips" id="lvnHomeFive"></div>
+        </section>
+
+        ${numbered.length < squad.length ? `<p class="lv2-nwarn">${squad.length - numbered.length} joueur(s) de l’effectif n’ont pas de numéro et ne peuvent pas être inscrits sur la feuille.</p>` : ''}
+        <p class="lv2-nerr" id="lvnErr" hidden></p>
+        <button type="submit" class="btn btn-primary lv2-start">Démarrer le match</button>
+      </form>`;
+
+    const squadByNum = {};
+    numbered.forEach(p => { squadByNum[p.num] = p; });
+
+    function chip(num, label, on, attr){
+      return `<button type="button" class="lv2-chip${on ? ' on' : ''}" ${attr}="${num}"><span class="lv2-chip-n mono">${num}</span>${label ? `<span class="lv2-chip-l">${esc(label)}</span>` : ''}</button>`;
+    }
+    function paintNew(){
+      $('lvnDispo').innerHTML = numbered.map(p => chip(p.num, lastName(p.name), newState.dispo.indexOf(p.num) !== -1, 'data-dispo')).join('');
+      $('lvnDispoCount').textContent = newState.dispo.length + ' inscrits';
+      $('lvnHomeFive').innerHTML = newState.dispo.length
+        ? newState.dispo.map(n => chip(n, lastName((squadByNum[n] || {}).name), newState.startHome.indexOf(n) !== -1, 'data-sh')).join('')
+          + `<span class="lv2-count${newState.startHome.length === 5 ? ' ok' : ''}">${newState.startHome.length}/5</span>`
+        : '<span class="lv2-empty-inline">Inscrivez d’abord des joueurs.</span>';
+      $('lvnAwayFive').innerHTML = newState.oppNums.length
+        ? newState.oppNums.map(n => chip(n, '', newState.startAway.indexOf(n) !== -1, 'data-sa')).join('')
+          + `<span class="lv2-count${newState.startAway.length === 5 ? ' ok' : ''}">${newState.startAway.length}/5</span>`
+        : '<span class="lv2-empty-inline">Saisissez les numéros pour choisir le cinq adverse.</span>';
+    }
+    paintNew();
+
+    /* tout se joue au clic : ajouter/retirer, sans jamais bloquer la saisie.
+       Affectation (et non addEventListener) : renderLiveNew peut être rappelé
+       à chaque entrée de route sans empiler les écouteurs. */
+    el.onclick = e => {
+      const d = e.target.closest('[data-dispo]'), sh = e.target.closest('[data-sh]'), sa = e.target.closest('[data-sa]');
+      if(d){
+        const n = +d.dataset.dispo, i = newState.dispo.indexOf(n);
+        if(i === -1) newState.dispo.push(n);
+        else { newState.dispo.splice(i, 1); newState.startHome = newState.startHome.filter(x => x !== n); }
+        newState.dispo.sort((a, b) => a - b); paintNew();
+      } else if(sh){
+        const n = +sh.dataset.sh, i = newState.startHome.indexOf(n);
+        if(i !== -1) newState.startHome.splice(i, 1);
+        else if(newState.startHome.length < 5) newState.startHome.push(n);
+        paintNew();
+      } else if(sa){
+        const n = +sa.dataset.sa, i = newState.startAway.indexOf(n);
+        if(i !== -1) newState.startAway.splice(i, 1);
+        else if(newState.startAway.length < 5) newState.startAway.push(n);
+        paintNew();
       }
-      if(e.actionType==='timeout') TO[e.teamId]=Math.max(0,TO[e.teamId]-1);
+    };
+
+    $('lvnOpp').addEventListener('input', e => { newState.oppName = e.target.value; });
+    $('lvnNums').addEventListener('input', e => {
+      newState.oppNums = parseNums(e.target.value);
+      newState.startAway = newState.startAway.filter(n => newState.oppNums.indexOf(n) !== -1);
+      /* pré-remplissage : les cinq premiers numéros saisis */
+      while(newState.startAway.length < 5 && newState.startAway.length < newState.oppNums.length){
+        const n = newState.oppNums.find(x => newState.startAway.indexOf(x) === -1);
+        if(n == null) break;
+        newState.startAway.push(n);
+      }
+      paintNew();
     });
-    return {scores,TF,TO,fouls,pts};
-  }
-
-  /* ---- fin de match : génère la feuille depuis les événements ---- */
-  function genLiveFeuille(){
-    if(!window.HoopStore) return;
-    const s=recompute();
-    const teamData = t => ({ name:TEAM[t].name, code:TEAM[t].code, score:s.scores[t],
-      players: ROSTER[t].filter(p=>(s.pts[key(t,p.num)]||0)>0 || (s.fouls[key(t,p.num)]||0)>0 || TEAM[t].court.indexOf(p.num)!==-1)
-        .map(p=>({num:p.num, name:p.name, pts:s.pts[key(t,p.num)]||0, fa:s.fouls[key(t,p.num)]||0}))
-        .sort((a,b)=>b.pts-a.pts) });
-    const shots = events.filter(e=>e.actionType==='shot' && e.x!=null && e.teamId==='zal').map(e=>({x:e.x, y:e.y, result:e.result}));
-    window.HoopStore.setLiveResult({
-      match:{ id:'live', competition:'Match live — session de saisie', date:null, status:'final',
-        home:{name:TEAM.zal.name, code:TEAM.zal.code, score:s.scores.zal},
-        away:{name:TEAM.opp.name, code:TEAM.opp.code, score:s.scores.opp},
-        result: s.scores.zal>s.scores.opp?'win':(s.scores.zal<s.scores.opp?'loss':null) },
-      home: teamData('zal'), away: teamData('opp'), shots:shots, quarter: qLabel()
+    const drop = $('lvnDrop');
+    if(drop) drop.addEventListener('click', () => {
+      if(confirm('Abandonner le match en cours ? Les actions saisies seront perdues.')){ wipe(); renderSidebarLive(); renderLiveNew(); }
     });
-    if(typeof navigate==='function') navigate('#/matchs/live/feuille');
-  }
 
-  /* ---- helpers ---- */
-  const pad=n=>String(n).padStart(2,'0');
-  const fmt=s=>pad(Math.floor(s/60))+':'+pad(s%60);
-  const qLabel=()=>quarter<=4?'Q'+quarter:'P'+(quarter-4);
-  const selNum=()=>selBy[activeTeam];
-  const ICON={
-    made:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M20 6L9 17l-5-5"/></svg>',
-    miss:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8"><path d="M6 6l12 12M18 6L6 18"/></svg>',
-    neutral:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><circle cx="12" cy="12" r="8"/></svg>',
-    foul:'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>',
-    admin:'<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/></svg>',
-  };
-  function busy(){ if(lock||ended) return true; lock=true; setTimeout(()=>lock=false, 260); return false; }
-
-  /* ---- rendu ---- */
-  function render(){
-    const s=recompute();
-    $('lvScoreHome').textContent=s.scores.zal;
-    $('lvScoreAway').textContent=s.scores.opp;
-    setFouls('lvTfHome', s.TF.zal); setFouls('lvTfAway', s.TF.opp);
-    renderTO('lvToHome', s.TO.zal); renderTO('lvToAway', s.TO.opp);
-    $('lvQuarter').textContent=qLabel();
-    $('lvClock').textContent=fmt(clock);
-    const st=$('lvStatusText'), dot=$('lvDot');
-    st.textContent = ended?'Terminé':running?'En cours':'En pause';
-    dot.className='lv-livedot'+(running&&!ended?' run':'');
-    $('lvClock').classList.toggle('paused', !running||ended);
-    // possession (dans le panneau fil)
-    $('lvPossHome').className='lv-poss'+(possession==='zal'?' home':'');
-    $('lvPossAway').className='lv-poss'+(possession==='opp'?' away':'');
-    renderLineup(s); renderFeed(); renderMarkers(); renderContext(); renderLast();
-    const noEv=events.length===0;
-    $('lvUndo').disabled=noEv; const u2=$('lvUndo2'); if(u2) u2.disabled=noEv;
-    updateAvail();
-  }
-  function setFouls(id,v){ const el=$(id); el.textContent='Fautes : '+v+(v>=FOUL_LIMIT?' (bonus)':''); el.parentElement.classList.toggle('bonus', v>=FOUL_LIMIT); }
-  function renderTO(id,v){ let h=''; for(let i=0;i<Math.max(v,0);i++) h+='<span class="lv-to-dot"></span>'; $(id).innerHTML=h; $(id).title=v+' temps-morts restants'; }
-
-  function renderLineup(s){
-    const el=$('lvLineup'); el.innerHTML='';
-    TEAM[activeTeam].court.forEach(num => {
-      const p=byNum(activeTeam,num), f=s.fouls[key(activeTeam,num)];
-      const b=document.createElement('button');
-      b.className='lv-player'+(num===selNum()?' selected':'')+(f>=FOUL_LIMIT?' fouled-out':'');
-      b.setAttribute('role','option'); b.setAttribute('aria-selected', num===selNum());
-      b.setAttribute('aria-label', `#${num} ${p.short}`+(f>=FOUL_LIMIT?' — sorti pour 5 fautes':''));
-      b.innerHTML=`<span class="lv-pnum mono">${num}</span><span class="lv-pname">${p.short}</span>`;
-      b.addEventListener('click',()=>selectPlayer(num));
-      el.appendChild(b);
+    $('lvnForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const err = $('lvnErr');
+      const fail = msg => { err.textContent = msg; err.hidden = false; };
+      if(newState.oppNums.length < 5) return fail('Saisissez au moins 5 numéros adverses.');
+      if(newState.startHome.length !== 5) return fail('Choisissez les 5 joueurs qui commencent pour nous.');
+      if(newState.startAway.length !== 5) return fail('Choisissez les 5 numéros adverses qui commencent.');
+      err.hidden = true;
+      startMatch(squadByNum);
     });
   }
-  function renderLast(){
-    const el=$('lvLast'); if(!el) return;
-    if(!events.length){ el.innerHTML='<span class="lv-last-empty">Aucune action enregistrée</span>'; return; }
-    const e=events[events.length-1];
-    const cls=(e.actionType==='shot'||e.actionType==='freethrow')?(e.result==='made'?'made':'miss'):e.actionType==='foul'?'foul':'neutral';
-    const ic=cls==='made'?ICON.made:cls==='miss'?ICON.miss:cls==='foul'?ICON.foul:ICON.neutral;
-    const who=e.playerId!=null?`<b>#${e.playerId} ${byNum(e.teamId,e.playerId).short}</b> · `:'';
-    el.innerHTML=`<span class="lv-last-dot ${cls}">${ic}</span><span class="lv-last-main"><span class="lv-last-lab">${who}${e.label}</span><span class="lv-last-time mono">${e.period} · ${e.gameClock}</span></span>`;
+
+  function startMatch(squadByNum){
+    const S = window.HoopStore, club = S.getClub();
+    const oppName = (newState.oppName || '').trim() || 'Adversaire';
+    /* « Žalgiris Kaunas » -> ZAL : on retire les diacritiques avant de couper,
+       sinon les lettres hors Latin-1 (Ž, Ų…) sautent et le code est faux. */
+    const code = s => (String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
+      .replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || 'OPP');
+    M = {
+      id: 'live-' + Date.now().toString(36),
+      createdAt: new Date().toISOString(),
+      uid: 1,
+      home: { name: club.nom, code: code(club.nom) },
+      away: { name: oppName, code: code(oppName) },
+      roster: {
+        home: newState.dispo.map(n => ({ num: n, name: (squadByNum[n] || {}).name || null })),
+        away: newState.oppNums.map(n => ({ num: n, name: null }))
+      },
+      court: { home: newState.startHome.slice(), away: newState.startAway.slice() },
+      quarter: 1, clock: QUARTER_SEC, running: false, ended: false,
+      events: []
+    };
+    save();
+    newState.oppName = ''; newState.oppNums = []; newState.dispo = []; newState.startHome = []; newState.startAway = [];
+    navigate('#/live');
   }
 
-  function renderFeed(){
-    const el=$('lvFeed');
-    if(!events.length){ el.innerHTML='<div class="lv-feed-empty">Aucune action. Sélectionnez un joueur, puis saisissez.</div>'; return; }
-    let sc={zal:TEAM.zal.open, opp:TEAM.opp.open}; const scores={};
-    events.forEach(e=>{ if(e.result==='made'&&(e.actionType==='shot'||e.actionType==='freethrow')) sc[e.teamId]+=e.points; if(e.actionType==='score-adj') sc[e.teamId]+=e.points; scores[e.id]=sc.zal+'–'+sc.opp; });
-    el.innerHTML=events.slice().reverse().map((e,i)=>{
-      const isShot=e.actionType==='shot';
-      const dotCls=isShot||e.actionType==='freethrow'?(e.result==='made'?'made':'miss'):e.actionType==='foul'?'foul':(['timeout','jumpball','sub-in','sub-out','period','score-adj'].includes(e.actionType))?'admin':e.actionType==='turnover'?'miss':'neutral';
-      const ic=dotCls==='made'?ICON.made:dotCls==='miss'?ICON.miss:dotCls==='foul'?ICON.foul:dotCls==='admin'?ICON.admin:ICON.neutral;
-      const tt='';
-      const who=e.playerId!=null?`<b>#${e.playerId} ${byNum(e.teamId,e.playerId).short}</b> — `:'';
-      const showScore=(e.result==='made'&&(isShot||e.actionType==='freethrow'))||e.actionType==='score-adj';
-      const editable=isShot||e.actionType==='freethrow'||e.playerId!=null;
-      return `<div class="lv-ev${i===0?' last':''}${e.teamId==='opp'?' opp':''}" data-id="${e.id}">
-        <span class="lv-ev-time mono">${e.period}<br>${e.gameClock}</span>
-        <span class="lv-ev-dot ${dotCls}">${ic}</span>
-        <span class="lv-ev-main"><span class="lv-ev-lab">${tt}${who}${e.label}</span></span>
-        <span class="lv-ev-score mono">${showScore?scores[e.id]:''}</span>
-        ${editable?`<button class="lv-ev-btn edit" data-edit="${e.id}" aria-label="Modifier"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/></svg></button>`:'<span></span>'}
-        <button class="lv-ev-btn del" data-del="${e.id}" aria-label="Supprimer"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg></button>
+  /* ================= ÉCRAN MATCH LIVE (#/live) ================= */
+  function renderLive(){
+    const el = $('page-live'); if(!el) return;
+    M = load();
+    if(!M){ navigate('#/live/nouveau'); return; }
+
+    el.innerHTML = `
+      <div class="lv2">
+        <header class="lv2-board">
+          <div class="lv2-team home">
+            <span class="lv2-tname">${esc(M.home.name)}</span>
+            <span class="lv2-tscore mono" id="lv2ScoreHome">0</span>
+          </div>
+          <div class="lv2-center">
+            <button class="lv2-clock" id="lv2Clock" aria-label="Démarrer ou mettre en pause le chronomètre">
+              <span class="lv2-q" id="lv2Q">Q1</span>
+              <span class="lv2-time mono" id="lv2Time">10:00</span>
+              <span class="lv2-run" id="lv2Run">Départ</span>
+            </button>
+            <button class="lv2-more" id="lv2Menu" aria-label="Options du match" aria-haspopup="true">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+            </button>
+          </div>
+          <div class="lv2-team away">
+            <span class="lv2-tname">${esc(M.away.name)}</span>
+            <span class="lv2-tscore mono" id="lv2ScoreAway">0</span>
+          </div>
+        </header>
+
+        <p class="lv2-rotate">Tournez l’appareil en paysage : le terrain double de taille.</p>
+
+        <div class="lv2-courtwrap">
+          <div class="lv2-court" id="lv2Court" role="application"
+               aria-label="Terrain complet. Touchez l’endroit de l’action : la moitié gauche est notre équipe, la moitié droite l’adversaire."></div>
+          <p class="lv2-courthint">Touchez le terrain à l’endroit de l’action.</p>
+        </div>
+
+        <div class="lv2-fives">
+          <div class="lv2-five home"><span class="lv2-five-lab">${esc(M.home.name)}</span><div class="lv2-five-list" id="lv2FiveHome"></div></div>
+          <div class="lv2-five away"><span class="lv2-five-lab">${esc(M.away.name)}</span><div class="lv2-five-list" id="lv2FiveAway"></div></div>
+        </div>
+
+        <footer class="lv2-foot">
+          <div class="lv2-last" id="lv2Last"></div>
+          <div class="lv2-foot-act">
+            <button class="lv2-btn undo" id="lv2Undo">Annuler</button>
+            <button class="lv2-btn" id="lv2Other">Autre action</button>
+            <button class="lv2-btn" id="lv2Sub">Remplacement</button>
+          </div>
+        </footer>
       </div>`;
-    }).join('');
+
+    if(window.HoopCourt && HoopCourt.renderFull){
+      /* active:'both' — les deux moitiés sont armées, aucun côté n'est en
+         retrait : c'est le côté touché qui désigne l'équipe. */
+      courtApi = HoopCourt.renderFull($('lv2Court'), { active:'both', onZone:onCourtZone });
+      courtApi.setSideLabels(M.home.name.toUpperCase(), M.away.name.toUpperCase());
+    }
+    $('lv2Clock').addEventListener('click', toggleClock);
+    $('lv2Menu').addEventListener('click', openMenu);
+    $('lv2Undo').addEventListener('click', undo);
+    $('lv2Other').addEventListener('click', () => { pending = { team:'home', zone:null }; sheetAction(); });
+    $('lv2Sub').addEventListener('click', () => { subTeam = 'home'; subOut = null; sheetSub(); });
+    paint();
   }
 
-  function renderMarkers(){
+  /* ---------------- peinture de l'écran ---------------- */
+  function paint(){
+    if(!M || !$('lv2ScoreHome')) return;
+    const d = derive();
+    $('lv2ScoreHome').textContent = d.scores.home;
+    $('lv2ScoreAway').textContent = d.scores.away;
+    $('lv2Q').textContent = qLabel(M);
+    $('lv2Time').textContent = fmtClock(M.clock);
+    $('lv2Run').textContent = M.ended ? 'Terminé' : (M.running ? 'En cours' : 'En pause');
+    $('lv2Clock').classList.toggle('running', !!M.running && !M.ended);
+    ['home','away'].forEach(t => {
+      $(t === 'home' ? 'lv2FiveHome' : 'lv2FiveAway').innerHTML = M.court[t].map(n => {
+        const s = d.statOf(t, n);
+        return `<span class="lv2-pchip"><span class="lv2-pchip-n mono">${n}</span><span class="lv2-pchip-p mono">${s.pts}</span></span>`;
+      }).join('');
+    });
+    paintLast();
+    paintMarks();
+    $('lv2Undo').disabled = !M.events.length;
+    renderSidebarLive();
+  }
+  function paintLast(){
+    const el = $('lv2Last'); if(!el) return;
+    if(!M.events.length){ el.innerHTML = '<span class="lv2-last-empty">Aucune action enregistrée</span>'; return; }
+    const e = M.events[M.events.length - 1];
+    const cls = e.actionType === 'shot' ? (e.result === 'made' ? 'made' : 'miss') : (e.actionType === 'foul' || e.actionType === 'turnover' ? 'warn' : 'neutral');
+    const who = e.playerId != null ? `<b>${esc(pLabel(e.teamId, e.playerId))}</b> · ` : '';
+    el.innerHTML = `<span class="lv2-last-dot ${cls}"></span><span class="lv2-last-txt">${who}${esc(e.label)}</span><span class="lv2-last-time mono">${e.period} · ${e.gameClock}</span>`;
+  }
+  function paintMarks(){
     if(!courtApi) return;
-    // chaque équipe voit ses tirs sur SA moitié (home = notre équipe, away = adversaire)
-    const shots=events.filter(e=>e.actionType==='shot' && e.x!=null).map(e=>({
-      side: e.teamId==='zal' ? 'home' : 'away', x:e.x, y:e.y, result:e.result, subKind:e.subKind
-    }));
-    courtApi.renderMarks(shots);
+    courtApi.renderMarks((M.events || [])
+      .filter(e => e.actionType === 'shot' && e.x != null)
+      .map(e => ({ side: e.teamId, x: e.x, y: e.y, result: e.result })));
   }
 
-  function renderContext(){
-    const el=$('lvContext'), cancel=$('lvCancel'), d=$('lvCurrentDot');
-    if(ended){ el.innerHTML='Match terminé'; cancel.classList.remove('show'); if(d) d.classList.add('idle'); return; }
-    const n=selNum();
-    if(armedShot && n!=null){ el.innerHTML=`<b>#${n} ${byNum(activeTeam,n).short}</b> · touchez la zone du tir`; cancel.classList.add('show'); if(d) d.classList.remove('idle'); }
-    else if(n!=null){ const p=byNum(activeTeam,n); el.innerHTML=`<b>#${n} ${p.short}</b>${activeTeam==='opp'?' · adversaire':''}`; cancel.classList.remove('show'); if(d) d.classList.remove('idle'); }
-    else { el.innerHTML=`Sélectionnez un joueur${activeTeam==='opp'?' adverse':''}`; cancel.classList.remove('show'); if(d) d.classList.add('idle'); }
-  }
-
-  function updateAvail(){
-    const on = selNum()!=null && !ended;
-    document.querySelectorAll('[data-main],[data-ev],[data-foul]').forEach(b=>{ b.disabled=!on; });
-  }
-
-  /* ---- sélection ---- */
-  function selectPlayer(num){ selBy[activeTeam]=(selBy[activeTeam]===num)?null:num; if(armedShot&&selBy[activeTeam]==null) disarm(); render(); }
-  function setTeam(t){ if(t===activeTeam) return; activeTeam=t; disarm(); closePop();
-    document.querySelectorAll('.lv-teamseg button').forEach(b=>{ const a=b.dataset.team===t; b.classList.toggle('active',a); b.setAttribute('aria-selected',a); });
-    syncCourtSide();
-    render();
-  }
-  function syncCourtSide(){
-    const side = activeTeam==='zal' ? 'home' : 'away';
-    if(courtApi) courtApi.setActiveSide(side);
-    const h=$('lvSideHome'), a=$('lvSideAway');
-    if(h) h.classList.toggle('active', side==='home');
-    if(a) a.classList.toggle('active', side==='away');
-  }
-
-  /* ---- popover partagé ---- */
-  const pop=$('lvPop');
-  function placePop(ref){ const r=pop.getBoundingClientRect(); let x=ref.x, y=ref.y;
-    x=Math.min(Math.max(10,x), innerWidth-r.width-10); y=Math.min(Math.max(10,y), innerHeight-r.height-10); pop.style.left=x+'px'; pop.style.top=y+'px'; }
-  function openPop(html, anchor){ pop.innerHTML=html; pop.classList.add('open');
-    const a = anchor.getBoundingClientRect ? (()=>{const b=anchor.getBoundingClientRect(); return {x:b.left, y:b.bottom+6};})() : anchor;
-    placePop(a);
-  }
-  function closePop(){ pop.classList.remove('open'); pop.innerHTML=''; }
-  document.addEventListener('click', e=>{ if(!pop.contains(e.target) && !e.target.closest('[data-main],[data-edit],#lvCourtWrap')) closePop(); });
-
-  /* ---- tir : armement + terrain ---- */
-  function armShot(){ if(selNum()==null||ended){ toast('neutral','Sélectionnez un joueur'); return; } armedShot=true; pendingShot=null; closePop();
-    $('lvCourtWrap').classList.add('armed'); pressMain('shot',true); renderContext(); }
-  function disarm(){ armedShot=false; pendingShot=null; $('lvCourtWrap').classList.remove('armed'); pressMain('shot',false); renderContext(); }
-  function pressMain(kind,on){ document.querySelectorAll(`[data-main="${kind}"]`).forEach(b=>b.classList.toggle('pressed',on)); }
-
-  /* Clic sur le terrain complet : la moitié active (équipe sélectionnée)
-     est classée par court.js (mêmes zones et valeur 2/3 pts que le demi-terrain). */
-  function onCourtZone(info, evt){
-    if(ended) return;
-    const c={ zoneId:info.zoneId, zoneName:info.zoneName, points:info.value, side:info.side,
-      xp:+info.pos.x.toFixed(1), yp:+info.pos.y.toFixed(1) };
-    pendingShot=c;
+  /* ================= TERRAIN → ACTION → JOUEUR ================= */
+  function onCourtZone(info){
+    if(!M || M.ended) return;
+    /* le côté touché donne l'équipe : aucune sélection manuelle */
+    pending = { team: info.side, zone: {
+      zoneId: info.zoneId, zoneName: info.zoneName, value: info.value,
+      x: +info.pos.x.toFixed(1), y: +info.pos.y.toFixed(1)
+    } };
     if(courtApi) courtApi.highlight(info);
-    openShotPop(evt, c);
-  }
-  function onCourtInactive(info){ toast('neutral', info.side==='home' ? 'Sélectionnez « Notre équipe » pour ce côté' : 'Sélectionnez « Adversaire » pour ce côté'); }
-
-  function openShotPop(evt, c){
-    const n=selNum();
-    const chips = n==null ? `<div class="lv-pop-chips">${TEAM[activeTeam].court.map(num=>`<button class="lv-pop-chip" data-pick="${num}">${num}</button>`).join('')}</div>` : '';
-    const dis = n==null ? 'disabled' : '';
-    openPop(`<div class="lv-pop-head">${c.zoneName} · ${c.points} pts</div>${chips}
-      <button class="lv-act made sm" data-sh="made" ${dis}><span class="ic">${ICON.made}</span>Tir marqué</button>
-      <button class="lv-act miss sm" data-sh="missed" ${dis}><span class="ic">${ICON.miss}</span>Tir manqué</button>
-      <button class="lv-act foul sm" data-sh="foul" ${dis}><span class="ic">${ICON.foul}</span>Faute sur tir</button>
-      <button class="lv-act sm" data-sh="cancel">Annuler</button>`, {x:(evt.clientX||innerWidth/2)-90, y:(evt.clientY||120)+8});
-    pop.querySelectorAll('[data-pick]').forEach(b=>b.addEventListener('click',()=>{ selBy[activeTeam]=+b.dataset.pick; render(); openShotPop(evt,c); }));
-    pop.querySelectorAll('[data-sh]').forEach(b=>b.addEventListener('click',()=>{
-      const k=b.dataset.sh; if(k==='cancel'){ closePop(); disarm(); return; }
-      if(selNum()==null) return;
-      if(k==='foul') recordShotFoul(c); else recordShot(k, c);
-      closePop(); disarm();
-    }));
+    sheetAction();
   }
 
-  function recordShot(result, c){
-    if(busy()) return; const made=result==='made';
-    addEvent({teamId:activeTeam, playerId:selNum(), actionType:'shot', result, points:c.points,
-      zoneId:c.zoneId, zoneName:c.zoneName, x:c.xp, y:c.yp,
-      label:`Tir à ${c.points} pts ${made?'marqué':'manqué'} — ${c.zoneName}`});
-    if(made){ possession=other(activeTeam); flashScore(); toast('made',`Tir à ${c.points} pts marqué`); } else toast('miss','Tir manqué');
-  }
-  function recordShotFoul(c){
-    if(busy()) return;
-    addEvent({teamId:activeTeam, playerId:selNum(), actionType:'shot', result:'missed', points:c.points, subKind:'shooting-foul',
-      zoneId:c.zoneId, zoneName:c.zoneName, x:c.xp, y:c.yp,
-      label:`Faute sur tir ${c.points} pts — ${c.zoneName} (lancers)`});
-    // faute provoquée -> faute d'équipe adverse
-    addEvent({teamId:activeTeam, playerId:selNum(), actionType:'foul', subKind:'foul-drawn', label:'Faute provoquée sur tir'});
-    toast('foul','Faute sur tir — lancers à venir');
+  const ACTIONS = {
+    'shot-made':  { lab:'Tir marqué',      cls:'made' },
+    'shot-miss':  { lab:'Tir manqué',      cls:'miss' },
+    'reb-off':    { lab:'Rebond offensif', cls:'' },
+    'reb-def':    { lab:'Rebond défensif', cls:'' },
+    'assist':     { lab:'Passe décisive',  cls:'' },
+    'steal':      { lab:'Interception',    cls:'' },
+    'block':      { lab:'Contre',          cls:'' },
+    'turnover':   { lab:'Perte de balle',  cls:'warn' },
+    'foul':       { lab:'Faute',           cls:'warn' },
+    'foul-drawn': { lab:'Faute provoquée', cls:'' }
+  };
+
+  /* --- INTERFACE 1 : que s'est-il passé ? --- */
+  function sheetAction(){
+    const z = pending.zone, t = pending.team, lm = lastMade(t);
+    const b = (k, note, extra) => `<button class="lv2-act ${ACTIONS[k].cls} ${extra || ''}" data-act="${k}">
+        <span class="lv2-act-l">${ACTIONS[k].lab}</span>${note ? `<span class="lv2-act-n">${esc(note)}</span>` : ''}</button>`;
+    let html = '';
+    if(!z){
+      /* hors terrain : l'équipe n'est pas déduite d'un côté, on la choisit ici */
+      html += `<div class="lv2-teamseg" role="group" aria-label="Équipe concernée">
+        ${['home','away'].map(s => `<button class="lv2-seg${t === s ? ' on' : ''}" data-team="${s}">${esc(M[s].name)}</button>`).join('')}</div>`;
+    }
+    html += '<div class="lv2-acts">';
+    /* les plus fréquentes en premier et en grand */
+    if(z){ html += b('shot-made', z.value + ' pts', 'big') + b('shot-miss', z.value + ' pts', 'big'); }
+    html += b('reb-def') + b('reb-off');
+    html += b('assist', lm ? 'sur le panier de ' + pLabel(t, lm.playerId) : null, lm ? 'wide' : '');
+    html += b('steal') + b('block') + b('turnover') + b('foul') + b('foul-drawn');
+    html += '</div>';
+    if(!z){
+      html += `<div class="lv2-acts sec">
+        <button class="lv2-act" data-sub="1">Remplacement</button>
+        <button class="lv2-act" data-timeout="1">Temps-mort</button></div>`;
+    }
+    openSheet('Que s’est-il passé ?', (z ? z.zoneName + ' · ' + z.value + ' pts · ' : '') + M[t].name, html);
   }
 
-
-  /* ---- rebond / faute (popovers d'action) ---- */
-  function openReboundPop(anchor){ if(selNum()==null){ toast('neutral','Sélectionnez un joueur'); return; }
-    openPop(`<div class="lv-pop-head">Rebond de #${selNum()}</div>
-      <button class="lv-act sm" data-reb="def">Rebond défensif</button>
-      <button class="lv-act sm" data-reb="off">Rebond offensif</button>`, anchor);
-    pop.querySelectorAll('[data-reb]').forEach(b=>b.addEventListener('click',()=>{ recordRebound(b.dataset.reb); closePop(); }));
-  }
-  function recordRebound(kind){ if(busy()) return; const def=kind==='def';
-    addEvent({teamId:activeTeam, playerId:selNum(), actionType:'rebound', subKind:kind, label:`Rebond ${def?'défensif':'offensif'}`});
-    possession=activeTeam; toast('neutral',`Rebond ${def?'défensif':'offensif'}`);
-  }
-  const FOULS=[['perso','Faute personnelle'],['off','Faute offensive'],['tech','Faute technique'],['antisport','Faute antisportive'],['sur-2','Faute sur tir 2 pts'],['sur-3','Faute sur tir 3 pts']];
-  function openFoulPop(anchor){ if(selNum()==null){ toast('neutral','Sélectionnez un joueur'); return; }
-    openPop(`<div class="lv-pop-head">Faute de #${selNum()}</div>${FOULS.map(([k,l])=>`<button class="lv-act foul sm" data-fl="${k}">${l}</button>`).join('')}`, anchor);
-    pop.querySelectorAll('[data-fl]').forEach(b=>b.addEventListener('click',()=>{ recordFoul(b.dataset.fl, FOULS.find(f=>f[0]===b.dataset.fl)[1]); closePop(); }));
-  }
-  function recordFoul(subKind, label){ if(busy()) return;
-    addEvent({teamId:activeTeam, playerId:selNum(), actionType:'foul', subKind, label});
-    const f=recompute().fouls[key(activeTeam,selNum())];
-    toast('foul',label);
-    if(f>=FOUL_LIMIT) toast('miss',`#${selNum()} ${byNum(activeTeam,selNum()).short} — sorti (${FOUL_LIMIT} fautes)`);
+  /* --- INTERFACE 2 : quel joueur ? (uniquement les 5 sur le terrain) --- */
+  let pendingAction = null;   // action choisie en interface 1
+  function sheetPlayer(actionKey){
+    pendingAction = actionKey;
+    const t = pending.team, z = pending.zone;
+    const html = '<div class="lv2-players">' + M.court[t].map(n => {
+      const p = player(t, n);
+      return `<button class="lv2-pbtn" data-player="${n}">
+          <span class="lv2-pbtn-n mono">${n}</span>
+          ${p.name ? `<span class="lv2-pbtn-name">${esc(lastName(p.name))}</span>` : ''}</button>`;
+    }).join('') + '</div>';
+    const note = ACTIONS[actionKey].lab + (z && actionKey.indexOf('shot') === 0 ? ' · ' + z.value + ' pts · ' + z.zoneName : '') + ' · ' + M[t].name;
+    openSheet('Quel joueur ?', note, html);
   }
 
-  /* ---- actions directes (passe / interception / contre / perte / faute provoquée) ---- */
-  function recordPlay(type, label){ if(busy()) return;
-    addEvent({teamId:activeTeam, playerId:selNum(), actionType:type, label});
-    if(type==='steal') possession=activeTeam;
-    if(type==='turnover') possession=other(activeTeam);
-    toast('neutral', label);
-  }
-
-  /* ---- délégation des boutons (panneau, secondaire, feuille, barre mobile) ---- */
-  document.addEventListener('click', e=>{
-    const main=e.target.closest('[data-main]'); if(main){ const k=main.dataset.main;
-      if(k==='shot') armShot(); else if(k==='rebound') openReboundPop(main); else if(k==='foul') openFoulPop(main); return; }
-    const ev=e.target.closest('[data-ev]'); if(ev){ if(selNum()==null){toast('neutral','Sélectionnez un joueur');return;}
-      const t=ev.dataset.ev; recordPlay(t==='assist'?'assist':t, ev.dataset.lab); return; }
-    const fl=e.target.closest('[data-foul]'); if(fl){ if(selNum()==null){toast('neutral','Sélectionnez un joueur');return;}
-      recordFoul('foul-drawn', fl.dataset.lab); return; }
-    const ad=e.target.closest('[data-admin]'); if(ad){ doAdmin(ad.dataset.admin, ad); return; }
-  });
-
-  function doAdmin(a, anchor){
-    if(a==='timeout'){ if(busy())return; setRunning(false); addEvent({teamId:activeTeam, actionType:'timeout', label:'Temps-mort'}); toast('neutral','Temps-mort'); }
-    else if(a==='jumpball'){ if(busy())return; addEvent({teamId:activeTeam, actionType:'jumpball', playerId:selNum(), label:'Entre-deux'}); toast('neutral','Entre-deux'); }
-    else if(a==='sub'){ openDrawer(); }
-    else if(a==='score-adj'){ openScoreAdj(anchor); }
+  /* --- enregistrement : dernière pression, aucune validation à suivre --- */
+  function record(k, num){
+    const t = pending.team, z = pending.zone;
+    const zone = z ? { zoneId:z.zoneId, zoneName:z.zoneName, x:z.x, y:z.y } : {};
+    if(k === 'shot-made' || k === 'shot-miss'){
+      const made = k === 'shot-made';
+      push(Object.assign({ teamId:t, playerId:num, actionType:'shot', result: made ? 'made' : 'missed',
+        points: z.value, label: 'Tir à ' + z.value + ' pts ' + (made ? 'marqué' : 'manqué') + ' — ' + z.zoneName }, zone));
+      toast(made ? 'made' : 'miss', pLabel(t, num) + ' · ' + (made ? '+' + z.value + ' pts' : 'tir manqué'));
+    } else if(k === 'reb-off' || k === 'reb-def'){
+      const off = k === 'reb-off';
+      push(Object.assign({ teamId:t, playerId:num, actionType:'rebound', subKind: off ? 'off' : 'def',
+        label: 'Rebond ' + (off ? 'offensif' : 'défensif') }, zone));
+      toast('neutral', pLabel(t, num) + ' · rebond ' + (off ? 'offensif' : 'défensif'));
+    } else if(k === 'assist'){
+      const lm = lastMade(t);
+      push(Object.assign({ teamId:t, playerId:num, actionType:'assist', assistOf: lm ? lm.id : null,
+        label: 'Passe décisive' + (lm ? ' — panier de ' + pLabel(t, lm.playerId) : '') }, zone));
+      toast('neutral', pLabel(t, num) + ' · passe décisive');
+    } else if(k === 'foul' || k === 'foul-drawn'){
+      push(Object.assign({ teamId:t, playerId:num, actionType:'foul', subKind: k === 'foul-drawn' ? 'foul-drawn' : 'perso',
+        label: k === 'foul-drawn' ? 'Faute provoquée' : 'Faute personnelle' }, zone));
+      toast('warn', pLabel(t, num) + ' · ' + ACTIONS[k].lab.toLowerCase());
+    } else {
+      const map = { steal:'steal', block:'block', turnover:'turnover' };
+      push(Object.assign({ teamId:t, playerId:num, actionType: map[k], label: ACTIONS[k].lab }, zone));
+      toast(k === 'turnover' ? 'warn' : 'neutral', pLabel(t, num) + ' · ' + ACTIONS[k].lab.toLowerCase());
+    }
     closeSheet();
   }
-  function openScoreAdj(anchor){
-    openPop(`<div class="lv-pop-head">Correction score · ${TEAM[activeTeam].code}</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;">
-        ${[3,2,1].map(v=>`<button class="lv-act sm" data-adj="${v}">+${v}</button>`).join('')}
-        ${[-3,-2,-1].map(v=>`<button class="lv-act sm" data-adj="${v}">${v}</button>`).join('')}
-      </div>`, anchor);
-    pop.querySelectorAll('[data-adj]').forEach(b=>b.addEventListener('click',()=>{ if(busy())return;
-      const v=+b.dataset.adj; addEvent({teamId:activeTeam, actionType:'score-adj', points:v, label:`Correction score (${v>0?'+':''}${v})`}); flashScore(); closePop(); }));
-  }
 
-  /* ---- création + feedback ---- */
-  function addEvent(ev){ ev.id=uid++; ev.period=qLabel(); ev.gameClock=fmt(clock); ev.createdAt=Date.now();
-    if(ev.result===undefined) ev.result=null; if(ev.points===undefined) ev.points=0;
-    events.push(ev); clearRedo(); render();
+  function push(ev){
+    ev.id = M.uid++;
+    ev.period = qLabel(M); ev.gameClock = fmtClock(M.clock); ev.createdAt = Date.now();
+    if(ev.result === undefined) ev.result = null;
+    if(ev.points === undefined) ev.points = 0;
+    M.events.push(ev);
+    redoEv = null; clearTimeout(redoTimer);
+    save(); paint();
     if(navigator.vibrate && !reduce) navigator.vibrate(12);
   }
-  const scoreEl=$('lvScoreHome');
-  function flashScore(){ if(reduce)return; scoreEl.classList.remove('flash'); void scoreEl.offsetWidth; scoreEl.classList.add('flash'); }
-  const toastEl=$('lvToast'); let toastT;
-  function toast(kind,msg){ toastEl.innerHTML=`<span class="tk ${kind}">${ICON[kind]||ICON.neutral}</span>${msg}`; toastEl.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove('show'),1600); }
 
-  /* ---- annuler / rétablir / supprimer / modifier ---- */
-  function clearRedo(){ redo=null; clearTimeout(redoTimer); $('lvRedo').classList.remove('show'); }
-  $('lvUndo').addEventListener('click',()=>{ if(!events.length) return; redo=events.pop(); render();
-    $('lvRedo').classList.add('show'); clearTimeout(redoTimer); redoTimer=setTimeout(()=>{ redo=null; $('lvRedo').classList.remove('show'); }, 6000); toast('neutral','Dernière action annulée'); });
-  $('lvRedo').addEventListener('click',()=>{ if(redo){ events.push(redo); redo=null; render(); toast('neutral','Action rétablie'); } });
-  $('lvFeed').addEventListener('click', e=>{
-    const del=e.target.closest('[data-del]'); if(del){ events=events.filter(x=>x.id!==+del.dataset.del); clearRedo(); render(); return; }
-    const ed=e.target.closest('[data-edit]'); if(ed){ openEditPop(+ed.dataset.edit, ed); }
-  });
-  function openEditPop(id, anchor){
-    const ev=events.find(x=>x.id===id); if(!ev) return;
-    const isShot=ev.actionType==='shot'||ev.actionType==='freethrow';
-    const chips=TEAM[ev.teamId].court.map(n=>`<button class="lv-pop-chip${ev.playerId===n?' active':''}" data-ep="${n}" ${ev.playerId===n?'style="border-color:var(--orange);color:var(--orange)"':''}>${n}</button>`).join('');
-    openPop(`<div class="lv-pop-head">Modifier l'action</div>
-      ${ev.playerId!=null?`<div style="font-size:10px;color:var(--t4);padding:0 2px 3px;">Joueur</div><div class="lv-pop-chips">${chips}</div>`:''}
-      ${isShot?`<button class="lv-act made sm" data-er="made">Marquer réussi</button><button class="lv-act miss sm" data-er="missed">Marquer manqué</button>`:''}
-      <button class="lv-act sm" data-eclose>Fermer</button>`, anchor);
-    pop.querySelectorAll('[data-ep]').forEach(b=>b.addEventListener('click',()=>{ ev.playerId=+b.dataset.ep; ev.label=relabel(ev); render(); openEditPop(id,anchor); }));
-    pop.querySelectorAll('[data-er]').forEach(b=>b.addEventListener('click',()=>{ ev.result=b.dataset.er; ev.label=relabel(ev); render(); closePop(); toast(ev.result==='made'?'made':'miss','Action modifiée'); }));
-    pop.querySelector('[data-eclose]').addEventListener('click', closePop);
+  /* ---------------- annuler / rétablir ---------------- */
+  function undo(){
+    if(!M || !M.events.length) return;
+    redoEv = M.events.pop();
+    save(); paint();
+    toast('neutral', 'Action annulée', true);
+    clearTimeout(redoTimer);
+    redoTimer = setTimeout(() => { redoEv = null; }, 8000);
   }
-  function relabel(ev){ if(ev.actionType==='shot'){ const made=ev.result==='made'; return `Tir à ${ev.points} pts ${made?'marqué':'manqué'} — ${ev.zoneName}`; } return ev.label; }
-
-  /* ---- horloge / statut ---- */
-  function setRunning(v){ if(ended)return; running=v; render(); }
-  $('lvPause').addEventListener('click',()=>{ setRunning(!running); $('lvPauseIco').innerHTML=running?'<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>':'<path d="M8 5v14l11-7z"/>'; });
-  function endQuarter(){ if(ended)return; addEvent({teamId:'zal', actionType:'period', label:`Fin du ${qLabel()}`}); if(quarter<8) quarter++; clock=10*60; setRunning(false); render(); toast('neutral','Nouveau quart-temps · '+qLabel()); }
-  setInterval(()=>{ if(running&&!ended&&clock>0){ clock--; $('lvClock').textContent=fmt(clock); if(clock===0){ running=false; render(); } } },1000);
-
-  /* ---- menu bandeau (options secondaires) ---- */
-  const menu=$('lvMenu'), menuBtn=$('lvMenuBtn');
-  menuBtn.addEventListener('click',e=>{ e.stopPropagation(); const o=menu.classList.toggle('open'); menuBtn.setAttribute('aria-expanded',o); });
-  document.addEventListener('click',()=>{ menu.classList.remove('open'); menuBtn.setAttribute('aria-expanded','false'); });
-  menu.addEventListener('click',e=>e.stopPropagation());
-  menu.querySelectorAll('[data-mact]').forEach(b=>b.addEventListener('click',()=>{ const a=b.dataset.mact;
-    if(a==='end-q'){ endQuarter(); }
-    else if(a==='poss'){ possession=other(possession); render(); toast('neutral','Possession · '+(possession==='zal'?TEAM.zal.name:TEAM.opp.name)); }
-    else if(a==='next-q'){ if(quarter<8)quarter++; clock=10*60; render(); }
-    else if(a==='prev-q'){ if(quarter>1)quarter--; clock=10*60; render(); }
-    else if(a==='end'){ if(confirm('Terminer le match ? La saisie sera close et la feuille générée.')){ ended=true; running=false; disarm(); render(); toast('neutral','Match terminé'); genLiveFeuille(); } }
-    menu.classList.remove('open'); }));
-
-  /* ---- sélecteur d'équipe ---- */
-  document.querySelectorAll('.lv-teamseg button').forEach(b=>b.addEventListener('click',()=>setTeam(b.dataset.team)));
-
-  /* ---- feuille "Plus d'actions" (divulgation progressive) ---- */
-  const sheet=$('lvSheet'), sheetScrim=$('lvSheetScrim');
-  function openSheet(){ sheet.classList.add('open'); sheetScrim.classList.add('open'); sheet.setAttribute('aria-hidden','false'); }
-  function closeSheet(){ sheet.classList.remove('open'); sheetScrim.classList.remove('open'); sheet.setAttribute('aria-hidden','true'); }
-  $('lvMoreBtn').addEventListener('click', openSheet);
-  $('lvMoreMobile').addEventListener('click', openSheet);
-  $('lvSheetClose').addEventListener('click', closeSheet);
-  sheetScrim.addEventListener('click', closeSheet);
-
-  /* ---- panneau "Fil du match" (masqué par défaut) ---- */
-  const feedPanel=$('lvFeedPanel'), feedScrim=$('lvFeedScrim');
-  function openFeed(){ feedPanel.classList.add('open'); feedScrim.classList.add('open'); feedPanel.setAttribute('aria-hidden','false'); }
-  function closeFeed(){ feedPanel.classList.remove('open'); feedScrim.classList.remove('open'); feedPanel.setAttribute('aria-hidden','true'); }
-  $('lvFeedOpen').addEventListener('click', openFeed);
-  $('lvFeedClose').addEventListener('click', closeFeed);
-  feedScrim.addEventListener('click', closeFeed);
-  $('lvUndo2').addEventListener('click',()=>$('lvUndo').click());
-
-  /* ---- drawer changement ---- */
-  const drawer=$('lvDrawer'), scrim=$('lvDrawerScrim'); let subOut=null;
-  function openDrawer(){ subOut=null; renderDrawer(); drawer.classList.add('open'); scrim.classList.add('open'); drawer.setAttribute('aria-hidden','false'); }
-  function closeDrawer(){ drawer.classList.remove('open'); scrim.classList.remove('open'); drawer.setAttribute('aria-hidden','true'); }
-  $('lvDrawerClose').addEventListener('click', closeDrawer);
-  scrim.addEventListener('click', closeDrawer);
-  function renderDrawer(){
-    $('lvDrawerSub').textContent = subOut==null ? `1. Joueur qui sort (${TEAM[activeTeam].name}).` : `#${subOut} sort · choisissez le remplaçant qui entre.`;
-    const oncourt=TEAM[activeTeam].court, bench=ROSTER[activeTeam].filter(p=>!oncourt.includes(p.num));
-    const row=(p,kind)=>`<button class="lv-sub-player${subOut===p.num?' picked':''}" data-${kind}="${p.num}"><span class="lv-pnum mono">${p.num}</span><span class="lv-pname">${p.name}</span></button>`;
-    $('lvDrawerList').innerHTML=`<div class="lv-drawer-group">Sur le terrain — sort</div>`+oncourt.map(n=>row(byNum(activeTeam,n),'out')).join('')+`<div class="lv-drawer-group">Banc — entre</div>`+bench.map(p=>row(p,'in')).join('');
+  function redo(){
+    if(!redoEv) return;
+    M.events.push(redoEv); redoEv = null;
+    save(); paint(); toast('neutral', 'Action rétablie');
   }
-  $('lvDrawerList').addEventListener('click', e=>{
-    const o=e.target.closest('[data-out]'), i=e.target.closest('[data-in]');
-    if(o){ subOut=+o.dataset.out; renderDrawer(); }
-    else if(i && subOut!=null){ const inNum=+i.dataset.in;
-      TEAM[activeTeam].court=TEAM[activeTeam].court.map(n=>n===subOut?inNum:n);
-      addEvent({teamId:activeTeam, playerId:subOut, actionType:'sub-out', label:'Sortie'});
-      addEvent({teamId:activeTeam, playerId:inNum, actionType:'sub-in', label:'Entrée en jeu'});
-      if(selBy[activeTeam]===subOut) selBy[activeTeam]=null;
-      closeDrawer(); render(); toast('neutral',`#${inNum} ${byNum(activeTeam,inNum).short} entre`);
+
+  /* ---------------- remplacement ---------------- */
+  function sheetSub(){
+    const on = M.court[subTeam], bench = (M.roster[subTeam] || []).filter(p => on.indexOf(p.num) === -1);
+    const btn = (n, kind) => {
+      const p = player(subTeam, n);
+      return `<button class="lv2-pbtn${subOut === n ? ' on' : ''}" data-${kind}="${n}">
+        <span class="lv2-pbtn-n mono">${n}</span>${p.name ? `<span class="lv2-pbtn-name">${esc(lastName(p.name))}</span>` : ''}</button>`;
+    };
+    let html = `<div class="lv2-teamseg" role="group" aria-label="Équipe">
+      ${['home','away'].map(s => `<button class="lv2-seg${subTeam === s ? ' on' : ''}" data-subteam="${s}">${esc(M[s].name)}</button>`).join('')}</div>`;
+    if(subOut == null){
+      html += '<div class="lv2-players">' + on.map(n => btn(n, 'out')).join('') + '</div>';
+    } else {
+      html += '<div class="lv2-players">' + (bench.length
+        ? bench.map(p => btn(p.num, 'in')).join('')
+        : '<span class="lv2-empty-inline">Aucun remplaçant sur la feuille.</span>') + '</div>';
     }
-  });
+    openSheet('Remplacement', subOut == null ? 'Qui sort ?' : pLabel(subTeam, subOut) + ' sort — qui entre ?', html);
+  }
+  function doSub(inNum){
+    const out = subOut;
+    M.court[subTeam] = M.court[subTeam].map(n => (n === out ? inNum : n));
+    push({ teamId:subTeam, playerId:out,   actionType:'sub-out', label:'Sortie' });
+    push({ teamId:subTeam, playerId:inNum, actionType:'sub-in',  label:'Entrée en jeu' });
+    toast('neutral', pLabel(subTeam, inNum) + ' entre');
+    subOut = null; closeSheet();
+  }
 
-  $('lvCancel').addEventListener('click', disarm);
-  document.addEventListener('keydown', e=>{ if(e.key==='Escape'){ if(armedShot)disarm(); closePop(); closeDrawer(); closeSheet(); closeFeed(); } });
+  /* ---------------- chrono & options ---------------- */
+  function toggleClock(){
+    if(!M || M.ended) return;
+    M.running = !M.running; save(); paint();
+  }
+  function openMenu(){
+    openSheet('Options du match', qLabel(M) + ' · ' + fmtClock(M.clock), `<div class="lv2-acts sec">
+      <button class="lv2-act" data-opt="end-q">Fin du quart-temps</button>
+      <button class="lv2-act" data-opt="reset-clock">Remettre le chrono à 10:00</button>
+      <button class="lv2-act warn" data-opt="end">Terminer le match</button>
+      <button class="lv2-act warn" data-opt="drop">Abandonner le match</button></div>`);
+  }
+  function endQuarter(){
+    push({ teamId:'home', actionType:'period', label:'Fin du ' + qLabel(M) });
+    if(M.quarter < 8) M.quarter++;
+    M.clock = QUARTER_SEC; M.running = false;
+    save(); paint(); toast('neutral', 'Nouveau quart-temps · ' + qLabel(M));
+  }
 
-  /* ---- terrain COMPLET double-côté (composant réutilisable court.js) ---- */
-  if(window.HoopCourt && HoopCourt.renderFull){
-    courtApi = HoopCourt.renderFull(courtMount, {
-      active: activeTeam==='zal' ? 'home' : 'away',
-      onZone: onCourtZone,
-      onInactive: onCourtInactive
+  /* ---------------- fin de match : feuille depuis les événements ---------------- */
+  function endMatch(){
+    const S = window.HoopStore; if(!S) return;
+    const d = derive();
+    const teamData = t => ({
+      name: M[t].name, code: M[t].code, score: d.scores[t],
+      players: (M.roster[t] || []).map(p => {
+        const s = d.statOf(t, p.num);
+        return { num:p.num, name: p.name || ('#' + p.num), pts:s.pts, fa:s.fa, reb:s.reb, ast:s.ast, stl:s.stl };
+      }).filter(p => p.pts || p.fa || p.reb || p.ast || p.stl || M.court[t].indexOf(p.num) !== -1)
+        .sort((a, b) => b.pts - a.pts)
+    });
+    S.setLiveResult({
+      match: { id:'live', competition:'Match live — saisie temps réel', date:null, status:'final',
+        home:{ name:M.home.name, code:M.home.code, score:d.scores.home },
+        away:{ name:M.away.name, code:M.away.code, score:d.scores.away },
+        result: d.scores.home > d.scores.away ? 'win' : (d.scores.home < d.scores.away ? 'loss' : null) },
+      home: teamData('home'), away: teamData('away'),
+      shots: (M.events || []).filter(e => e.actionType === 'shot' && e.x != null && e.teamId === 'home')
+        .map(e => ({ x:e.x, y:e.y, result:e.result })),
+      quarter: qLabel(M)
+    });
+    wipe(); renderSidebarLive();
+    navigate('#/matchs/live/feuille');
+  }
+
+  /* ================= BOTTOM SHEET ================= */
+  const sheet = $('lv2Sheet'), scrim = $('lv2Scrim');
+  function openSheet(title, sub, html){
+    if(!sheet) return;
+    $('lv2SheetTitle').textContent = title;
+    const s = $('lv2SheetSub'); s.textContent = sub || ''; s.hidden = !sub;
+    $('lv2SheetBody').innerHTML = html;
+    sheet.classList.add('open'); scrim.classList.add('open');
+    sheet.setAttribute('aria-hidden', 'false');
+  }
+  function closeSheet(){
+    if(!sheet) return;
+    sheet.classList.remove('open'); scrim.classList.remove('open');
+    sheet.setAttribute('aria-hidden', 'true');
+    $('lv2SheetBody').innerHTML = '';
+    subOut = null;
+  }
+  if(sheet){
+    $('lv2SheetClose').addEventListener('click', closeSheet);
+    scrim.addEventListener('click', closeSheet);
+    /* un seul écouteur : le contenu de la feuille change, pas ses gestes */
+    sheet.addEventListener('click', e => {
+      if(!M) return;
+      const act = e.target.closest('[data-act]');
+      if(act){ sheetPlayer(act.dataset.act); return; }
+      const pl = e.target.closest('[data-player]');
+      if(pl){ record(pendingAction, +pl.dataset.player); return; }
+      const tm = e.target.closest('[data-team]');
+      if(tm){ pending.team = tm.dataset.team; sheetAction(); return; }
+      const st = e.target.closest('[data-subteam]');
+      if(st){ subTeam = st.dataset.subteam; subOut = null; sheetSub(); return; }
+      const out = e.target.closest('[data-out]');
+      if(out){ subOut = +out.dataset.out; sheetSub(); return; }
+      const inn = e.target.closest('[data-in]');
+      if(inn){ doSub(+inn.dataset.in); return; }
+      if(e.target.closest('[data-sub]')){ subTeam = pending ? pending.team : 'home'; subOut = null; sheetSub(); return; }
+      if(e.target.closest('[data-timeout]')){
+        push({ teamId: pending.team, actionType:'timeout', label:'Temps-mort' });
+        M.running = false; save(); paint(); toast('neutral', 'Temps-mort'); closeSheet(); return;
+      }
+      const opt = e.target.closest('[data-opt]');
+      if(opt){
+        const a = opt.dataset.opt;
+        if(a === 'end-q'){ endQuarter(); closeSheet(); }
+        else if(a === 'reset-clock'){ M.clock = QUARTER_SEC; M.running = false; save(); paint(); closeSheet(); }
+        else if(a === 'end'){ if(confirm('Terminer le match ? La feuille sera générée depuis les actions saisies.')){ closeSheet(); endMatch(); } }
+        else if(a === 'drop'){ if(confirm('Abandonner le match ? Les actions saisies seront perdues.')){ wipe(); closeSheet(); navigate('#/live/nouveau'); } }
+      }
     });
   }
-  syncCourtSide();
 
-  render();
+  /* ================= TOAST ================= */
+  const toastEl = $('lv2Toast'); let toastT;
+  function toast(kind, msg, withRedo){
+    if(!toastEl) return;
+    toastEl.className = 'lv2-toast show ' + kind;
+    toastEl.innerHTML = `<span class="lv2-toast-msg">${esc(msg)}</span>` +
+      (withRedo ? '<button class="lv2-toast-redo" id="lv2Redo">Rétablir</button>' : '');
+    if(withRedo) $('lv2Redo').addEventListener('click', () => { redo(); toastEl.classList.remove('show'); });
+    clearTimeout(toastT);
+    toastT = setTimeout(() => toastEl.classList.remove('show'), withRedo ? 6000 : 1800);
+  }
+
+  /* ================= CHRONO ================= */
+  setInterval(() => {
+    const live = M || load();
+    if(!live || !live.running || live.ended) return;
+    live.clock = Math.max(0, live.clock - 1);
+    if(live.clock === 0) live.running = false;
+    M = live;
+    if(++tick % 5 === 0 || !live.running) save();
+    const t = $('lv2Time'); if(t) t.textContent = fmtClock(live.clock);
+    if(!live.running) paint();
+    renderSidebarLive();
+  }, 1000);
+
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeSheet(); });
+
+  routeHandlers.live = renderLive;
+  routeHandlers['live-new'] = renderLiveNew;
+  M = load();
+  renderSidebarLive();
 })();
 
 /* ============ GAME CENTER (coach) ============ */

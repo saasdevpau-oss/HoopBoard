@@ -1319,7 +1319,7 @@ input[type="text"],input[type="email"],textarea,select{
 #tnCourt,#tdCourt{max-width:480px;}
 
 @media print{
-  .app-sidebar,.app-topbar,.scrim,.fs-actions,.fs-back,.mh-actions,.lv-bottombar,.menu-btn{display:none!important;}
+  .app-sidebar,.app-topbar,.scrim,.fs-actions,.fs-back,.mh-actions,.sb-live,.menu-btn{display:none!important;}
   body{background:#fff!important;}
   .app-main{margin:0!important;}
   .page:not(.active){display:none!important;}
@@ -1377,7 +1377,6 @@ input[type="text"],input[type="email"],textarea,select{
 /* le nom d'équipe devient l'identifiant principal, plus grand & net */
 .nh-tname{font-size:15px; font-weight:600;}
 .gc-name{font-size:13px; font-weight:600; color:var(--t2);}
-.lv-team-name{font-size:18px; font-weight:600;}
 .nh-team,.gc-team{gap:2px;}
 
 /* petits labels agrandis (fini le minuscule cramé) */
@@ -1449,22 +1448,9 @@ input[type="text"],input[type="email"],textarea,select{
 .account-name{color:var(--t1); font-weight:700; font-size:15px;}
 .account-role{color:var(--t3); font-size:12px;}
 
-/* -- Match Live : lv-crest ré-affiché en badge club dynamique -- */
-.lv-crest{
-  border-radius:50%!important; width:46px!important; height:46px!important;
-  font-weight:800; color:#fff!important;
-  background:var(--club-color,#5A6B7A)!important;
-  box-shadow:0 2px 7px rgba(28,22,16,0.18), inset 0 1px 0 rgba(255,255,255,0.3);
-}
-.lv-crest.home{background:linear-gradient(150deg,var(--orange-vif),var(--orange-deep))!important;}
-
 /* -- couleur : liens & boutons secondaires en orange ; blanc sur fond orange -- */
 a{color:var(--orange);}
 .btn-secondary{color:var(--orange);}
-.lv-player.selected .lv-pnum,.lv-player.selected .lv-pname,
-.lv-sub-player.picked .lv-pnum,.lv-sub-player.picked .lv-pname,
-.lv-act.pressed,.lv-bb.pressed,.lv-pop-chip:hover{color:#fff!important;}
-.lv-act.pressed .ic,.lv-bb.pressed .ic{color:#fff!important;}
 
 /* cartes de contenu bien solides (le verre reste au chrome) */
 .card,.card-elevated,.panel,.metric-card,.table-card,.leader-card,.session-card{-webkit-backdrop-filter:none;backdrop-filter:none;}
@@ -1579,4 +1565,347 @@ a{color:var(--orange);}
   .ef2-sv{font-size:20px;}
   .ef2-actions{justify-content:stretch;}
   .ef2-actions .btn-view{flex:1; min-height:44px; padding:0 18px;}
+}
+
+/* ============================================================
+   MATCH LIVE (#/live) + création express (#/live/nouveau)
+   Namespace .lv2-* et .sb-live-*.
+   Priorité : vitesse de saisie. Le terrain occupe l'essentiel de
+   l'écran, tout le reste est secondaire et tient sur une ligne.
+   ============================================================ */
+
+/* ---- accès dans la sidebar : bloc à part, sous la navigation ---- */
+.sb-live{padding:6px 12px 10px; display:flex; flex-direction:column; gap:8px;}
+.sb-live-btn{
+  width:100%; padding:16px 18px; border-radius:18px; border:none;
+  background:#12100E; color:#fff; cursor:pointer;
+  font-family:var(--cond); font-size:17px; font-weight:800;
+  letter-spacing:0.06em; text-transform:uppercase;
+  box-shadow:0 6px 18px rgba(18,16,14,0.22);
+  transition:transform .16s ease, box-shadow .16s ease;
+}
+.sb-live-btn:hover{transform:translateY(-1px); box-shadow:0 10px 24px rgba(18,16,14,0.30);}
+.sb-live-btn.on{box-shadow:0 0 0 2px var(--orange), 0 6px 18px rgba(18,16,14,0.22);}
+
+/* indication « un match est en cours » — cliquable pour reprendre */
+.sb-live-now{
+  width:100%; display:flex; flex-direction:column; align-items:flex-start; gap:2px;
+  padding:10px 14px; border-radius:14px; border:none; cursor:pointer; text-align:left;
+  background:var(--orange-soft); color:var(--t1);
+  transition:background .16s ease;
+}
+.sb-live-now:hover{background:rgba(255,106,0,0.16);}
+.sb-live-tag{
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--cond); font-size:11px; font-weight:800;
+  letter-spacing:0.16em; text-transform:uppercase; color:var(--orange);
+}
+.sb-live-dot{width:7px; height:7px; border-radius:50%; background:var(--orange); animation:sbLivePulse 1.6s ease-in-out infinite;}
+@keyframes sbLivePulse{0%,100%{opacity:1;} 50%{opacity:0.3;}}
+.sb-live-score{font-size:13.5px; font-weight:700; color:var(--t1);}
+.sb-live-time{font-family:var(--mono); font-size:11px; color:var(--t3);}
+@media (prefers-reduced-motion: reduce){ .sb-live-dot{animation:none;} }
+
+/* ============================================================
+   CRÉATION EXPRESS
+   ============================================================ */
+.lv2-hero{text-align:center; padding:clamp(10px,2.4vw,26px) 0 clamp(18px,2.6vw,32px);}
+.lv2-hero-t{
+  font-family:var(--cond); color:var(--orange);
+  font-size:clamp(44px,8vw,96px); font-weight:700; line-height:0.95;
+  letter-spacing:0.04em; text-transform:uppercase; margin:0;
+}
+.lv2-hero-s{margin-top:12px; font-size:clamp(13px,1.3vw,15px); color:var(--t2);}
+
+.lv2-resume{
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  background:var(--orange-soft); border-radius:var(--card-radius);
+  padding:16px 20px; margin-bottom:20px;
+}
+.lv2-resume b{display:block; font-size:14.5px; color:var(--t1);}
+.lv2-resume span{font-size:13px; color:var(--t2);}
+.lv2-resume-act{display:flex; gap:8px;}
+
+.lv2-new{max-width:780px; margin:0 auto; display:flex; flex-direction:column; gap:clamp(18px,2.4vw,28px);}
+.lv2-nblock{
+  background:var(--card-bg); border:1px solid var(--hair-soft);
+  border-radius:var(--card-radius); box-shadow:var(--shadow-xs);
+  padding:clamp(18px,2.2vw,26px);
+}
+.lv2-nh{
+  font-family:var(--cond); color:var(--orange); font-size:clamp(19px,2vw,24px);
+  font-weight:700; letter-spacing:0.06em; text-transform:uppercase; margin:0 0 4px;
+}
+.lv2-nhint{font-size:13px; color:var(--t3); margin:0 0 14px; line-height:1.5;}
+.lv2-ninput{width:100%; font-size:16px; min-height:52px; border-radius:14px;}
+.lv2-nwarn{font-size:12.5px; color:var(--t3); text-align:center; margin:0;}
+.lv2-nerr{
+  margin:0; padding:12px 16px; border-radius:14px; text-align:center;
+  background:var(--loss-soft); color:var(--loss); font-size:13.5px; font-weight:600;
+}
+.lv2-start{width:100%; min-height:60px; font-size:17px; border-radius:18px;}
+
+/* pastilles joueur / numéro — grandes cibles tactiles */
+.lv2-chips{display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-top:12px;}
+.lv2-chip{
+  display:inline-flex; align-items:center; gap:8px;
+  min-height:46px; padding:0 14px; border-radius:14px; cursor:pointer;
+  background:var(--field-bg); border:1px solid transparent; color:var(--t2);
+  font-size:13.5px; font-weight:600;
+  transition:background .14s ease, color .14s ease;
+}
+.lv2-chip:hover{color:var(--orange);}
+.lv2-chip.on{background:var(--orange); color:var(--text-on-orange);}
+.lv2-chip-n{
+  font-family:var(--cond); font-size:16px; font-weight:700; min-width:20px; text-align:center;
+  opacity:0.75;
+}
+.lv2-chip.on .lv2-chip-n{opacity:1;}
+.lv2-count{
+  margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--t3);
+  padding:6px 12px; border-radius:999px; background:var(--field-bg);
+}
+.lv2-count.ok{background:var(--win-soft); color:var(--win);}
+.lv2-empty-inline{font-size:13px; color:var(--t4);}
+
+/* ============================================================
+   ÉCRAN DE SAISIE — le terrain est l'élément principal
+   ============================================================ */
+#page-live.page{padding-top:14px; padding-bottom:24px;}
+.lv2{display:flex; flex-direction:column; gap:clamp(10px,1.4vw,18px);}
+
+/* --- bandeau : score, chrono, quart-temps, noms --- */
+.lv2-board{
+  display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:clamp(12px,2vw,28px);
+  background:var(--card-bg); border-radius:var(--card-radius);
+  box-shadow:var(--shadow-xs); padding:clamp(12px,1.6vw,20px) clamp(16px,2.2vw,28px);
+}
+.lv2-team{display:flex; flex-direction:column; min-width:0;}
+.lv2-team.away{align-items:flex-end; text-align:right;}
+.lv2-tname{
+  font-size:clamp(12px,1.3vw,15px); font-weight:600; color:var(--t2);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;
+}
+.lv2-tscore{
+  font-family:var(--cond); font-size:clamp(40px,6vw,76px); font-weight:700;
+  line-height:1; color:var(--t1); letter-spacing:-0.01em;
+}
+.lv2-center{display:flex; align-items:center; gap:10px;}
+.lv2-clock{
+  display:flex; flex-direction:column; align-items:center; gap:2px; cursor:pointer;
+  padding:8px 18px; border-radius:16px; border:none; background:var(--field-bg);
+  transition:background .16s ease;
+}
+.lv2-clock:hover{background:rgba(255,106,0,0.10);}
+.lv2-clock.running{background:var(--orange-soft);}
+.lv2-q{
+  font-family:var(--cond); font-size:14px; font-weight:800;
+  letter-spacing:0.14em; text-transform:uppercase; color:var(--orange);
+}
+.lv2-time{font-size:clamp(22px,2.6vw,32px); font-weight:700; color:var(--t1); line-height:1;}
+.lv2-run{font-size:10.5px; color:var(--t3); text-transform:uppercase; letter-spacing:0.08em;}
+.lv2-more{
+  width:44px; height:44px; border-radius:14px; border:none; cursor:pointer;
+  background:var(--field-bg); color:var(--t2);
+  display:flex; align-items:center; justify-content:center;
+}
+.lv2-more:hover{color:var(--orange);}
+
+/* --- terrain : il prend toute la place disponible --- */
+.lv2-courtwrap{
+  background:var(--card-bg); border-radius:var(--card-radius);
+  box-shadow:var(--shadow-xs); padding:clamp(10px,1.4vw,18px);
+}
+.lv2-court{width:100%;}
+.lv2-court .hbcf-svg{width:100%; height:auto; max-height:calc(100vh - 340px);}
+.lv2-courthint{
+  margin:8px 0 0; text-align:center; font-size:12px; color:var(--t4);
+  letter-spacing:0.02em;
+}
+
+/* --- les cinq de chaque côté, en lecture seule et discrets --- */
+.lv2-fives{display:grid; grid-template-columns:1fr 1fr; gap:clamp(10px,1.4vw,18px);}
+.lv2-five{display:flex; align-items:center; gap:10px; min-width:0; flex-wrap:wrap;}
+.lv2-five.away{justify-content:flex-end;}
+.lv2-five-lab{
+  font-family:var(--cond); font-size:11.5px; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase; color:var(--t4);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:130px;
+}
+.lv2-five-list{display:flex; gap:6px; flex-wrap:wrap;}
+.lv2-pchip{
+  display:inline-flex; align-items:baseline; gap:5px;
+  padding:5px 10px; border-radius:999px; background:var(--field-bg);
+}
+.lv2-pchip-n{font-family:var(--cond); font-size:14px; font-weight:700; color:var(--t1);}
+.lv2-pchip-p{font-size:11px; color:var(--t3);}
+
+/* --- barre du bas : dernière action + trois boutons, rien d'autre --- */
+.lv2-foot{
+  display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+  background:var(--card-bg); border-radius:var(--card-radius);
+  box-shadow:var(--shadow-xs); padding:clamp(12px,1.5vw,18px) clamp(16px,2vw,24px);
+}
+.lv2-last{display:flex; align-items:center; gap:10px; min-width:0; flex:1;}
+.lv2-last-empty{font-size:13px; color:var(--t4);}
+.lv2-last-dot{width:9px; height:9px; border-radius:50%; flex:0 0 auto; background:var(--t4);}
+.lv2-last-dot.made{background:var(--win);}
+.lv2-last-dot.miss{background:var(--loss);}
+.lv2-last-dot.warn{background:var(--gold,var(--orange));}
+.lv2-last-txt{font-size:13.5px; color:var(--t2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.lv2-last-time{font-size:11px; color:var(--t4); flex:0 0 auto;}
+.lv2-foot-act{display:flex; gap:8px; flex-wrap:wrap;}
+.lv2-btn{
+  min-height:46px; padding:0 18px; border-radius:14px; border:none; cursor:pointer;
+  background:var(--field-bg); color:var(--t1); font-size:13.5px; font-weight:600;
+  transition:background .14s ease, color .14s ease;
+}
+.lv2-btn:hover{background:rgba(255,106,0,0.10); color:var(--orange);}
+.lv2-btn.undo{background:var(--loss-soft); color:var(--loss);}
+.lv2-btn:disabled{opacity:0.4; cursor:default;}
+.lv2-btn:disabled:hover{background:var(--field-bg); color:var(--t1);}
+
+/* ============================================================
+   BOTTOM SHEET : action puis joueur — transitions courtes
+   ============================================================ */
+.lv2-scrim{
+  position:fixed; inset:0; background:rgba(18,16,14,0.34); z-index:210;
+  opacity:0; pointer-events:none; transition:opacity .14s ease;
+}
+.lv2-scrim.open{opacity:1; pointer-events:auto;}
+.lv2-sheet{
+  position:fixed; left:50%; bottom:0; z-index:211;
+  width:min(680px, 100%); transform:translate(-50%, 100%);
+  background:var(--card-bg); border-radius:26px 26px 0 0;
+  box-shadow:0 -12px 40px rgba(28,22,16,0.18);
+  padding:10px clamp(16px,2.4vw,26px) clamp(18px,2.4vw,26px);
+  max-height:min(84vh, 720px); overflow-y:auto;
+  transition:transform .16s cubic-bezier(.2,.8,.3,1);
+}
+.lv2-sheet.open{transform:translate(-50%, 0);}
+.lv2-sheet-grip{width:38px; height:4px; border-radius:2px; background:var(--hair); margin:0 auto 10px;}
+.lv2-sheet-head{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+.lv2-sheet-title{
+  font-family:var(--cond); font-size:clamp(21px,2.4vw,27px); font-weight:700;
+  letter-spacing:0.04em; text-transform:uppercase; color:var(--t1); margin:0;
+}
+.lv2-sheet-close{
+  width:38px; height:38px; border-radius:12px; border:none; cursor:pointer; flex:0 0 auto;
+  background:var(--field-bg); color:var(--t2); display:flex; align-items:center; justify-content:center;
+}
+.lv2-sheet-sub{margin-top:4px; font-size:13px; color:var(--t3);}
+.lv2-sheet-body{margin-top:16px;}
+
+.lv2-teamseg{display:grid; grid-template-columns:1fr 1fr; gap:6px; background:var(--field-bg); padding:5px; border-radius:14px; margin-bottom:14px;}
+.lv2-seg{
+  min-height:42px; border:none; border-radius:10px; cursor:pointer;
+  background:transparent; color:var(--t2); font-size:13.5px; font-weight:600;
+  overflow:hidden; text-overflow:ellipsis; white-space:nowrap; padding:0 10px;
+}
+.lv2-seg.on{background:var(--card-bg); color:var(--t1); box-shadow:var(--shadow-xs);}
+
+/* grille d'actions : les plus fréquentes en grand */
+.lv2-acts{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
+.lv2-acts.sec{margin-top:10px;}
+.lv2-act{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
+  min-height:60px; padding:10px 12px; border-radius:16px; border:none; cursor:pointer;
+  background:var(--field-bg); color:var(--t1);
+  font-size:14px; font-weight:600; text-align:center; line-height:1.2;
+  transition:background .12s ease, color .12s ease, transform .12s ease;
+}
+.lv2-act:active{transform:scale(0.98);}
+.lv2-act:hover{background:rgba(255,106,0,0.10); color:var(--orange);}
+.lv2-act.big{
+  min-height:88px; font-family:var(--cond); font-size:22px; font-weight:700;
+  letter-spacing:0.04em; text-transform:uppercase;
+}
+.lv2-act.wide{grid-column:1/-1;}
+.lv2-act.made{background:var(--win-soft); color:var(--win);}
+.lv2-act.made:hover{background:var(--win); color:#fff;}
+.lv2-act.miss{background:var(--loss-soft); color:var(--loss);}
+.lv2-act.miss:hover{background:var(--loss); color:#fff;}
+.lv2-act.warn{color:var(--t2);}
+.lv2-act-n{font-family:var(--mono); font-size:10.5px; font-weight:500; opacity:0.8; text-transform:none; letter-spacing:0.04em;}
+
+/* choix du joueur : cinq gros boutons */
+.lv2-players{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:8px;}
+.lv2-pbtn{
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  min-height:92px; padding:12px 8px; border-radius:16px; border:none; cursor:pointer;
+  background:var(--field-bg); color:var(--t1);
+  transition:background .12s ease, color .12s ease, transform .12s ease;
+}
+.lv2-pbtn:active{transform:scale(0.98);}
+.lv2-pbtn:hover,.lv2-pbtn.on{background:var(--orange); color:var(--text-on-orange);}
+.lv2-pbtn-n{font-family:var(--cond); font-size:30px; font-weight:700; line-height:1;}
+.lv2-pbtn-name{
+  font-family:var(--cond); font-size:14px; font-weight:600;
+  letter-spacing:0.05em; text-transform:uppercase; opacity:0.9;
+  max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+}
+
+/* toast : confirmation courte, avec Rétablir après une annulation */
+.lv2-toast{
+  position:fixed; left:50%; bottom:26px; transform:translate(-50%,14px); z-index:220;
+  display:flex; align-items:center; gap:12px;
+  padding:12px 18px; border-radius:999px;
+  background:#12100E; color:#fff; font-size:13.5px; font-weight:600;
+  box-shadow:0 10px 30px rgba(18,16,14,0.30);
+  opacity:0; pointer-events:none; transition:opacity .14s ease, transform .14s ease;
+  max-width:calc(100% - 32px);
+}
+.lv2-toast.show{opacity:1; transform:translate(-50%,0); pointer-events:auto;}
+.lv2-toast.made{background:var(--win);}
+.lv2-toast.miss{background:var(--loss);}
+.lv2-toast-msg{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.lv2-toast-redo{
+  border:none; cursor:pointer; background:rgba(255,255,255,0.20); color:#fff;
+  padding:6px 14px; border-radius:999px; font-size:12.5px; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.06em; flex:0 0 auto;
+}
+
+/* conseil de rotation : un terrain complet 28×15 m sur un écran portrait
+   étroit devient trop bas pour viser une zone précisément. */
+.lv2-rotate{display:none;}
+
+/* ---- responsive ---- */
+@media(max-width:1080px){
+  .lv2-court .hbcf-svg{max-height:none;}
+}
+@media (orientation:portrait) and (max-width:620px){
+  .lv2-rotate{
+    display:block; margin:0; padding:11px 16px; border-radius:14px;
+    background:var(--orange-soft); color:var(--orange);
+    font-size:12.5px; font-weight:600; text-align:center;
+  }
+}
+/* téléphone en paysage : le terrain prend tout, le reste se resserre */
+@media (orientation:landscape) and (max-height:560px){
+  .lv2-board{padding:8px 14px;}
+  .lv2-tscore{font-size:30px;}
+  .lv2-fives{display:none;}
+  .lv2-courthint{display:none;}
+  .lv2-court .hbcf-svg{max-height:calc(100vh - 190px);}
+}
+@media(max-width:760px){
+  .lv2-board{grid-template-columns:1fr auto 1fr; gap:8px; padding:12px 14px;}
+  .lv2-tscore{font-size:34px;}
+  .lv2-center{flex-direction:column; gap:6px;}
+  .lv2-more{width:38px; height:38px;}
+  .lv2-fives{grid-template-columns:1fr; gap:8px;}
+  .lv2-five.away{justify-content:flex-start;}
+  .lv2-foot{flex-direction:column; align-items:stretch;}
+  .lv2-foot-act{display:grid; grid-template-columns:repeat(3,minmax(0,1fr));}
+  .lv2-btn{padding:0 10px; font-size:13px;}
+  .lv2-sheet{width:100%; border-radius:22px 22px 0 0;}
+  .lv2-act.big{min-height:76px; font-size:19px;}
+}
+@media(max-width:480px){
+  .lv2-players{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .lv2-pbtn{min-height:82px;}
+  .lv2-pbtn-n{font-size:26px;}
+}
+@media (prefers-reduced-motion: reduce){
+  .lv2-sheet,.lv2-toast,.lv2-act,.lv2-pbtn{transition:none;}
 }
