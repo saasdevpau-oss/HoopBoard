@@ -1681,8 +1681,11 @@ a{color:var(--orange);}
 /* ============================================================
    ÉCRAN DE SAISIE — le terrain est l'élément principal
    ============================================================ */
+/* Pas d'overflow-x:clip ici : un débordement doit rester visible. Sur mobile
+   il élargit le viewport de layout, les overlays fixés en width:100% suivent,
+   et l'emballement saute aux yeux — c'est le signal qu'on veut. */
 #page-live.page{padding-top:14px; padding-bottom:24px;}
-.lv2{display:flex; flex-direction:column; gap:clamp(10px,1.4vw,18px);}
+.lv2{display:flex; flex-direction:column; gap:clamp(10px,1.4vw,18px); min-width:0;}
 
 /* --- bandeau : score, chrono, quart-temps, noms --- */
 .lv2-board{
@@ -1762,13 +1765,19 @@ a{color:var(--orange);}
 .lv2-last-dot.made{background:var(--win);}
 .lv2-last-dot.miss{background:var(--loss);}
 .lv2-last-dot.warn{background:var(--gold,var(--orange));}
-.lv2-last-txt{font-size:13.5px; color:var(--t2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+/* min-width:0 obligatoire : sans lui, le texte en nowrap refuse de rétrécir
+   et un libellé long (« Passe décisive — panier de #3 FRANCISCO ») élargit
+   toute la page au lieu d'être tronqué. */
+.lv2-last-txt{font-size:13.5px; color:var(--t2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0; flex:1;}
 .lv2-last-time{font-size:11px; color:var(--t4); flex:0 0 auto;}
-.lv2-foot-act{display:flex; gap:8px; flex-wrap:wrap;}
+.lv2-foot-act{display:flex; gap:8px; flex-wrap:wrap; min-width:0;}
 .lv2-btn{
   min-height:46px; padding:0 18px; border-radius:14px; border:none; cursor:pointer;
   background:var(--field-bg); color:var(--t1); font-size:13.5px; font-weight:600;
   transition:background .14s ease, color .14s ease;
+  /* min-width:0 : sans lui, un item de grille garde sa largeur min-content
+     (« Remplacement » ne se coupe pas) et élargit la page au lieu de rétrécir */
+  min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
 }
 .lv2-btn:hover{background:rgba(255,106,0,0.10); color:var(--orange);}
 .lv2-btn.undo{background:var(--loss-soft); color:var(--loss);}
@@ -1868,7 +1877,10 @@ a{color:var(--orange);}
 .lv2-toast.show{opacity:1; transform:translate(-50%,0); pointer-events:auto;}
 .lv2-toast.made{background:var(--win);}
 .lv2-toast.miss{background:var(--loss);}
-.lv2-toast-msg{overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+/* même piège que .lv2-last-txt : sans min-width:0 le message en nowrap
+   dépasse le max-width du toast, élargit le viewport de layout, et les
+   éléments fixés en width:100% grandissent à leur tour (emballement). */
+.lv2-toast-msg{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
 .lv2-toast-redo{
   border:none; cursor:pointer; background:rgba(255,255,255,0.20); color:#fff;
   padding:6px 14px; border-radius:999px; font-size:12.5px; font-weight:700;
@@ -1905,7 +1917,11 @@ a{color:var(--orange);}
   .lv2-more{width:38px; height:38px;}
   .lv2-fives{grid-template-columns:1fr; gap:8px;}
   .lv2-five.away{justify-content:flex-start;}
-  .lv2-foot{flex-direction:column; align-items:stretch;}
+  /* flex-wrap:nowrap indispensable : en colonne, un conteneur flex qui peut
+     wrapper dimensionne ses lignes sur leur contenu et non sur le conteneur —
+     les enfants prennent alors leur largeur max-content et sortent de l'écran. */
+  .lv2-foot{flex-direction:column; align-items:stretch; flex-wrap:nowrap; min-width:0;}
+  .lv2-last{overflow:hidden;}
   .lv2-foot-act{display:grid; grid-template-columns:repeat(3,minmax(0,1fr));}
   .lv2-btn{padding:0 10px; font-size:13px;}
   .lv2-sheet{width:100%; border-radius:22px 22px 0 0;}

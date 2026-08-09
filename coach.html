@@ -4075,6 +4075,16 @@ selectAction(0);
     'foul':       { lab:'Faute',           cls:'warn' },
     'foul-drawn': { lab:'Faute provoquée', cls:'' }
   };
+  /* Chaque moitié de terrain est le panier qu'une équipe ATTAQUE. L'action dit
+     ensuite de quel côté du ballon on se trouve : un rebond offensif revient à
+     l'attaque (l'équipe du côté touché), un rebond défensif à la défense
+     (l'autre équipe). Sans zone (« Autre action »), l'équipe est choisie à la
+     main : on ne la retourne pas. */
+  const DEFENDING = { 'reb-def': true };
+  function teamFor(k){
+    if(!pending.zone) return pending.team;
+    return DEFENDING[k] ? otherSide(pending.team) : pending.team;
+  }
 
   /* --- INTERFACE 1 : que s'est-il passé ? --- */
   function sheetAction(){
@@ -4090,42 +4100,60 @@ selectAction(0);
     html += '<div class="lv2-acts">';
     /* les plus fréquentes en premier et en grand */
     if(z){ html += b('shot-made', z.value + ' pts', 'big') + b('shot-miss', z.value + ' pts', 'big'); }
-    html += b('reb-def') + b('reb-off');
+    /* on annonce l'équipe attribuée : le rebond défensif change de camp */
+    html += b('reb-def', z ? M[otherSide(t)].name : null) + b('reb-off', z ? M[t].name : null);
     html += b('assist', lm ? 'sur le panier de ' + pLabel(t, lm.playerId) : null, lm ? 'wide' : '');
     html += b('steal') + b('block') + b('turnover') + b('foul') + b('foul-drawn');
     html += '</div>';
     if(!z){
       html += `<div class="lv2-acts sec">
-        <button class="lv2-act" data-sub="1">Remplacement</button>
-        <button class="lv2-act" data-timeout="1">Temps-mort</button></div>`;
+        <button class="lv2-act" data-sub="1">Remplacement</button></div>`;
     }
-    openSheet('Que s’est-il passé ?', (z ? z.zoneName + ' · ' + z.value + ' pts · ' : '') + M[t].name, html);
+    openSheet('Que s’est-il passé ?', (z ? z.zoneName + ' · ' + z.value + ' pts · attaque ' + M[t].name : M[t].name), html);
   }
 
   /* --- INTERFACE 2 : quel joueur ? (uniquement les 5 sur le terrain) --- */
   let pendingAction = null;   // action choisie en interface 1
-  function sheetPlayer(actionKey){
-    pendingAction = actionKey;
-    const t = pending.team, z = pending.zone;
-    const html = '<div class="lv2-players">' + M.court[t].map(n => {
-      const p = player(t, n);
-      return `<button class="lv2-pbtn" data-player="${n}">
+  let pendingTeam = null;     // équipe résolue par teamFor() — fait foi
+  function fiveButtons(team, attr, skip){
+    return '<div class="lv2-players">' + M.court[team].filter(n => n !== skip).map(n => {
+      const p = player(team, n);
+      return `<button class="lv2-pbtn" ${attr}="${n}">
           <span class="lv2-pbtn-n mono">${n}</span>
           ${p.name ? `<span class="lv2-pbtn-name">${esc(lastName(p.name))}</span>` : ''}</button>`;
     }).join('') + '</div>';
-    const note = ACTIONS[actionKey].lab + (z && actionKey.indexOf('shot') === 0 ? ' · ' + z.value + ' pts · ' + z.zoneName : '') + ' · ' + M[t].name;
-    openSheet('Quel joueur ?', note, html);
+  }
+  function sheetPlayer(actionKey){
+    pendingAction = actionKey;
+    pendingTeam = teamFor(actionKey);
+    const z = pending.zone;
+    const note = ACTIONS[actionKey].lab + (z && actionKey.indexOf('shot') === 0 ? ' · ' + z.value + ' pts · ' + z.zoneName : '') + ' · ' + M[pendingTeam].name;
+    openSheet('Quel joueur ?', note, fiveButtons(pendingTeam, 'data-player'));
   }
 
-  /* --- enregistrement : dernière pression, aucune validation à suivre --- */
+  /* --- INTERFACE 3 (paniers seulement) : qui a fait la passe ? --- */
+  let pendingShot = null;     // panier auquel rattacher la passe décisive
+  function sheetPasser(team, scorer, shotId, points){
+    pendingShot = { team: team, id: shotId };
+    openSheet('Qui a fait la passe ?',
+      pLabel(team, scorer) + ' · +' + points + ' pts · ' + M[team].name,
+      fiveButtons(team, 'data-passer', scorer) +
+      '<div class="lv2-acts sec"><button class="lv2-act wide" data-noassist="1">Pas de passeur</button></div>');
+  }
+
+  /* --- enregistrement : dernière pression, aucune validation à suivre
+         (sauf panier marqué, qui enchaîne sur le choix du passeur) --- */
   function record(k, num){
-    const t = pending.team, z = pending.zone;
+    const t = pendingTeam, z = pending.zone;
     const zone = z ? { zoneId:z.zoneId, zoneName:z.zoneName, x:z.x, y:z.y } : {};
     if(k === 'shot-made' || k === 'shot-miss'){
       const made = k === 'shot-made';
-      push(Object.assign({ teamId:t, playerId:num, actionType:'shot', result: made ? 'made' : 'missed',
+      const ev = push(Object.assign({ teamId:t, playerId:num, actionType:'shot', result: made ? 'made' : 'missed',
         points: z.value, label: 'Tir à ' + z.value + ' pts ' + (made ? 'marqué' : 'manqué') + ' — ' + z.zoneName }, zone));
       toast(made ? 'made' : 'miss', pLabel(t, num) + ' · ' + (made ? '+' + z.value + ' pts' : 'tir manqué'));
+      /* un panier appelle son passeur : la feuille reste complète sans que le
+         coach ait à ressaisir l'action */
+      if(made){ sheetPasser(t, num, ev.id, z.value); return; }
     } else if(k === 'reb-off' || k === 'reb-def'){
       const off = k === 'reb-off';
       push(Object.assign({ teamId:t, playerId:num, actionType:'rebound', subKind: off ? 'off' : 'def',
@@ -4157,6 +4185,15 @@ selectAction(0);
     redoEv = null; clearTimeout(redoTimer);
     save(); paint();
     if(navigator.vibrate && !reduce) navigator.vibrate(12);
+    return ev;
+  }
+  /* passe rattachée au panier qui vient d'être saisi (interface 3) */
+  function recordPasser(num){
+    const s = pendingShot; if(!s) return;
+    push({ teamId:s.team, playerId:num, actionType:'assist', assistOf:s.id,
+      label:'Passe décisive — panier de ' + pLabel(s.team, (M.events.find(e => e.id === s.id) || {}).playerId) });
+    toast('neutral', pLabel(s.team, num) + ' · passe décisive');
+    pendingShot = null; closeSheet();
   }
 
   /* ---------------- annuler / rétablir ---------------- */
@@ -4209,10 +4246,17 @@ selectAction(0);
   }
   function openMenu(){
     openSheet('Options du match', qLabel(M) + ' · ' + fmtClock(M.clock), `<div class="lv2-acts sec">
+      <button class="lv2-act" data-opt="to-home"><span class="lv2-act-l">Temps-mort</span><span class="lv2-act-n">${esc(M.home.name)}</span></button>
+      <button class="lv2-act" data-opt="to-away"><span class="lv2-act-l">Temps-mort</span><span class="lv2-act-n">${esc(M.away.name)}</span></button>
       <button class="lv2-act" data-opt="end-q">Fin du quart-temps</button>
       <button class="lv2-act" data-opt="reset-clock">Remettre le chrono à 10:00</button>
       <button class="lv2-act warn" data-opt="end">Terminer le match</button>
       <button class="lv2-act warn" data-opt="drop">Abandonner le match</button></div>`);
+  }
+  function timeout(team){
+    push({ teamId:team, actionType:'timeout', label:'Temps-mort — ' + M[team].name });
+    M.running = false; save(); paint();
+    toast('neutral', 'Temps-mort · ' + M[team].name);
   }
   function endQuarter(){
     push({ teamId:'home', actionType:'period', label:'Fin du ' + qLabel(M) });
@@ -4262,7 +4306,7 @@ selectAction(0);
     sheet.classList.remove('open'); scrim.classList.remove('open');
     sheet.setAttribute('aria-hidden', 'true');
     $('lv2SheetBody').innerHTML = '';
-    subOut = null;
+    subOut = null; pendingShot = null;
   }
   if(sheet){
     $('lv2SheetClose').addEventListener('click', closeSheet);
@@ -4274,6 +4318,9 @@ selectAction(0);
       if(act){ sheetPlayer(act.dataset.act); return; }
       const pl = e.target.closest('[data-player]');
       if(pl){ record(pendingAction, +pl.dataset.player); return; }
+      const pa = e.target.closest('[data-passer]');
+      if(pa){ recordPasser(+pa.dataset.passer); return; }
+      if(e.target.closest('[data-noassist]')){ pendingShot = null; closeSheet(); return; }
       const tm = e.target.closest('[data-team]');
       if(tm){ pending.team = tm.dataset.team; sheetAction(); return; }
       const st = e.target.closest('[data-subteam]');
@@ -4283,14 +4330,12 @@ selectAction(0);
       const inn = e.target.closest('[data-in]');
       if(inn){ doSub(+inn.dataset.in); return; }
       if(e.target.closest('[data-sub]')){ subTeam = pending ? pending.team : 'home'; subOut = null; sheetSub(); return; }
-      if(e.target.closest('[data-timeout]')){
-        push({ teamId: pending.team, actionType:'timeout', label:'Temps-mort' });
-        M.running = false; save(); paint(); toast('neutral', 'Temps-mort'); closeSheet(); return;
-      }
       const opt = e.target.closest('[data-opt]');
       if(opt){
         const a = opt.dataset.opt;
-        if(a === 'end-q'){ endQuarter(); closeSheet(); }
+        if(a === 'to-home'){ timeout('home'); closeSheet(); }
+        else if(a === 'to-away'){ timeout('away'); closeSheet(); }
+        else if(a === 'end-q'){ endQuarter(); closeSheet(); }
         else if(a === 'reset-clock'){ M.clock = QUARTER_SEC; M.running = false; save(); paint(); closeSheet(); }
         else if(a === 'end'){ if(confirm('Terminer le match ? La feuille sera générée depuis les actions saisies.')){ closeSheet(); endMatch(); } }
         else if(a === 'drop'){ if(confirm('Abandonner le match ? Les actions saisies seront perdues.')){ wipe(); closeSheet(); navigate('#/live/nouveau'); } }
