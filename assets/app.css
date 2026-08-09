@@ -1637,6 +1637,16 @@ a{color:var(--orange);}
   font-weight:700; letter-spacing:0.06em; text-transform:uppercase; margin:0 0 4px;
 }
 .lv2-nhint{font-size:13px; color:var(--t3); margin:0 0 14px; line-height:1.5;}
+.lv2-nhint b{color:var(--t1); font-weight:600;}
+/* compteur sous le champ des numéros : combien de remplaçants sont saisis */
+.lv2-nsub{margin:10px 0 0; font-size:12.5px; color:var(--t3);}
+.lv2-nsub b{color:var(--t1); font-weight:600;}
+.lv2-nsub .warn{color:var(--orange); font-weight:600;}
+/* sous-titre interne d'un bloc (« Cinq de départ adverse ») */
+.lv2-nsh{
+  margin:18px 0 0; font-family:var(--cond); font-size:13px; font-weight:700;
+  letter-spacing:0.14em; text-transform:uppercase; color:var(--t4);
+}
 .lv2-ninput{width:100%; font-size:16px; min-height:52px; border-radius:14px;}
 .lv2-nwarn{font-size:12.5px; color:var(--t3); text-align:center; margin:0;}
 .lv2-nerr{

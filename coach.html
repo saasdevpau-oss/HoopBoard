@@ -3819,8 +3819,11 @@ selectAction(0);
 
         <section class="lv2-nblock">
           <h2 class="lv2-nh">Numéros adverses</h2>
-          <p class="lv2-nhint">Tapez les numéros séparés par des virgules — les noms pourront être ajoutés plus tard.</p>
-          <input class="mc-input lv2-ninput mono" id="lvnNums" name="nums" placeholder="4, 7, 11, 15, 21, 24, 32, 44" inputmode="numeric" autocomplete="off" value="${esc(newState.oppNums.join(', '))}">
+          <p class="lv2-nhint">Notez <b>toute la feuille adverse, remplaçants compris</b> — l’adversaire fait
+            aussi des changements. Les noms pourront être ajoutés plus tard.</p>
+          <input class="mc-input lv2-ninput mono" id="lvnNums" name="nums" placeholder="4, 7, 9, 11, 15, 21, 24, 32, 40, 44" inputmode="numeric" autocomplete="off" value="${esc(newState.oppNums.join(', '))}">
+          <p class="lv2-nsub" id="lvnNumsCount"></p>
+          <h3 class="lv2-nsh">Cinq de départ adverse</h3>
           <div class="lv2-chips" id="lvnAwayFive"></div>
         </section>
 
@@ -3857,6 +3860,14 @@ selectAction(0);
         ? newState.oppNums.map(n => chip(n, '', newState.startAway.indexOf(n) !== -1, 'data-sa')).join('')
           + `<span class="lv2-count${newState.startAway.length === 5 ? ' ok' : ''}">${newState.startAway.length}/5</span>`
         : '<span class="lv2-empty-inline">Saisissez les numéros pour choisir le cinq adverse.</span>';
+      /* montre ce qui restera sur le banc adverse : sans remplaçants saisis,
+         aucun changement adverse ne sera possible pendant le match. */
+      const nb = newState.oppNums.length, bench = Math.max(0, nb - 5);
+      $('lvnNumsCount').innerHTML = !nb
+        ? ''
+        : `<b>${nb} numéro${nb > 1 ? 's' : ''}</b> · ` + (bench
+            ? `${bench} remplaçant${bench > 1 ? 's' : ''} disponible${bench > 1 ? 's' : ''} pour les changements`
+            : '<span class="warn">aucun remplaçant : ajoutez le banc adverse</span>');
     }
     paintNew();
 
