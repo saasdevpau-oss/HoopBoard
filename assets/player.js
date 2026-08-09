@@ -1962,14 +1962,28 @@
      ============================================================ */
   const VIEWS = ['dashboard', 'training', 'games', 'hoopfeed'];
   const TITLES = { dashboard: 'Dashboard', training: 'Entraînements', games: 'Game Center', hoopfeed: 'HoopFeed' };
+  /* La navigation principale ne compte que deux espaces : « perf » (privé —
+     Vue d'ensemble, Entraînements, Game Center, réunis sous Dashboard) et
+     « social » (HoopFeed). Les trois pages privées se parcourent via la
+     navigation interne .pv-nav, sans repasser par la nav principale. */
+  const SPACES = { dashboard: 'perf', training: 'perf', games: 'perf', hoopfeed: 'social' };
   let current = 'dashboard';
   function showView(view, opts) {
     if (VIEWS.indexOf(view) === -1) return;
     const from = VIEWS.indexOf(current), to = VIEWS.indexOf(view);
     const dir = to > from ? 'enter-right' : 'enter-left';
     current = view;
-    $$('.ptab').forEach((t) => t.classList.toggle('active', t.dataset.view === view));
-    $$('.bn-item').forEach((t) => t.classList.toggle('active', t.dataset.view === view));
+    const space = SPACES[view];
+    // nav principale : active sur l'espace, pas sur la page
+    $$('.ptab').forEach((t) => t.classList.toggle('active', SPACES[t.dataset.view] === space));
+    $$('.bn-item').forEach((t) => t.classList.toggle('active', SPACES[t.dataset.view] === space));
+    // nav interne du Dashboard : active sur la page courante
+    $$('.pv-tab').forEach((t) => {
+      const on = t.dataset.view === view;
+      t.classList.toggle('active', on);
+      if (on) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
+    });
+    $$('.pspace').forEach((s) => s.classList.toggle('active', s.dataset.space === space));
     $$('.pview').forEach((v) => v.classList.remove('active', 'enter-right', 'enter-left'));
     const el = document.getElementById('view-' + view);
     if (el) el.classList.add('active', dir);
@@ -2069,7 +2083,7 @@
     if (scrim) scrim.addEventListener('click', () => document.body.classList.remove('nav-open'));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { document.body.classList.remove('nav-open'); closeMatch(); closeHF(); } });
 
-    console.info('[HoopBoard] Espace joueur prêt — privé (Dashboard/Training/Games) + HoopFeed social. Modèle HoopStore :', LOG.length, 'matchs,', PUBLIC_POSTS.length, 'posts publics,', CONVERSATIONS.length, 'conversations.');
+    console.info('[HoopBoard] Espace joueur prêt — 2 espaces : Dashboard (Vue d’ensemble/Entraînements/Game Center) + HoopFeed social. Modèle HoopStore :', LOG.length, 'matchs,', PUBLIC_POSTS.length, 'posts publics,', CONVERSATIONS.length, 'conversations.');
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
