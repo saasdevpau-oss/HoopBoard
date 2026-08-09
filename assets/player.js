@@ -79,63 +79,61 @@
   // Séances collectives (store) — vues côté Francisco.
   const COLLECTIFS = S.getCollectifs().filter((s) => s.eval);           // récentes en premier
   const COLL_CHRONO = COLLECTIFS.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
-  const COLL_CRIT = S.collectifCriteria();                              // {intensite,execution,concentration,communication,engagement}
-  const COLL_CRIT_LABEL = { intensite: 'Intensité', execution: 'Exécution', concentration: 'Concentration', communication: 'Communication', engagement: 'Impact collectif' };
   const playerColl = profile.training.collective;                     // {presenceRate,noteAvg,critAvg,series,recent…} (exposé via getPlayerProfile)
 
-  /* ---- Séances de TIR (démo déterministe, alimentée par le profil de tir du store) ----
-     Le feed EuroLeague ne publie pas de séances de tir : on génère un suivi
-     hebdomadaire réaliste et cohérent avec le profil du joueur (H.p2/p3/lf),
-     en progression légère sur la saison. Sert au shot chart, aux KPIs, à
-     l'historique, aux courbes d'évolution et à un post HoopFeed. */
   const ZONE8 = ['RAQUETTE', 'MI_DISTANCE_GAUCHE', 'MI_DISTANCE_CENTRE', 'MI_DISTANCE_DROITE', 'CORNER_3_GAUCHE', 'CORNER_3_DROIT', 'TOP_KEY_GAUCHE', 'TOP_KEY_DROIT'];
-  const ZONE8_LABEL = { RAQUETTE: 'Raquette', MI_DISTANCE_GAUCHE: 'Mi-distance gauche', MI_DISTANCE_CENTRE: 'Mi-distance axe', MI_DISTANCE_DROITE: 'Mi-distance droite', CORNER_3_GAUCHE: 'Corner 3 gauche', CORNER_3_DROIT: 'Corner 3 droit', TOP_KEY_GAUCHE: 'Aile 3 gauche', TOP_KEY_DROIT: 'Aile 3 droite' };
-  const ZONE_IS3 = (k) => k.indexOf('CORNER_3') === 0 || k.indexOf('TOP_KEY') === 0;
-  // Base de réussite par zone, calée sur le profil du joueur.
-  function zoneBase(k) {
-    if (k === 'RAQUETTE') return H.p2 + 14;
-    if (k.indexOf('MI_DISTANCE') === 0) return H.p2 - 4;
-    if (k.indexOf('CORNER_3') === 0) return H.p3 + 3;
-    return H.p3 - 2; // TOP_KEY
+
+  /* ---- Séances thématiques (tir + personnalisées) : MÊME source que le coach ----
+     Le staff saisit les séances de tir zone par zone et note les séances
+     personnalisées dans HoopStore (getThematicSessions). On ne fait ici que
+     filtrer la ligne de Sylvain Francisco : le joueur voit exactement ce que
+     le coach a enregistré — aucune donnée n'est régénérée côté joueur.
+     Sert au shot chart, à l'analyse, à l'historique, au Dashboard et au feed. */
+  const THEMATIC = S.getThematicSessions() || [];
+  const HEAT_SCALE = { three: [25, 45], mid: [32, 52], paint: [45, 72], rim: [48, 78] };
+  const zoneMeta = (zid) => ((Court && Court.ZONES && Court.ZONES[zid]) ? Court.ZONES[zid] : null);
+  const zoneLabel = (zid) => { const z = zoneMeta(zid); return z ? z.label : zid; };
+  const zoneValue = (zid) => { const z = zoneMeta(zid); return z ? z.value : 2; };
+  /* échelle de couleur par famille de zone : un 3 pts à 40 % vaut un 2 pts à 65 % */
+  function heatValue(zid, pct) {
+    const z = zoneMeta(zid), s = HEAT_SCALE[(z && z.group) || 'mid'] || HEAT_SCALE.mid;
+    return clamp((pct - s[0]) / (s[1] - s[0]), 0, 1);
   }
-  const SHOOT_FOCUS = [
-    { label: 'Tir à 3 points', zones: ['CORNER_3_GAUCHE', 'TOP_KEY_GAUCHE', 'TOP_KEY_DROIT', 'CORNER_3_DROIT'] },
-    { label: 'Mi-distance', zones: ['MI_DISTANCE_GAUCHE', 'MI_DISTANCE_CENTRE', 'MI_DISTANCE_DROITE'] },
-    { label: 'Finitions près du cercle', zones: ['RAQUETTE', 'MI_DISTANCE_GAUCHE', 'MI_DISTANCE_DROITE'] },
-    { label: 'Séance mixte', zones: ZONE8.slice() },
-    { label: 'Catch & shoot', zones: ['CORNER_3_GAUCHE', 'CORNER_3_DROIT', 'TOP_KEY_GAUCHE', 'TOP_KEY_DROIT', 'MI_DISTANCE_CENTRE'] },
-  ];
+  // agrège une liste de séances de tir -> { zoneId: {m, a, pct} }
+  function zonesOf(list) {
+    const Z = {};
+    list.forEach((s) => Object.keys(s.zones).forEach((zid) => {
+      const t = Z[zid] || (Z[zid] = { m: 0, a: 0 });
+      t.m += s.zones[zid].m; t.a += s.zones[zid].a;
+    }));
+    Object.keys(Z).forEach((k) => (Z[k].pct = pctOf(Z[k].m, Z[k].a)));
+    return Z;
+  }
   function buildShooting() {
-    const N = 16, r = rng('sf-shoot'), sessions = [];
-    let start = parseISO('2025-11-03').getTime();
-    for (let i = 0; i < N; i++) {
-      const focus = SHOOT_FOCUS[i % SHOOT_FOCUS.length];
-      const prog = (i / (N - 1)) * 6;               // +0..+6 % de progression sur la saison
-      const date = new Date(start + i * 7 * 86400000 + Math.round((r() * 2 - 1) * 2) * 86400000);
-      const zones = {}; let tm = 0, ta = 0;
-      focus.zones.forEach((k, zi) => {
-        const att = 12 + Math.round(r() * 10);
-        const pct = clamp(zoneBase(k) + prog + (r() * 2 - 1) * 6, 8, 96);
-        const made = clamp(Math.round(att * pct / 100), 0, att);
-        zones[k] = { a: att, m: made };
-        tm += made; ta += att;
+    const sessions = THEMATIC
+      .filter((s) => s.categorie === 'tir' && s.status === 'done' && s.resultats && s.resultats[PID])
+      .sort((a, b) => (a.date < b.date ? -1 : 1))
+      .map((s, i) => {
+        const r = s.resultats[PID], zones = {};
+        (s.zones || []).forEach((zid) => { const z = r.zones[zid]; if (z) zones[zid] = { m: z.m, a: z.a, pct: pctOf(z.m, z.a) }; });
+        return {
+          i: i, id: s.id, date: parseISO(s.date), dateISO: s.date, focus: s.titre || 'Séance de tir',
+          objectif: s.objectif || '', notes: s.notes || '', lieu: s.lieu || '', heure: s.heure || '',
+          duree: s.duree || 0, intensite: s.intensite || '', reps: s.reps || 0,
+          zones: zones, made: r.total.m, att: r.total.a, pct: r.total.pct,
+          teamPct: (s.teamPct != null ? s.teamPct : null),
+        };
       });
-      // composante lancers francs
-      const fta = 8 + Math.round(r() * 6), ftm = clamp(Math.round(fta * (H.lf + prog + (r() * 2 - 1) * 5) / 100), 0, fta);
-      const globalPct = ta ? pctOf(tm, ta) : 0;
-      sessions.push({ i: i, date: date, focus: focus.label, zones: zones, made: tm, att: ta, pct: globalPct, ftm: ftm, fta: fta });
-    }
-    // agrégats par zone (shot chart) + séries d'évolution par zone
-    const byZone = {}; ZONE8.forEach((k) => (byZone[k] = { made: 0, att: 0, series: [] }));
-    sessions.forEach((s) => { ZONE8.forEach((k) => { if (s.zones[k]) { byZone[k].made += s.zones[k].m; byZone[k].att += s.zones[k].a; byZone[k].series.push(pctOf(s.zones[k].m, s.zones[k].a)); } }); });
-    ZONE8.forEach((k) => (byZone[k].pct = pctOf(byZone[k].made, byZone[k].att)));
-    const totMade = sum(sessions.map((s) => s.made)), totAtt = sum(sessions.map((s) => s.att));
-    const ftMade = sum(sessions.map((s) => s.ftm)), ftAtt = sum(sessions.map((s) => s.fta));
+    const byZone = zonesOf(sessions);
+    Object.keys(byZone).forEach((zid) => { byZone[zid].series = sessions.filter((s) => s.zones[zid]).map((s) => s.zones[zid].pct); });
     let m2 = 0, a2 = 0, m3 = 0, a3 = 0;
-    ZONE8.forEach((k) => { if (ZONE_IS3(k)) { m3 += byZone[k].made; a3 += byZone[k].att; } else { m2 += byZone[k].made; a2 += byZone[k].att; } });
+    Object.keys(byZone).forEach((zid) => {
+      if (zoneValue(zid) === 3) { m3 += byZone[zid].m; a3 += byZone[zid].a; } else { m2 += byZone[zid].m; a2 += byZone[zid].a; }
+    });
+    const made = sum(sessions.map((s) => s.made)), att = sum(sessions.map((s) => s.att));
     return {
       sessions: sessions, byZone: byZone,
-      kpi: { count: sessions.length, att: totAtt, made: totMade, pct: pctOf(totMade, totAtt), p2: pctOf(m2, a2), p3: pctOf(m3, a3), ft: pctOf(ftMade, ftAtt) },
+      kpi: { count: sessions.length, made: made, att: att, pct: pctOf(made, att), p2: pctOf(m2, a2), p3: pctOf(m3, a3), m2: m2, a2: a2, m3: m3, a3: a3 },
       evolution: sessions.map((s) => s.pct),
     };
   }
@@ -254,7 +252,7 @@
     return '<div class="tile' + (opts.accent ? ' accent' : '') + '"><div class="tile-val">' + val + '</div><div class="tile-lab">' + lab + '</div>' + (sub ? '<div class="tile-sub">' + sub + '</div>' : '') + delta + '</div>';
   }
   function critRow(label, val) {
-    return '<div class="crit-row"><span class="crit-lab">' + label + '</span><span class="crit-track"><span class="crit-fill" style="width:' + (val / 10 * 100) + '%"></span></span><span class="crit-val">' + round1(val) + '</span></div>';
+    return '<div class="crit-row"><span class="crit-lab">' + esc(label) + '</span><span class="crit-track"><span class="crit-fill" style="width:' + (val / 10 * 100) + '%"></span></span><span class="crit-val">' + fr(round1(val)) + '</span></div>';
   }
   function noteColor(n) { return n >= 8 ? 'var(--win)' : n >= 6.5 ? 'var(--orange)' : n >= 5 ? 'var(--gold)' : 'var(--loss)'; }
 
@@ -344,102 +342,550 @@
   }
 
   /* ============================================================
-     6. VUE — ENTRAÎNEMENTS (Collectif / Tirs)
+     6. VUE — ENTRAÎNEMENT
+     ------------------------------------------------------------
+     Même parcours que la page Entraînement du coach : hero centré,
+     vue globale des trois familles, trois grands boutons, puis
+     l'analyse détaillée et l'historique de la famille choisie.
+     Les données et les règles d'analyse (tendance sur le premier tiers
+     vs le dernier tiers, échelle de couleur par famille de zone,
+     comparaison à la référence) sont celles du staff : rien n'est
+     recalculé différemment côté joueur.
      ============================================================ */
-  let trainSub = 'collectif';
+  const PT_CATS = [['tirs', 'Tirs'], ['collectifs', 'Collectifs'], ['perso', 'Personnalisés']];
+  const PT_ALIAS = { tirs: 'tirs', tir: 'tirs', collectif: 'collectifs', collectifs: 'collectifs', perso: 'perso' };
+  const PT_THEME_COLORS = ['#FF6A00', '#B0812C', '#3E7BB6', '#9B6A4E', '#7A8189', '#2E2A24', '#C4632A', '#5C6BC0'];
+  let trainCat = 'tirs';
+
+  /* ---- helpers d'analyse (mêmes règles que la page Entraînement du coach) ---- */
+  const fr = (n) => String(n).replace('.', ',');
+  const frS = (n) => (n > 0 ? '+' : '') + fr(round1(n));
+  function dirOf(d, seuil) { const s = seuil || 0.3; return d >= s ? 'up' : (d <= -s ? 'down' : 'flat'); }
+  // tendance : moyenne du premier tiers comparée à celle du dernier tiers
+  function trend(vals, seuil) {
+    if (!vals || vals.length < 4) return null;
+    const k = Math.max(2, Math.round(vals.length / 3));
+    const d = round1(mean(vals.slice(-k)) - mean(vals.slice(0, k)));
+    return { d: d, dir: dirOf(d, seuil) };
+  }
+  function trendBadge(t, unit) {
+    if (!t) return '';
+    const txt = t.dir === 'up' ? 'En progression' : (t.dir === 'down' ? 'En baisse' : 'Stable');
+    return '<span class="tr2-trend ' + t.dir + '">' + txt + ' <b>' + frS(t.d) + (unit || '') + '</b></span>';
+  }
+  function sumRow(k, v, cls) {
+    return '<div class="tr2-sum-row"><span>' + k + '</span><b' + (cls && cls !== 'flat' ? ' class="' + cls + '"' : '') + '>' + v + '</b></div>';
+  }
+  function heatmapOf(Z) {
+    const h = {}; Object.keys(Z).forEach((k) => { if (Z[k].a) h[k] = { value: heatValue(k, Z[k].pct), key: k }; });
+    return h;
+  }
+
+  /* ---- les trois familles, dérivées du store ---- */
+  const COLL_ATT = COLL_CHRONO.filter((s) => S.playerAvg(s, PID) != null);   // séances collectives suivies
+  const PERSO = THEMATIC
+    .filter((s) => s.categorie === 'coach' && s.status === 'done' && s.evalCoach && s.evalCoach[PID])
+    .sort((a, b) => (a.date < b.date ? -1 : 1))
+    .map((s, i) => ({
+      i: i, id: s.id, dateISO: s.date, theme: s.theme || s.type || 'Autre', titre: s.titre || 'Séance',
+      type: s.type || '', note: s.evalCoach[PID].note, comment: s.evalCoach[PID].comment || '',
+      team: (s.avgNote != null ? s.avgNote : null), objectif: s.objectif || '', notes: s.notes || '',
+      lieu: s.lieu || '', heure: s.heure || '', duree: s.duree || 0, intensite: s.intensite || '',
+    }));
+  const PERSO_THEMES = []; PERSO.forEach((s) => { if (PERSO_THEMES.indexOf(s.theme) === -1) PERSO_THEMES.push(s.theme); });
+  const TRAIN = {
+    tirs: { vals: SHOOT.sessions.map((s) => s.pct), unit: ' %', seuil: 1.5, avgRef: SHOOT.kpi.pct },
+    collectifs: { vals: COLL_ATT.map((s) => S.playerAvg(s, PID)), unit: '', seuil: 0.3, avgRef: playerColl.noteAvg },
+    perso: { vals: PERSO.map((s) => s.note), unit: '', seuil: 0.3 },
+  };
+
+  /* ---- 2. vue globale : une carte de synthèse par famille ---- */
+  function ovStats(vals, seuil, avgRef) {
+    if (!vals.length) return null;
+    // avgRef : moyenne de référence du store quand elle est pondérée par le volume
+    // (réussite au tir = total réussis / total tentés), sinon moyenne des séances.
+    const n = vals.length, avg = avgRef != null ? avgRef : round1(mean(vals)), k = Math.min(5, n);
+    return {
+      n: n, last: vals[n - 1], avg: avg, best: Math.max.apply(null, vals), k: k,
+      recent: round1(mean(vals.slice(-k)) - avg), trend: trend(vals, seuil),
+      spark: vals.slice(-Math.min(12, n)),
+    };
+  }
+  // n premiers / n derniers d'un classement, sans jamais se chevaucher
+  function topBottom(list, n) {
+    return [list.slice(0, n), list.slice(Math.max(n, list.length - n)).reverse()];
+  }
+  function ovRow(k, v, cls) {
+    return '<div class="pt-ov-row"><span>' + k + '</span><b' + (cls && cls !== 'flat' ? ' class="' + cls + '"' : '') + '>' + v + '</b></div>';
+  }
+  function ovCard(cat, label, sub, empty) {
+    const T = TRAIN[cat], st = ovStats(T.vals, T.seuil, T.avgRef);
+    if (!st) return '<div class="pt-ov-card"><div class="pt-ov-cat">' + label + '</div><p class="pt-empty">' + empty + '</p></div>';
+    const d = dirOf(st.recent, T.seuil);
+    const col = d === 'up' ? 'var(--win)' : d === 'down' ? 'var(--loss)' : 'var(--orange)';
+    return '<button type="button" class="pt-ov-card" data-ptcat="' + cat + '">'
+      + '<div class="pt-ov-top"><div><div class="pt-ov-cat">' + label + '</div><div class="pt-ov-sub">' + sub + '</div></div>' + trendBadge(st.trend, T.unit) + '</div>'
+      + '<div class="pt-ov-now"><span class="pt-ov-val">' + fr(st.last) + T.unit + '</span><span class="pt-ov-unit">niveau actuel · dernière séance</span></div>'
+      + sparkline(st.spark, col)
+      + '<div class="pt-ov-rows">'
+      + ovRow('Moyenne saison', fr(st.avg) + T.unit)
+      + ovRow('Meilleure séance', fr(st.best) + T.unit)
+      + ovRow(st.k + ' dernières séances', frS(st.recent) + T.unit, d)
+      + '</div></button>';
+  }
+
+  /* ---- 1 + 3. hero, vue globale et les trois grands boutons ---- */
   function renderTraining() {
-    const html =
-      '<div class="view-head"><h2 class="view-title">Mes <em class="serif">entraînements</em></h2><div class="view-sub">Séances collectives du staff Žalgiris et suivi de progression au tir</div></div>'
-      + '<div class="subtabs" data-subtabs="training">'
-      + '<button class="subtab' + (trainSub === 'collectif' ? ' active' : '') + '" data-sub="collectif">Collectif</button>'
-      + '<button class="subtab' + (trainSub === 'tirs' ? ' active' : '') + '" data-sub="tirs">Tirs</button></div>'
-      + '<div class="subpane' + (trainSub === 'collectif' ? ' active' : '') + '" id="sub-collectif"></div>'
-      + '<div class="subpane' + (trainSub === 'tirs' ? ' active' : '') + '" id="sub-tirs"></div>';
-    $('#pane-training').innerHTML = html;
-    renderCollectif();
-    renderTirs();
+    const total = SHOOT.sessions.length + COLL_ATT.length + PERSO.length;
+    $('#pane-training').innerHTML =
+      '<header class="tr2-hero pt-hero"><h1 class="tr2-hero-t">Entraînement</h1>'
+      + '<p class="tr2-hero-s">' + esc(player.name) + ' · ' + esc(club.nom) + ' · Saison ' + esc(tournoi.saison) + '</p></header>'
+      + '<section class="tr2-panel tr2-panel-wide">'
+      + '<div class="tr2-panel-head"><h2 class="tr2-h2">Vue globale de mes entraînements</h2>'
+      + '<div class="tr2-panel-sub">' + total + ' séances suivies cette saison · niveau actuel, moyenne et tendance par famille</div></div>'
+      + '<div class="pt-ov">'
+      + ovCard('tirs', 'Tirs', SHOOT.sessions.length + ' séances · réussite globale', 'Aucune séance de tir jouée.')
+      + ovCard('collectifs', 'Collectifs', COLL_ATT.length + ' séances suivies · note du staff sur 10', 'Aucune séance collective notée.')
+      + ovCard('perso', 'Personnalisés', PERSO.length + ' séances · note du coach sur 10', 'Aucune séance personnalisée notée.')
+      + '</div></section>'
+      + '<nav class="tr2-nav" aria-label="Familles d’entraînement">'
+      + PT_CATS.map((c) => '<button type="button" class="tr2-navbtn' + (trainCat === c[0] ? ' on' : '') + '" data-ptcat="' + c[0] + '">' + c[1] + '</button>').join('')
+      + '</nav><div id="pt-detail"></div>';
+    renderTrainCat();
   }
-  function renderCollectif() {
-    const series = playerColl.series.map((x) => x.avg);
-    const crit = playerColl.critAvg;
-    const PLc = S.playerCriteria();
-    const html =
-      '<div class="grid-3" style="margin-bottom:16px">'
-      + tile(playerColl.attended, 'Séances suivies', 'sur ' + playerColl.doneCount + ' au total')
-      + tile(playerColl.noteAvg, 'Ma note moyenne', 'évaluation staff /10', { delta: playerColl.recent, accent: true })
-      + tile(playerColl.presenceRate + '%', 'Présence', 'assiduité saison')
+  function setTrainCat(cat, scroll) {
+    const c = PT_ALIAS[cat] || cat;
+    if (!TRAIN[c]) return;
+    trainCat = c;
+    $$('#pane-training .tr2-navbtn').forEach((b) => b.classList.toggle('on', b.dataset.ptcat === c));
+    renderTrainCat();
+    if (scroll) { const d = $('#pt-detail'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+  }
+  function renderTrainCat() {
+    const box = $('#pt-detail'); if (!box) return;
+    if (trainCat === 'collectifs') renderCatCollectifs(box);
+    else if (trainCat === 'perso') renderCatPerso(box);
+    else renderCatTirs(box);
+  }
+  function rankRow(label, meta, val, delta, seuil, cls) {
+    const d = delta == null ? '' : '<span class="d ' + dirOf(delta, seuil) + '">' + frS(delta) + '</span>';
+    return '<div class="pt-rank-row ' + (cls || '') + '"><span class="lab">' + esc(label) + (meta ? '<small>' + meta + '</small>' : '') + '</span>'
+      + '<span class="val">' + val + d + '</span></div>';
+  }
+  function rankPanel(title, note, rows) {
+    return '<section class="tr2-panel"><div class="tr2-panel-head"><h2 class="tr2-h2">' + title + '</h2></div>'
+      + '<div class="pt-rank">' + (rows || '<p class="pt-empty">Pas encore assez de données.</p>') + '</div>'
+      + (note ? '<p class="pt-note">' + note + '</p>' : '') + '</section>';
+  }
+
+  /* ============================================================
+     6a. TIRS — carte de tir, évolution de l'adresse, zones fortes
+         et faibles, transfert en match, historique des séances
+     ============================================================ */
+  const TIR_PERIODS = [['Saison', 0], ['10 dernières', 10], ['5 dernières', 5], ['Dernière séance', 1]];
+  let tirPeriod = 0, tirZone = null, tirShown = 6;
+  function tirSubset() { return tirPeriod ? SHOOT.sessions.slice(-tirPeriod) : SHOOT.sessions; }
+  function tirPeriodLabel() { const p = TIR_PERIODS.filter((x) => x[1] === tirPeriod)[0]; return p ? p[0].toLowerCase() : 'saison'; }
+
+  function renderCatTirs(box) {
+    const sess = SHOOT.sessions;
+    if (!sess.length) { box.innerHTML = '<section class="tr2-panel"><p class="pt-empty">Aucune séance de tir enregistrée pour le moment.</p></section>'; return; }
+    const K = SHOOT.kpi, vals = TRAIN.tirs.vals, t = trend(vals, 1.5);
+    const rec5 = zonesOf(sess.slice(-5));
+    const zdelta = (zid) => ((rec5[zid] && rec5[zid].a && SHOOT.byZone[zid]) ? round1(rec5[zid].pct - SHOOT.byZone[zid].pct) : null);
+    const ranked = Object.keys(SHOOT.byZone).filter((z) => SHOOT.byZone[z].a >= 10)
+      .map((z) => ({ id: z, pct: SHOOT.byZone[z].pct, m: SHOOT.byZone[z].m, a: SHOOT.byZone[z].a, v: heatValue(z, SHOOT.byZone[z].pct) }))
+      .sort((a, b) => b.v - a.v);
+    const tb = topBottom(ranked, 3), forts = tb[0], faibles = tb[1];
+    const zRow = (z, cls) => rankRow(zoneLabel(z.id), z.m + '/' + z.a, fr(z.pct) + ' %', zdelta(z.id), 1.5, cls);
+
+    box.innerHTML =
+      // carte de tir interactive + résumé de la période
+      '<section class="tr2-panel tr2-panel-wide"><div class="tr2-panel-head">'
+      + '<h2 class="tr2-h2">Ma carte de tir</h2>'
+      + '<div class="tr2-panel-sub">Ma réussite zone par zone sur les séances de tir'
+      + '<span class="tr2-legend"><i class="lo"></i>zone faible<i class="lm"></i>moyenne<i class="lh"></i>efficace</span></div></div>'
+      + '<div class="tr2-filters"><div class="tr2-chips" id="tirPer"></div></div>'
+      + '<div class="tr2-court-wide"><div class="tr2-court" id="tirCourt"></div>'
+      + '<div class="tr2-court-side"><div id="tirSum"></div><div id="tirZone"></div></div></div></section>'
+      // évolution de l'adresse
+      + '<section class="tr2-panel tr2-panel-wide"><div class="tr2-panel-head">'
+      + '<h2 class="tr2-h2">Évolution de mon adresse</h2>'
+      + '<div class="tr2-panel-sub">Réussite globale, séance après séance ' + trendBadge(t, ' %') + '</div></div>'
+      + lineChart(vals, { h: 170, unit: '%', labels: sess.map((s, i) => ((i % 3 === 0 || i === sess.length - 1) ? fmtDate(s.date) : '')) })
+      + '<p class="pt-note">Moyenne de la saison <b>' + fr(K.pct) + ' %</b> (' + K.made + '/' + K.att + ') · '
+      + 'à 2 points <b>' + fr(K.p2) + ' %</b> (' + K.m2 + '/' + K.a2 + ') · à 3 points <b>' + fr(K.p3) + ' %</b> (' + K.m3 + '/' + K.a3 + ').</p></section>'
+      // points forts / points à améliorer — classés comme chez le coach, au regard
+      // du standard attendu à cette distance (un 3 pts à 40 % vaut un 2 pts à 65 %)
+      + '<div class="pt-two">'
+      + rankPanel('Mes points forts', 'Classement au regard du standard attendu à cette distance : un 3 points à 40 % vaut un 2 points à 65 %. L’écart affiché compare mes 5 dernières séances à ma moyenne de la saison.',
+        forts.map((z) => zRow(z, 'good')).join(''))
+      + rankPanel('À travailler', 'Les secteurs les plus en retard sur le standard attendu à cette distance — les prochains chantiers avec le staff.',
+        faibles.map((z) => zRow(z, 'bad')).join(''))
       + '</div>'
-      // évolution
-      + '<div class="panel card-elevated" style="margin-bottom:16px"><div class="panel-head"><div class="sec-title">Évolution de mes notes collectives</div><div class="tile-sub">' + series.length + ' séances notées</div></div>'
-      + lineChart(series, { h: 150, min: 4, max: 10, labels: playerColl.series.map((x, i) => (i % 2 === 0 ? fmtDate(x.date) : '')) }) + '</div>'
-      // moyennes par critère
-      + '<div class="grid-2" style="margin-bottom:16px"><div class="panel card-elevated"><div class="panel-title">' + icoDot + 'Mes moyennes par critère</div><div class="crit-rows">'
-      + PLc.map((c) => critRow(c.label, crit[c.key])).join('') + '</div></div>'
-      + '<div class="panel card-elevated"><div class="panel-title">' + icoDot + 'Le mot du coach</div>'
-      + (lastColl() && lastColl().eval.noteCoach ? '<div class="coach-quote">« ' + esc(lastColl().eval.noteCoach) + ' »</div>' : '<div class="tile-sub">Pas de commentaire sur la dernière séance.</div>')
-      + '<div class="tile-sub" style="margin-top:12px">Le staff note chaque séance sur 5 critères : intensité, exécution, concentration, communication et impact collectif.</div></div></div>'
-      // historique séances
-      + '<div class="sec-head"><span class="sec-title">Historique des séances collectives</span></div>'
-      + '<div class="sess-list">' + COLLECTIFS.map(sessCard).join('') + '</div>';
-    $('#sub-collectif').innerHTML = html;
-    requestAnimationFrame(() => $$('#sub-collectif .crit-fill').forEach((f) => (f.style.width = f.style.width)));
-  }
-  function sessCard(s) {
-    const note = S.playerAvg(s, PID);
-    const present = !!s.presence[PID];
-    const crit = s.eval.collectif;
-    return '<div class="sess-card" data-coll="' + s.id + '"><div class="sess-top"><div><div class="sess-date">' + esc(s.titre) + ' · ' + fmtDate(s.date, true) + '</div>'
-      + '<div class="sess-meta">' + s.heure + ' · ' + s.duree + ' min · ' + esc(s.lieu) + '</div></div>'
-      + (present ? '<span class="sess-note-badge" style="background:' + noteColor(note) + '22;color:' + noteColor(note) + '">' + note + '/10</span>' : '<span class="sess-note-badge" style="background:var(--hair-soft);color:var(--t4)">Absent</span>')
-      + '</div><div class="crit-rows">'
-      + COLL_CRIT.map((c) => critRow(COLL_CRIT_LABEL[c.key], crit[c.key])).join('')
-      + '</div>' + (s.eval.noteCoach ? '<div class="coach-quote">« ' + esc(s.eval.noteCoach) + ' »</div>' : '') + '</div>';
-  }
-  function renderTirs() {
-    const k = SHOOT.kpi;
-    const html =
-      // KPIs
-      '<div class="tiles" style="margin-bottom:12px">'
-      + tile(k.count, 'Séances', 'de tir cette saison')
-      + tile(k.att, 'Tirs tentés', k.made + ' réussis')
-      + tile(k.pct + '%', 'Réussite globale', null, { accent: true })
-      + tile(SHOOT.sessions[SHOOT.sessions.length - 1].pct + '%', 'Dernière séance', fmtDate(lastShoot().date))
-      + '</div>'
-      + '<div class="pcts" style="margin-bottom:16px">' + pctCell('2PT%', k.p2) + pctCell('3PT%', k.p3) + pctCell('LF%', k.ft) + pctCell('Global', k.pct) + '</div>'
-      // shot chart interactif
-      + '<div class="panel card-elevated" style="margin-bottom:16px"><div class="panel-title">' + icoDot + 'Ma carte de tir — réussite par zone</div>'
-      + '<div class="panel-sub" style="color:var(--t3);font-size:12.5px;margin-bottom:14px">Touche une zone du terrain pour voir le détail et son évolution</div>'
-      + '<div class="shot-wrap"><div><div class="court-hold" id="tirCourt"></div>'
-      + '<div class="zone-legend"><span class="lg"><span class="sw" style="background:#7FA05F"></span>Zone chaude</span><span class="lg"><span class="sw" style="background:#C99E63"></span>Moyenne</span><span class="lg"><span class="sw" style="background:#C25645"></span>Zone à travailler</span></div></div>'
-      + '<div class="zone-detail" id="tirZone"></div></div></div>'
-      // évolution
-      + '<div class="panel card-elevated" style="margin-bottom:16px"><div class="panel-head"><div class="sec-title">Évolution de ma réussite au tir</div><div class="tile-sub">réussite globale par séance</div></div>'
-      + lineChart(SHOOT.evolution, { h: 150, min: 30, max: 70, unit: '%', labels: SHOOT.sessions.map((s, i) => (i % 3 === 0 ? fmtDate(s.date) : '')) }) + '</div>'
+      // transfert entraînement -> match
+      + tirVsMatch(profile.training.vsMatch)
       // historique
-      + '<div class="sec-head"><span class="sec-title">Historique des séances de tir</span></div>'
-      + '<div class="sess-list">' + SHOOT.sessions.slice().reverse().map(shootRow).join('') + '</div>';
-    $('#sub-tirs').innerHTML = html;
-    // shot chart
-    const holder = $('#tirCourt');
-    const zones = {}; ZONE8.forEach((z) => (zones[z] = { pct: SHOOT.byZone[z].pct, made: SHOOT.byZone[z].made, att: SHOOT.byZone[z].att }));
-    renderShotChart(holder, zones, showTirZone);
-    showTirZone('RAQUETTE');
+      + '<div class="pt-sec">Historique de mes séances de tir</div><div id="tirHist"></div>';
+    paintTirCourt();
+    paintTirHist();
   }
-  function showTirZone(k) {
-    const z = SHOOT.byZone[k];
-    const trend = z.series.length > 1 ? round1(z.series[z.series.length - 1] - z.series[0]) : 0;
-    const html = '<h4>' + ZONE8_LABEL[k] + '</h4><div class="zd-hint">' + (ZONE_IS3(k) ? 'Tir à 3 points' : 'Tir à 2 points') + ' · ' + z.series.length + ' séances</div>'
-      + '<div class="zd-stats"><div class="zd-stat"><b>' + z.att + '</b><span>Tentés</span></div><div class="zd-stat"><b>' + z.made + '</b><span>Réussis</span></div><div class="zd-stat"><b style="color:var(--orange-vif)">' + z.pct + '%</b><span>Réussite</span></div></div>'
-      + '<div class="tile-sub" style="margin-bottom:6px">Évolution sur la saison <b style="color:' + (trend >= 0 ? 'var(--win)' : 'var(--loss)') + '">' + signed(trend) + ' pts</b></div>'
-      + sparkline(z.series, trend >= 0 ? 'var(--win)' : 'var(--loss)');
-    $('#tirZone').innerHTML = html;
-    $$('#tirCourt .zone-tag').forEach((t) => (t.style.color = '#fff'));
+  function paintTirCourt() {
+    const chips = $('#tirPer'), courtEl = $('#tirCourt'), sumEl = $('#tirSum'), zoneEl = $('#tirZone');
+    if (!chips || !courtEl) return;
+    chips.innerHTML = TIR_PERIODS.map((p) => '<button type="button" class="tr2-chip' + (tirPeriod === p[1] ? ' on' : '') + '" data-tirper="' + p[1] + '">' + p[0] + '</button>').join('');
+    const Z = zonesOf(tirSubset()), ids = Object.keys(Z).filter((k) => Z[k].a);
+    let hi = null, lo = null, m = 0, a = 0, ms = 0, as = 0;
+    ids.forEach((k) => {
+      const v = heatValue(k, Z[k].pct); m += Z[k].m; a += Z[k].a;
+      if (!hi || v > hi.v) hi = { id: k, v: v };
+      if (!lo || v < lo.v) lo = { id: k, v: v };
+      /* référence saison calculée sur LES MÊMES zones que la période affichée :
+         comparer une séance de 3 pts à la moyenne toutes zones n'aurait aucun sens */
+      if (SHOOT.byZone[k]) { ms += SHOOT.byZone[k].m; as += SHOOT.byZone[k].a; }
+    });
+    const tot = pctOf(m, a), totS = pctOf(ms, as), d = round1(tot - totS);
+    sumEl.innerHTML = '<div class="tr2-sum">'
+      + sumRow('Réussite ' + tirPeriodLabel(), fr(tot) + ' % <i>(' + m + '/' + a + ')</i>')
+      + (tirPeriod ? sumRow('Ma moyenne de la saison <i>(mêmes zones)</i>', fr(totS) + ' % <i>(' + ms + '/' + as + ')</i>') + sumRow('Écart', frS(d) + ' %', dirOf(d, 1.5)) : '')
+      + (hi ? sumRow('Zone forte', esc(zoneLabel(hi.id)) + ' · ' + fr(Z[hi.id].pct) + ' %') : '')
+      + (lo ? sumRow('Zone à travailler', esc(zoneLabel(lo.id)) + ' · ' + fr(Z[lo.id].pct) + ' %') : '')
+      + '</div>';
+    zoneEl.innerHTML = tirZonePanel(tirZone, Z);
+    if (Court) {
+      Court.render(courtEl, {
+        mode: 'analysis', heatmap: heatmapOf(Z), selectedZoneId: tirZone,
+        onZoneSelect: (z) => {
+          tirZone = (z.id === 'out-of-bounds') ? null : z.id;
+          const box = $('#tirZone'); if (box) box.innerHTML = tirZonePanel(tirZone, zonesOf(tirSubset()));
+        },
+      });
+    }
   }
-  function shootRow(s) {
-    return '<div class="sess-card" style="cursor:default"><div class="sess-top"><div><div class="sess-date">' + esc(s.focus) + ' · ' + fmtDate(s.date, true) + '</div>'
-      + '<div class="sess-meta">' + Object.keys(s.zones).length + ' zones travaillées · ' + s.made + '/' + s.att + ' au tir · LF ' + s.ftm + '/' + s.fta + '</div></div>'
-      + '<span class="sess-note-badge" style="background:var(--orange-soft);color:var(--orange-vif)">' + s.pct + '%</span></div>'
-      + '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">' + Object.keys(s.zones).map((z) => '<span class="id-tag">' + ZONE8_LABEL[z] + ' ' + pctOf(s.zones[z].m, s.zones[z].a) + '%</span>').join('') + '</div></div>';
+  function tirZonePanel(zid, Z) {
+    if (!zid) return '<div class="tr2-zone empty">Touche une zone du terrain pour voir le détail : réussite, volume, évolution récente et comparaison avec tes matchs.</div>';
+    const z = Z[zid];
+    if (!z || !z.a) {
+      return '<div class="tr2-zone"><div class="tr2-zone-t">' + esc(zoneLabel(zid)) + '</div>'
+        + '<p class="pt-empty">Aucun tir enregistré dans cette zone sur la période choisie.</p></div>';
+    }
+    const ref = SHOOT.byZone[zid], rec = zonesOf(SHOOT.sessions.slice(-5))[zid];
+    const d = (rec && rec.a && ref && ref.a) ? round1(rec.pct - ref.pct) : null;
+    const v = heatValue(zid, z.pct), cls = v >= 0.66 ? 'win' : (v <= 0.33 ? 'loss' : 'neutral');
+    const mz = profile.matchZones ? profile.matchZones[ZONE18_TO_8[zid]] : null;
+    return '<div class="tr2-zone"><div class="tr2-zone-t">' + esc(zoneLabel(zid)) + '</div>'
+      + '<div class="tr2-zone-big"><span class="tr2-zone-made">' + z.m + ' / ' + z.a + '</span>'
+      + '<span class="tr2-zone-pct ' + cls + '">' + fr(z.pct) + ' %</span></div>'
+      + (d != null ? '<div class="tr2-zone-evo ' + dirOf(d, 1.5) + '">' + frS(d) + ' % sur mes 5 dernières séances</div>' : '')
+      + (mz ? '<div class="tr2-zone-best"><span>Ma réussite en match sur ce secteur</span><b>' + fr(mz.pct) + ' % (' + mz.reussis + '/' + mz.tentes + ')</b></div>' : '')
+      + '</div>';
+  }
+  function tirVsMatch(vm) {
+    if (!vm || !vm.rows || !vm.rows.length) return '';
+    return '<section class="tr2-panel tr2-panel-wide"><div class="tr2-panel-head">'
+      + '<h2 class="tr2-h2">Ce que ça donne en match</h2>'
+      + '<div class="tr2-panel-sub">Ma réussite à l’entraînement comparée à ma réussite en match, secteur par secteur</div></div>'
+      + '<div class="pt-legend"><span><i class="tr"></i>entraînement</span><span><i class="mt"></i>match</span></div>'
+      + '<div class="pt-cmp">' + vm.rows.map(cmpZoneRow).join('') + '</div>'
+      + '<p class="pt-note">Global : <b>' + fr(vm.trainGlobal) + ' %</b> à l’entraînement contre <b>' + fr(vm.matchGlobal) + ' %</b> en match'
+      + (vm.ecart != null ? ' — soit <b>' + frS(-vm.ecart) + ' pts</b> en match.' : '.')
+      + ' Un écart positif en match veut dire que le travail se transfère bien sous pression.</p></section>';
+  }
+  function cmpZoneRow(r) {
+    const max = Math.max(r.train, r.match, 1), gain = round1(-r.ecart);
+    return '<div class="pt-cmp-row"><span>' + esc(r.label) + '</span>'
+      + '<span class="pt-cmp-val ' + dirOf(gain, 1.5) + '">' + frS(gain) + ' pts en match</span>'
+      + '<span class="pt-cmp-bars">'
+      + '<span class="pt-cmp-track"><span class="pt-cmp-fill tr" style="width:' + (r.train / max * 100).toFixed(1) + '%"></span></span>'
+      + '<span class="pt-cmp-track"><span class="pt-cmp-fill mt" style="width:' + (r.match / max * 100).toFixed(1) + '%"></span></span>'
+      + '</span></div>';
+  }
+  function paintTirHist() {
+    const el = $('#tirHist'); if (!el) return;
+    const list = SHOOT.sessions.slice().reverse(), shown = list.slice(0, tirShown);
+    el.innerHTML = '<div class="pt-list">' + shown.map(tirSessCard).join('') + '</div>'
+      + (list.length > shown.length ? '<button type="button" class="pt-more" data-ptmore="tirs">Voir plus de séances (' + (list.length - shown.length) + ')</button>' : '');
+  }
+  function tirSessCard(s) {
+    const nz = Object.keys(s.zones).length;
+    const cls = s.pct >= 50 ? 'win' : (s.pct >= 35 ? '' : 'loss');
+    const vsTeam = s.teamPct != null ? round1(s.pct - s.teamPct) : null;
+    return '<button type="button" class="pt-sess" data-ptsess="tir:' + esc(s.id) + '">'
+      + '<div class="pt-sess-top"><div><div class="pt-sess-t">' + esc(s.focus) + '</div>'
+      + '<div class="pt-sess-m">Séance de tir · ' + fmtDate(s.date, true) + (s.heure ? ' · ' + esc(s.heure) : '') + (s.duree ? ' · ' + s.duree + ' min' : '') + '</div></div>'
+      + '<span class="pt-sess-badge ' + cls + '">' + fr(s.pct) + ' %</span></div>'
+      + '<div class="pt-sess-stats"><span class="pt-chip hot">' + s.made + '/' + s.att + ' au tir</span>'
+      + '<span class="pt-chip">' + nz + ' zone' + (nz > 1 ? 's' : '') + ' travaillée' + (nz > 1 ? 's' : '') + '</span>'
+      + (vsTeam != null ? '<span class="pt-chip ' + dirOf(vsTeam, 1.5) + '">' + frS(vsTeam) + ' pts vs équipe</span>' : '')
+      + (s.intensite ? '<span class="pt-chip">Intensité ' + esc(s.intensite) + '</span>' : '')
+      + '</div>'
+      + (s.objectif ? '<div class="pt-sess-q">Objectif du coach : ' + esc(s.objectif) + '</div>' : '')
+      + '<div class="pt-sess-go">Voir le détail de la séance</div></button>';
+  }
+
+  /* ============================================================
+     6b. COLLECTIFS — évolution des notes du staff, critères,
+         points forts / à améliorer, mot du coach, historique
+     ============================================================ */
+  let collShown = 8;
+  function renderCatCollectifs(box) {
+    const vals = TRAIN.collectifs.vals;
+    if (!COLL_ATT.length) { box.innerHTML = '<section class="tr2-panel"><p class="pt-empty">Aucune séance collective notée pour le moment.</p></section>'; return; }
+    const t = trend(vals, 0.3);
+    const teamVals = COLL_ATT.map((s) => S.collectifAvg(s));
+    const teamAvg = round1(mean(teamVals));
+    const k = Math.min(5, vals.length);
+    const recent = round1(mean(vals.slice(-k)) - playerColl.noteAvg);
+    const last5 = COLL_ATT.slice(-k);
+    const crit = S.playerCriteria().map((c) => ({
+      key: c.key, label: c.label,
+      val: playerColl.critAvg[c.key],
+      d: round1(mean(last5.map((s) => s.eval.joueurs[PID][c.key])) - playerColl.critAvg[c.key]),
+    }));
+    const sorted = crit.slice().sort((a, b) => b.val - a.val);
+    const withCoach = COLLECTIFS.filter((s) => s.eval && s.eval.noteCoach)[0];
+
+    box.innerHTML =
+      // évolution des notes + résumé
+      '<section class="tr2-panel tr2-panel-wide"><div class="tr2-panel-head">'
+      + '<h2 class="tr2-h2">Évolution de mes notes</h2>'
+      + '<div class="tr2-panel-sub">Note du staff sur 10, séance après séance ' + trendBadge(t, '') + '</div></div>'
+      + lineChart(vals, { h: 170, min: 4, max: 10, labels: COLL_ATT.map((s, i) => ((i % Math.ceil(COLL_ATT.length / 7) === 0 || i === COLL_ATT.length - 1) ? fmtDate(s.date) : '')) })
+      + '<div class="tr2-sum" style="margin-top:16px">'
+      + sumRow('Ma moyenne de la saison', fr(playerColl.noteAvg) + ' <i>/10</i>')
+      + sumRow('Mes ' + k + ' dernières séances', frS(recent), dirOf(recent, 0.3))
+      + sumRow('Moyenne du groupe', fr(teamAvg) + ' <i>/10</i>')
+      + sumRow('Écart avec le groupe', frS(round1(playerColl.noteAvg - teamAvg)), dirOf(round1(playerColl.noteAvg - teamAvg), 0.3))
+      + sumRow('Meilleure séance', fr(Math.max.apply(null, vals)) + ' <i>/10</i>')
+      + sumRow('Présence', playerColl.presenceRate + ' % <i>(' + playerColl.attended + '/' + playerColl.doneCount + ')</i>')
+      + '</div></section>'
+      // critères + lecture du coach
+      + '<div class="pt-two">'
+      + '<section class="tr2-panel"><div class="tr2-panel-head"><h2 class="tr2-h2">Mes moyennes par critère</h2>'
+      + '<div class="tr2-panel-sub">Le staff note chaque séance sur ces 5 critères</div></div>'
+      + '<div class="crit-rows">' + crit.map((c) => critRow(c.label, c.val)).join('') + '</div></section>'
+      + '<section class="tr2-panel"><div class="tr2-panel-head"><h2 class="tr2-h2">Points forts &amp; à améliorer</h2>'
+      + '<div class="tr2-panel-sub">Écart de mes ' + k + ' dernières séances par rapport à ma moyenne</div></div>'
+      + '<div class="pt-rank">'
+      + sorted.slice(0, 2).map((c) => rankRow(c.label, '', fr(c.val) + '/10', c.d, 0.3, 'good')).join('')
+      + sorted.slice(-2).reverse().map((c) => rankRow(c.label, '', fr(c.val) + '/10', c.d, 0.3, 'bad')).join('')
+      + '</div>'
+      + (withCoach ? '<div class="pt-sess-q" style="margin-top:14px">« ' + esc(withCoach.eval.noteCoach) + ' »<br><small style="font-style:normal;color:var(--t4)">Le mot du coach · ' + fmtDate(withCoach.date) + '</small></div>' : '')
+      + '</section></div>'
+      // historique
+      + '<div class="pt-sec">Historique de mes séances collectives</div><div id="collHist"></div>';
+    paintCollHist();
+    requestAnimationFrame(() => $$('#pt-detail .crit-fill').forEach((f) => (f.style.width = f.style.width)));
+  }
+  function paintCollHist() {
+    const el = $('#collHist'); if (!el) return;
+    const list = COLLECTIFS, shown = list.slice(0, collShown);
+    el.innerHTML = '<div class="pt-list">' + shown.map(collSessCard).join('') + '</div>'
+      + (list.length > shown.length ? '<button type="button" class="pt-more" data-ptmore="collectifs">Voir plus de séances (' + (list.length - shown.length) + ')</button>' : '');
+  }
+  function collSessCard(s) {
+    const note = S.playerAvg(s, PID), team = S.collectifAvg(s);
+    const d = note != null ? round1(note - team) : null;
+    const cls = note == null ? 'off' : (note >= 8 ? 'win' : (note >= 6 ? '' : 'loss'));
+    let extremes = '';
+    if (note != null) {
+      const j = s.eval.joueurs[PID];
+      const l = S.playerCriteria().map((c) => ({ label: c.label, v: j[c.key] })).sort((a, b) => b.v - a.v);
+      extremes = '<span class="pt-chip up">' + esc(l[0].label) + ' ' + fr(l[0].v) + '</span>'
+        + '<span class="pt-chip down">' + esc(l[l.length - 1].label) + ' ' + fr(l[l.length - 1].v) + '</span>';
+    }
+    return '<button type="button" class="pt-sess" data-ptsess="coll:' + esc(s.id) + '">'
+      + '<div class="pt-sess-top"><div><div class="pt-sess-t">' + esc(s.titre || 'Entraînement collectif') + '</div>'
+      + '<div class="pt-sess-m">Séance collective · ' + fmtDate(s.date, true) + (s.heure ? ' · ' + esc(s.heure) : '') + (s.duree ? ' · ' + s.duree + ' min' : '') + (s.lieu ? ' · ' + esc(s.lieu) : '') + '</div></div>'
+      + '<span class="pt-sess-badge ' + cls + '">' + (note != null ? fr(note) + '/10' : 'Absent') + '</span></div>'
+      + '<div class="pt-sess-stats"><span class="pt-chip hot">Groupe ' + fr(team) + '/10</span>'
+      + (d != null ? '<span class="pt-chip ' + dirOf(d, 0.3) + '">' + frS(d) + ' vs groupe</span>' : '')
+      + extremes + '</div>'
+      + (s.eval.noteCoach ? '<div class="pt-sess-q">« ' + esc(s.eval.noteCoach) + ' »</div>' : '')
+      + '<div class="pt-sess-go">Voir le détail de la séance</div></button>';
+  }
+
+  /* ============================================================
+     6c. PERSONNALISÉS — progression par objectif travaillé,
+         comparaison au groupe, historique des séances
+     ============================================================ */
+  let persoActive = null, persoShown = 8;
+  function persoByTheme() {
+    return PERSO_THEMES.map((th) => {
+      const l = PERSO.filter((s) => s.theme === th), v = l.map((s) => s.note);
+      const teams = l.filter((s) => s.team != null).map((s) => s.team);
+      return {
+        theme: th, n: l.length, avg: round1(mean(v)), last: v[v.length - 1], first: v[0],
+        delta: round1(v[v.length - 1] - v[0]), best: Math.max.apply(null, v),
+        team: teams.length ? round1(mean(teams)) : null, dateISO: l[l.length - 1].dateISO,
+      };
+    });
+  }
+  function renderCatPerso(box) {
+    const vals = TRAIN.perso.vals;
+    if (!PERSO.length) { box.innerHTML = '<section class="tr2-panel"><p class="pt-empty">Aucune séance personnalisée notée pour le moment.</p></section>'; return; }
+    if (!persoActive) persoActive = PERSO_THEMES.slice(0, 2);
+    const t = trend(vals, 0.3), avg = round1(mean(vals)), k = Math.min(5, vals.length);
+    const teams = PERSO.filter((s) => s.team != null).map((s) => s.team);
+    const teamAvg = teams.length ? round1(mean(teams)) : null;
+    const byTheme = persoByTheme();
+    const progTB = topBottom(byTheme.slice().sort((a, b) => b.delta - a.delta), 3);
+    const tRow = (x, cls) => rankRow(x.theme, x.n + ' séances · moy. ' + fr(x.avg), fr(x.last) + '/10', x.delta, 0.3, cls);
+
+    box.innerHTML =
+      // évolution par objectif travaillé
+      '<section class="tr2-panel tr2-panel-wide"><div class="tr2-panel-head">'
+      + '<h2 class="tr2-h2">Progression par objectif</h2>'
+      + '<div class="tr2-panel-sub">Note du coach sur 10, par catégorie de séance ' + trendBadge(t, '') + '</div></div>'
+      + '<div class="tr2-chart" id="perChart"></div><div class="tr2-toggles" id="perKeys"></div>'
+      + '<div class="tr2-sum" style="margin-top:16px">'
+      + sumRow('Ma moyenne de la saison', fr(avg) + ' <i>/10</i>')
+      + sumRow('Dernière séance', fr(vals[vals.length - 1]) + ' <i>/10 · ' + fmtDate(PERSO[PERSO.length - 1].dateISO) + '</i>')
+      + sumRow('Mes ' + k + ' dernières séances', frS(round1(mean(vals.slice(-k)) - avg)), dirOf(round1(mean(vals.slice(-k)) - avg), 0.3))
+      + sumRow('Meilleure séance', fr(Math.max.apply(null, vals)) + ' <i>/10</i>')
+      + (teamAvg != null ? sumRow('Écart avec le groupe', frS(round1(avg - teamAvg)) + ' <i>(groupe ' + fr(teamAvg) + ')</i>', dirOf(round1(avg - teamAvg), 0.3)) : '')
+      + sumRow('Objectifs travaillés', PERSO_THEMES.length + ' catégories')
+      + '</div></section>'
+      // objectifs en progression / à consolider
+      + '<div class="pt-two">'
+      + rankPanel('Objectifs en progression', 'Écart entre ma première et ma dernière séance sur cet objectif.',
+        progTB[0].map((x) => tRow(x, 'good')).join(''))
+      + rankPanel('Objectifs à consolider', 'Ces thèmes n’ont pas encore décollé : ce sont les prochains chantiers.',
+        progTB[1].map((x) => tRow(x, 'bad')).join(''))
+      + '</div>'
+      // historique
+      + '<div class="pt-sec">Historique de mes séances personnalisées</div><div id="perHist"></div>';
+    paintPersoChart();
+    paintPersoHist();
+  }
+  function paintPersoChart() {
+    const c = $('#perChart'), k = $('#perKeys'); if (!c || !k) return;
+    c.innerHTML = persoChart(persoActive);
+    k.innerHTML = PERSO_THEMES.map((th, i) => '<button type="button" class="tr2-key' + (persoActive.indexOf(th) !== -1 ? ' on' : '') + '" data-ptheme="' + esc(th) + '">'
+      + '<i style="background:' + PT_THEME_COLORS[i % PT_THEME_COLORS.length] + '"></i>' + esc(th) + '</button>').join('');
+  }
+  function persoChart(active) {
+    const n = PERSO.length;
+    if (n < 2) return '<p class="pt-empty">Pas encore assez de séances notées pour tracer une évolution.</p>';
+    const W = 680, H = 280, pl = 30, pr = 14, pt = 14, pb = 26;
+    const X = (i) => pl + (i / (n - 1)) * (W - pl - pr), Y = (v) => H - pb - (v / 10) * (H - pt - pb);
+    const grid = [0, 2, 4, 6, 8, 10].map((v) => '<line x1="' + pl + '" y1="' + Y(v).toFixed(1) + '" x2="' + (W - pr) + '" y2="' + Y(v).toFixed(1) + '" class="rc-grid"/>'
+      + '<text x="' + (pl - 6) + '" y="' + (Y(v) + 3.5).toFixed(1) + '" class="rc-yl">' + v + '</text>').join('');
+    const step = Math.max(1, Math.ceil(n / 6));
+    const xl = PERSO.map((s, i) => ((i % step === 0 || i === n - 1) ? '<text x="' + X(i).toFixed(1) + '" y="' + (H - 6) + '" class="rc-xl">' + esc(fmtDate(s.dateISO)) + '</text>' : '')).join('');
+    const paths = PERSO_THEMES.filter((th) => active.indexOf(th) !== -1).map((th) => {
+      const col = PT_THEME_COLORS[PERSO_THEMES.indexOf(th) % PT_THEME_COLORS.length];
+      /* on relie entre eux les points d'une même catégorie : les séances des
+         autres catégories ne coupent pas la courbe */
+      const pts = PERSO.map((s, i) => ({ i: i, v: s.theme === th ? s.note : null })).filter((p) => p.v != null);
+      const d = pts.map((p, j) => (j ? 'L' : 'M') + X(p.i).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' ');
+      const dots = pts.map((p) => '<circle cx="' + X(p.i).toFixed(1) + '" cy="' + Y(p.v).toFixed(1) + '" r="3.6" fill="' + col + '"/>').join('');
+      return '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' + dots;
+    }).join('');
+    return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="rc-svg tr2-svg" preserveAspectRatio="none" role="img" aria-label="Évolution de mes séances personnalisées">'
+      + grid + xl + paths + '</svg>';
+  }
+  function paintPersoHist() {
+    const el = $('#perHist'); if (!el) return;
+    const list = PERSO.slice().reverse(), shown = list.slice(0, persoShown);
+    el.innerHTML = '<div class="pt-list">' + shown.map(persoSessCard).join('') + '</div>'
+      + (list.length > shown.length ? '<button type="button" class="pt-more" data-ptmore="perso">Voir plus de séances (' + (list.length - shown.length) + ')</button>' : '');
+  }
+  function persoSessCard(s) {
+    const d = s.team != null ? round1(s.note - s.team) : null;
+    const cls = s.note >= 8 ? 'win' : (s.note >= 6 ? '' : 'loss');
+    return '<button type="button" class="pt-sess" data-ptsess="perso:' + esc(s.id) + '">'
+      + '<div class="pt-sess-top"><div><div class="pt-sess-t">' + esc(s.titre) + '</div>'
+      + '<div class="pt-sess-m">' + esc(s.theme) + ' · ' + fmtDate(s.dateISO, true) + (s.heure ? ' · ' + esc(s.heure) : '') + (s.duree ? ' · ' + s.duree + ' min' : '') + '</div></div>'
+      + '<span class="pt-sess-badge ' + cls + '">' + fr(s.note) + '/10</span></div>'
+      + '<div class="pt-sess-stats"><span class="pt-chip hot">' + esc(s.theme) + '</span>'
+      + (s.team != null ? '<span class="pt-chip">Groupe ' + fr(s.team) + '/10</span>' : '')
+      + (d != null ? '<span class="pt-chip ' + dirOf(d, 0.3) + '">' + frS(d) + ' vs groupe</span>' : '')
+      + (s.intensite ? '<span class="pt-chip">Intensité ' + esc(s.intensite) + '</span>' : '')
+      + '</div>'
+      + (s.comment ? '<div class="pt-sess-q">« ' + esc(s.comment) + ' »</div>' : (s.objectif ? '<div class="pt-sess-q">Objectif du coach : ' + esc(s.objectif) + '</div>' : ''))
+      + '<div class="pt-sess-go">Voir le détail de la séance</div></button>';
+  }
+
+  /* ============================================================
+     6d. DÉTAIL COMPLET D'UNE SÉANCE (modal .sheet réutilisée)
+     ============================================================ */
+  const PT_MORE_STEP = { tirs: 6, collectifs: 8, perso: 8 };
+  function ptMore(cat) {
+    if (cat === 'tirs') { tirShown += PT_MORE_STEP.tirs; paintTirHist(); }
+    else if (cat === 'collectifs') { collShown += PT_MORE_STEP.collectifs; paintCollHist(); }
+    else if (cat === 'perso') { persoShown += PT_MORE_STEP.perso; paintPersoHist(); }
+  }
+  function togglePersoTheme(th) {
+    const i = persoActive.indexOf(th);
+    if (i === -1) persoActive.push(th); else if (persoActive.length > 1) persoActive.splice(i, 1);
+    paintPersoChart();
+  }
+  function dlCell(k, v) { return '<div><div class="k">' + k + '</div><div class="v">' + v + '</div></div>'; }
+  function sessHead(eyebrow, titre, meta) {
+    return '<div class="sheet-head"><button class="sheet-close" id="sheetClose" aria-label="Fermer">'
+      + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
+      + '<div class="sheet-eyebrow">' + esc(eyebrow) + '</div>'
+      + '<div class="sheet-score" style="font-family:var(--cond);font-size:26px;letter-spacing:.02em">' + esc(titre) + '</div>'
+      + '<div class="tile-sub" style="margin-top:6px">' + meta + '</div></div>';
+  }
+  function openSession(kind, id) {
+    let html = null, s = null;
+    if (kind === 'tir') {
+      s = SHOOT.sessions.filter((x) => x.id === id)[0];
+      if (s) html = sessHead('Séance de tir · ' + fmtDate(s.date, true),
+        s.focus, [s.heure, (s.duree ? s.duree + ' min' : ''), s.lieu, (s.intensite ? 'intensité ' + s.intensite : '')].filter(Boolean).map(esc).join(' · '))
+        + '<div class="sheet-body">'
+        + '<div class="pt-dl">' + dlCell('Ma réussite', fr(s.pct) + ' %') + dlCell('Paniers', s.made + '/' + s.att)
+        + (s.teamPct != null ? dlCell('Équipe', fr(s.teamPct) + ' %') + dlCell('Écart', frS(round1(s.pct - s.teamPct)) + ' pts') : '')
+        + (s.reps ? dlCell('Tirs / zone', s.reps) : '') + '</div>'
+        + (s.objectif ? '<p class="pt-note" style="margin-bottom:16px"><b>Objectif :</b> ' + esc(s.objectif) + (s.notes ? '<br><b>Déroulé :</b> ' + esc(s.notes) : '') + '</p>' : '')
+        + '<div class="tr2-court" id="sessCourt" style="max-width:360px;margin:0 auto 18px"></div>'
+        + '<table class="pt-zt"><thead><tr><th>Zone</th><th>Réussis</th><th>Tentés</th><th>%</th><th>Saison</th></tr></thead><tbody>'
+        + Object.keys(s.zones).map((zid) => {
+          const z = s.zones[zid], ref = SHOOT.byZone[zid];
+          return '<tr><td>' + esc(zoneLabel(zid)) + '</td><td>' + z.m + '</td><td>' + z.a + '</td><td>' + fr(z.pct) + ' %</td>'
+            + '<td style="color:var(--t4)">' + (ref ? fr(ref.pct) + ' %' : '—') + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    } else if (kind === 'coll') {
+      s = COLLECTIFS.filter((x) => x.id === id)[0];
+      if (s) {
+        const note = S.playerAvg(s, PID), team = S.collectifAvg(s), j = note != null ? s.eval.joueurs[PID] : null;
+        html = sessHead('Séance collective · ' + fmtDate(s.date, true), s.titre || 'Entraînement collectif',
+          [s.heure, (s.duree ? s.duree + ' min' : ''), s.lieu].filter(Boolean).map(esc).join(' · '))
+          + '<div class="sheet-body">'
+          + '<div class="pt-dl">' + dlCell('Ma note', note != null ? fr(note) + '/10' : 'Absent')
+          + dlCell('Groupe', fr(team) + '/10')
+          + (note != null ? dlCell('Écart', frS(round1(note - team))) : '')
+          + dlCell('Présents', Object.keys(s.presence || {}).filter((k) => s.presence[k]).length) + '</div>'
+          + (j ? '<div class="sec-head"><span class="sec-title">Mes notes sur cette séance</span></div><div class="crit-rows" style="margin-bottom:18px">'
+            + S.playerCriteria().map((c) => critRow(c.label, j[c.key])).join('') + '</div>' : '')
+          + '<div class="sec-head"><span class="sec-title">La séance vue par le staff</span></div><div class="crit-rows">'
+          + S.collectifCriteria().map((c) => critRow(c.label, s.eval.collectif[c.key])).join('') + '</div>'
+          + (s.eval.noteCoach ? '<div class="pt-sess-q" style="margin-top:16px">« ' + esc(s.eval.noteCoach) + ' »</div>' : '')
+          + '</div>';
+      }
+    } else {
+      s = PERSO.filter((x) => x.id === id)[0];
+      if (s) html = sessHead(esc(s.theme) + ' · ' + fmtDate(s.dateISO, true), s.titre,
+        [s.type, s.heure, (s.duree ? s.duree + ' min' : ''), s.lieu, (s.intensite ? 'intensité ' + s.intensite : '')].filter(Boolean).map(esc).join(' · '))
+        + '<div class="sheet-body">'
+        + '<div class="pt-dl">' + dlCell('Ma note', fr(s.note) + '/10')
+        + (s.team != null ? dlCell('Groupe', fr(s.team) + '/10') + dlCell('Écart', frS(round1(s.note - s.team))) : '')
+        + dlCell('Objectif', esc(s.theme)) + '</div>'
+        + (s.objectif ? '<p class="pt-note" style="margin-bottom:14px"><b>Objectif :</b> ' + esc(s.objectif) + '</p>' : '')
+        + (s.notes ? '<p class="pt-note" style="margin-bottom:14px"><b>Déroulé :</b> ' + esc(s.notes) + '</p>' : '')
+        + (s.comment ? '<div class="pt-sess-q">« ' + esc(s.comment) + ' »</div>' : '')
+        + '</div>';
+    }
+    if (!html) return;
+    $('#sheetBox').innerHTML = html;
+    $('#sheetOverlay').classList.add('open');
+    document.body.style.overflow = 'hidden';
+    if (kind === 'tir' && Court) {
+      const c = $('#sessCourt');
+      if (c) Court.render(c, { mode: 'readonly', heatmap: heatmapOf(s.zones), highlightZones: Object.keys(s.zones) });
+    }
   }
 
   /* ============================================================
@@ -987,10 +1433,13 @@
     const title = $('#tbTitle'); if (title) title.textContent = TITLES[view];
     window.scrollTo({ top: 0, behavior: 'instant' });
     document.body.classList.remove('nav-open');
-    if (opts && opts.subtab) { if (view === 'training') { trainSub = opts.subtab; setSubtab('training', opts.subtab); } if (view === 'games') { gameSub = opts.subtab; setSubtab('games', opts.subtab); } }
+    if (opts && opts.subtab) {
+      if (view === 'training') setTrainCat(opts.subtab);           // « Collectif » / « Tirs » venus du Dashboard
+      if (view === 'games') { gameSub = opts.subtab; setSubtab('games', opts.subtab); }
+    }
   }
   function setSubtab(group, sub) {
-    const pane = group === 'training' ? $('#pane-training') : $('#pane-games');
+    const pane = $('#pane-' + group);
     if (!pane) return;
     $$('.subtab', pane).forEach((b) => b.classList.toggle('active', b.dataset.sub === sub));
     $$('.subpane', pane).forEach((p) => p.classList.remove('active'));
@@ -1028,9 +1477,20 @@
       if (fol) { const on = fol.textContent.trim() === 'Suivre'; fol.textContent = on ? 'Abonné' : 'Suivre'; fol.classList.toggle('ghost', on); fol.classList.toggle('primary', !on); return; }
       if (e.target.closest('#hfClose')) { closeHF(); return; }
       const hov = $('#hfOverlay'); if (hov && e.target === hov) { closeHF(); return; }
-      // sous-onglets privés (training/games)
+      // sous-onglets privés (Game Center : Saison / Matchs)
       const sub = e.target.closest('.subtab');
-      if (sub) { const group = sub.closest('[data-subtabs]').dataset.subtabs; if (group === 'training') trainSub = sub.dataset.sub; else gameSub = sub.dataset.sub; setSubtab(group, sub.dataset.sub); return; }
+      if (sub) { const group = sub.closest('[data-subtabs]').dataset.subtabs; gameSub = sub.dataset.sub; setSubtab(group, sub.dataset.sub); return; }
+      // page Entraînement : familles, période du terrain, catégories, historique, détail
+      const ptc = e.target.closest('[data-ptcat]');
+      if (ptc) { if (current !== 'training') showView('training'); setTrainCat(ptc.dataset.ptcat, true); return; }
+      const tper = e.target.closest('[data-tirper]');
+      if (tper) { tirPeriod = Number(tper.dataset.tirper); tirZone = null; paintTirCourt(); return; }
+      const pth = e.target.closest('[data-ptheme]');
+      if (pth) { togglePersoTheme(pth.dataset.ptheme); return; }
+      const pmore = e.target.closest('[data-ptmore]');
+      if (pmore) { ptMore(pmore.dataset.ptmore); return; }
+      const psess = e.target.closest('[data-ptsess]');
+      if (psess) { const p = psess.dataset.ptsess.split(':'); openSession(p[0], p.slice(1).join(':')); return; }
       const rg = e.target.closest('[data-range]');
       if (rg) { dashRange = rg.dataset.range; const box = $('#dashChart'); if (box) box.innerHTML = dashChartHTML(); return; }
       const sfil = e.target.closest('[data-f]');

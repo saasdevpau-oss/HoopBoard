@@ -648,6 +648,123 @@ h2.view-title .serif{color:var(--orange);}
 }
 
 /* ═══════════════════════════════════════════════════════════════════
+   ENTRAÎNEMENT (espace joueur) — namespace .pt-*
+   La page reprend le langage visuel de la page Entraînement du coach :
+   hero centré (.tr2-hero), panneaux (.tr2-panel), trois grands boutons
+   (.tr2-nav), chips et résumés (.tr2-chip / .tr2-sum / .tr2-zone) —
+   tout cela vit déjà dans app.css et n'est PAS redéfini ici.
+   Seuls les blocs propres au joueur sont ajoutés ci-dessous. Mobile-first.
+   ═══════════════════════════════════════════════════════════════════ */
+.pt-hero{padding-top:clamp(4px,1.5vw,18px);}
+
+/* ---------- Vue globale : une carte par famille d'entraînement ---------- */
+.pt-ov{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px;}
+.pt-ov-card{
+  display:flex; flex-direction:column; gap:11px; min-width:0; text-align:left;
+  background:var(--surface-2); border:1px solid var(--hair-soft);
+  border-radius:var(--radius); padding:16px 16px 14px;
+  transition:border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.pt-ov-card:hover{border-color:rgba(255,106,0,0.35); box-shadow:var(--shadow-sm); transform:translateY(-2px);}
+.pt-ov-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+.pt-ov-cat{font-family:var(--cond); font-size:18px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--t1); line-height:1.1;}
+.pt-ov-sub{font-size:11.5px; color:var(--t4); margin-top:3px;}
+.pt-ov-now{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;}
+.pt-ov-val{font-family:var(--cond); font-size:40px; font-weight:700; line-height:1; color:var(--orange);}
+.pt-ov-unit{font-size:11.5px; color:var(--t3);}
+.pt-ov-rows{display:flex; flex-direction:column; margin-top:auto;}
+.pt-ov-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding:7px 0; font-size:12.5px; color:var(--t3);}
+.pt-ov-row + .pt-ov-row{border-top:1px solid var(--hair-soft);}
+.pt-ov-row b{color:var(--t1); font-weight:600; font-family:var(--mono); font-size:12.5px;}
+.pt-ov-row b.up{color:var(--win);} .pt-ov-row b.down{color:var(--loss);}
+
+/* ---------- Titres et grilles d'analyse ---------- */
+.pt-sec{margin:26px 0 12px; font-family:var(--cond); font-size:21px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--t1);}
+.pt-sec:first-child{margin-top:0;}
+.pt-two{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-bottom:26px;}
+.pt-note{font-size:12.5px; color:var(--t3); line-height:1.5; margin-top:10px;}
+.pt-empty{font-size:13px; color:var(--t3); line-height:1.5;}
+
+/* points forts / points à améliorer */
+.pt-rank{display:flex; flex-direction:column; gap:8px;}
+.pt-rank-row{display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding:10px 13px; border-radius:12px; background:var(--field-bg); font-size:13px; color:var(--t2);}
+.pt-rank-row .lab{min-width:0;}
+.pt-rank-row .lab small{display:block; margin-top:2px; font-size:11.5px; font-family:var(--mono); color:var(--t4);}
+.pt-rank-row .val{flex:0 0 auto; font-family:var(--mono); font-weight:600; color:var(--t1); white-space:nowrap;}
+.pt-rank-row .d{font-size:11.5px; margin-left:7px; font-weight:600;}
+.pt-rank-row .d.up{color:var(--win);} .pt-rank-row .d.down{color:var(--loss);} .pt-rank-row .d.flat{color:var(--t4);}
+.pt-rank-row.good{background:var(--win-soft);}
+.pt-rank-row.bad{background:var(--loss-soft);}
+
+/* comparaison entraînement / match */
+.pt-cmp{display:flex; flex-direction:column;}
+.pt-cmp-row{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px 12px; padding:9px 0; align-items:center; font-size:13px; color:var(--t2);}
+.pt-cmp-row + .pt-cmp-row{border-top:1px solid var(--hair-soft);}
+.pt-cmp-bars{grid-column:1/-1; display:flex; flex-direction:column; gap:4px;}
+.pt-cmp-track{height:7px; border-radius:999px; background:var(--hair-soft); overflow:hidden;}
+.pt-cmp-fill{height:100%; border-radius:999px; display:block;}
+.pt-cmp-fill.tr{background:var(--orange);}
+.pt-cmp-fill.mt{background:var(--t4);}
+.pt-cmp-val{font-family:var(--mono); font-size:12px; font-weight:600; white-space:nowrap;}
+.pt-cmp-val.up{color:var(--win);} .pt-cmp-val.down{color:var(--loss);}
+.pt-legend{display:flex; gap:14px; flex-wrap:wrap; font-size:11.5px; color:var(--t3); margin-bottom:10px;}
+.pt-legend i{width:14px; height:8px; border-radius:3px; display:inline-block; margin-right:5px;}
+.pt-legend i.tr{background:var(--orange);} .pt-legend i.mt{background:var(--t4);}
+
+/* ---------- Historique des séances ---------- */
+.pt-list{display:flex; flex-direction:column; gap:10px;}
+.pt-sess{
+  display:block; width:100%; text-align:left; cursor:pointer;
+  background:var(--card-bg); border:1px solid var(--hair-soft); border-radius:var(--radius);
+  padding:14px 16px; box-shadow:var(--shadow-xs);
+  transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+}
+.pt-sess:hover{border-color:rgba(255,106,0,0.35); box-shadow:var(--shadow-sm); transform:translateY(-1px);}
+.pt-sess-top{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+.pt-sess-t{font-size:14.5px; font-weight:600; color:var(--t1); line-height:1.3;}
+.pt-sess-m{font-size:11.5px; color:var(--t4); margin-top:4px;}
+.pt-sess-badge{flex:0 0 auto; font-family:var(--mono); font-size:13px; font-weight:600; padding:5px 12px; border-radius:999px; background:var(--orange-soft); color:var(--orange);}
+.pt-sess-badge.win{background:var(--win-soft); color:var(--win);}
+.pt-sess-badge.loss{background:var(--loss-soft); color:var(--loss);}
+.pt-sess-badge.off{background:var(--field-bg); color:var(--t4);}
+.pt-sess-stats{display:flex; flex-wrap:wrap; gap:6px; margin-top:11px;}
+.pt-chip{font-size:11.5px; font-weight:600; color:var(--t2); background:var(--field-bg); border-radius:999px; padding:4px 10px;}
+.pt-chip.hot{background:var(--orange-soft); color:var(--orange);}
+.pt-chip.up{background:var(--win-soft); color:var(--win);}
+.pt-chip.down{background:var(--loss-soft); color:var(--loss);}
+.pt-sess-q{margin-top:11px; padding:9px 12px; border-left:2px solid var(--orange); background:var(--orange-soft); border-radius:0 8px 8px 0; font-size:12.5px; font-style:italic; color:var(--t2);}
+.pt-sess-go{margin-top:11px; font-size:12px; font-weight:600; color:var(--orange);}
+.pt-sess-go::after{content:" →";}
+.pt-more{
+  display:block; margin:14px auto 0; min-height:44px; padding:0 22px; border-radius:999px;
+  border:1px solid var(--glass-brd); background:rgba(255,255,255,0.55);
+  -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
+  font-size:13px; font-weight:600; color:var(--t2); box-shadow:var(--shadow-xs);
+}
+.pt-more:hover{color:var(--orange); border-color:rgba(255,106,0,0.35);}
+
+/* ---------- Détail d'une séance (modal .sheet réutilisée) ---------- */
+.pt-dl{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:1px; background:var(--hair-soft); border:1px solid var(--hair-soft); border-radius:var(--radius); overflow:hidden; margin-bottom:18px;}
+.pt-dl>div{background:var(--surface-1); padding:12px 14px;}
+.pt-dl .k{font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--t4);}
+.pt-dl .v{font-size:15px; font-weight:600; color:var(--t1); margin-top:3px; font-family:var(--mono);}
+.pt-zt{width:100%; border-collapse:collapse; font-size:12.5px;}
+.pt-zt th{text-align:right; padding:8px 10px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--t4); border-bottom:1px solid var(--hair);}
+.pt-zt th:first-child{text-align:left;}
+.pt-zt td{text-align:right; padding:9px 10px; font-family:var(--mono); color:var(--t2); border-bottom:1px solid var(--hair-soft);}
+.pt-zt td:first-child{text-align:left; font-family:var(--sans); color:var(--t1);}
+
+@media(max-width:900px){
+  .pt-ov{grid-template-columns:minmax(0,1fr);}
+  .pt-two{grid-template-columns:minmax(0,1fr);}
+}
+@media(max-width:560px){
+  .pt-sec{font-size:18px; margin:22px 0 10px;}
+  .pt-ov-val{font-size:36px;}
+  .pt-sess{padding:14px;}
+}
+
+/* ═══════════════════════════════════════════════════════════════════
    HOOPFEED — univers social (Feed / Messages / Profil) façon Instagram
    ═══════════════════════════════════════════════════════════════════ */
 .hf-app{max-width:940px; margin:0 auto;}
