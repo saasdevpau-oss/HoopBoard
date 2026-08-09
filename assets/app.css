@@ -929,6 +929,185 @@ input[type="text"],input[type="email"],textarea,select{
 .mc-actions{display:flex;gap:7px;flex-wrap:wrap;}
 .mc-actions .btn{flex:1;min-width:0;}
 
+/* ============================================================
+   Page Matchs (#/matchs) — calendrier de saison
+   1. .mx-next  : bloc « prochain match », grand rectangle horizontal
+   2. .mx-row   : journée (hors du rectangle) + bande de match pleine largeur
+   Aucune de ces classes n'est partagée avec les autres pages (les .mc-*
+   restent utilisées par les entraînements) — modifier ici n'impacte que Matchs.
+   ============================================================ */
+
+/* écusson club — même langage visuel que .sn-crest, en plus grand */
+.mx-logo{
+  width:48px; height:48px; border-radius:50%; flex:0 0 auto;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--cond); font-size:14.5px; font-weight:700; letter-spacing:.05em;
+  background:var(--field-bg); color:var(--t2); border:1px solid var(--hair-soft);
+}
+.mx-logo.home{
+  background:linear-gradient(180deg,var(--orange-vif),var(--orange-deep));
+  color:var(--text-on-orange); border-color:transparent;
+  box-shadow:0 4px 12px rgba(255,106,0,0.24), inset 0 1px 0 rgba(255,255,255,0.25);
+}
+.mx-logo.lg{width:78px; height:78px; font-size:22px;}
+
+/* ---- 1. Prochain match ---- */
+.mx-next{
+  position:relative; overflow:hidden; margin:0 0 38px;
+  background:var(--card-bg); border:1px solid var(--hair-soft);
+  border-radius:var(--card-radius); box-shadow:var(--shadow-md);
+  padding:clamp(20px,2.4vw,30px) clamp(20px,3vw,40px);
+  display:grid; grid-template-columns:minmax(0,1fr) auto; gap:22px clamp(24px,3vw,48px);
+}
+.mx-next::before{
+  content:""; position:absolute; inset:0; pointer-events:none;
+  background:linear-gradient(115deg,rgba(255,106,0,0.08),transparent 44%);
+}
+.mx-next>*{position:relative;}
+.mx-next-head{grid-column:1/-1; display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.mx-eyebrow{
+  font-family:var(--cond); font-size:14px; font-weight:700;
+  letter-spacing:.2em; text-transform:uppercase; color:var(--orange);
+}
+.mx-chip{
+  font-size:12px; font-weight:600; color:var(--t2);
+  background:var(--field-bg); border-radius:100px; padding:4px 12px;
+}
+.mx-chip.venue{background:var(--orange-soft); color:var(--orange);}
+
+.mx-next-duel{
+  grid-column:1; grid-row:2; align-self:center;
+  display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center; gap:clamp(14px,2.4vw,30px);
+}
+.mx-duel-team{display:flex; align-items:center; gap:16px; min-width:0;}
+.mx-duel-team.right{flex-direction:row-reverse; justify-content:flex-start;}
+.mx-duel-name{
+  font-family:var(--cond); font-size:clamp(22px,2.3vw,30px); font-weight:700;
+  line-height:1.05; letter-spacing:.01em; text-transform:uppercase; color:var(--t1);
+  min-width:0; overflow-wrap:anywhere;
+}
+.mx-duel-team.right .mx-duel-name{text-align:right;}
+.mx-vs{
+  font-family:var(--cond); font-size:20px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--t4); text-align:center;
+}
+
+.mx-next-info{
+  grid-column:1; grid-row:3;
+  display:flex; flex-wrap:wrap; gap:10px clamp(22px,3vw,44px);
+  padding-top:20px; border-top:1px solid var(--hair-soft);
+}
+.mx-info{display:flex; flex-direction:column; gap:3px; min-width:0;}
+.mx-info-lab{
+  font-size:10.5px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--t4);
+}
+.mx-info-val{font-size:14.5px; font-weight:600; color:var(--t1);}
+
+.mx-next-cta{grid-column:2; grid-row:2/4; align-self:center; justify-self:end;}
+.mx-next-cta .btn{
+  font-family:var(--cond); font-size:19px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase;
+  min-height:58px; padding:0 clamp(30px,3.4vw,54px); border-radius:999px;
+}
+
+/* ---- 2. Bandes de match (matchs précédents) ---- */
+.mx-list{list-style:none; margin:0 0 26px; padding:0; display:flex; flex-direction:column; gap:18px;}
+.mx-row{display:grid; grid-template-columns:76px minmax(0,1fr); align-items:center; gap:10px;}
+.mx-day{
+  font-family:var(--cond); font-size:32px; font-weight:700; line-height:1;
+  letter-spacing:.02em; text-transform:uppercase; color:var(--orange); text-align:center;
+}
+/* 5 colonnes sur 2 rangées : la ligne date/compétition est un item à part
+   (dans la colonne du score en desktop, pleine largeur en dessous de 1080px)
+   pour ne jamais élargir la colonne centrale et écraser les écussons. */
+.mx-band{
+  background:var(--card-bg); border:1px solid var(--hair-soft); border-radius:26px;
+  box-shadow:var(--shadow-xs); cursor:pointer;
+  padding:clamp(16px,1.8vw,22px) clamp(18px,2.4vw,34px);
+  display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto auto;
+  align-items:center; column-gap:clamp(14px,2vw,28px); row-gap:6px;
+  transition:box-shadow .18s ease, transform .18s ease, border-color .18s ease;
+}
+.mx-band:hover{box-shadow:var(--shadow-md); transform:translateY(-1px); border-color:rgba(255,106,0,0.22);}
+.mx-side{display:flex; align-items:center; gap:14px; min-width:0; grid-row:1/3;}
+.mx-side.right{flex-direction:row-reverse; justify-content:flex-start; grid-column:3;}
+.mx-tname{
+  font-size:16px; font-weight:600; color:var(--t1); min-width:0;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.mx-score{
+  grid-column:2; grid-row:1; text-align:center;
+  font-family:var(--cond); font-size:clamp(32px,3vw,42px); font-weight:700;
+  line-height:1; color:var(--t1); white-space:nowrap;
+}
+.mx-score i{font-style:normal; font-weight:400; color:var(--t4); margin:0 8px;}
+.mx-sub{grid-column:2; grid-row:2; text-align:center; font-size:12px; color:var(--t3);}
+.mx-verdict{
+  grid-column:4; grid-row:1/3; justify-self:center;
+  font-family:var(--cond); font-size:13px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; padding:5px 14px 4px; border-radius:100px; white-space:nowrap;
+}
+.mx-verdict.win{background:var(--win-soft); color:var(--win);}
+.mx-verdict.loss{background:var(--loss-soft); color:var(--loss);}
+.mx-acts{
+  grid-column:5; grid-row:1/3;
+  display:flex; align-items:center; gap:6px; justify-content:flex-end; flex-wrap:wrap;
+}
+.mx-link{
+  font:inherit; font-size:13px; font-weight:600; color:var(--t3);
+  background:none; border:none; cursor:pointer; white-space:nowrap;
+  min-height:38px; padding:0 12px; border-radius:999px;
+  transition:color .15s ease, background .15s ease;
+}
+.mx-link:hover{color:var(--orange); background:var(--orange-soft);}
+.mx-link:active{transform:scale(.96);}
+
+/* tablette : le duel reste horizontal, verdict + actions passent sur une 3e ligne */
+@media(max-width:1080px){
+  .mx-band{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); row-gap:8px;}
+  .mx-side{grid-row:1;}
+  .mx-sub{grid-column:1/-1; grid-row:2;}
+  .mx-verdict{grid-column:1; grid-row:3; justify-self:start; margin-top:6px;}
+  .mx-acts{grid-column:2/-1; grid-row:3; margin-top:6px;}
+}
+@media(max-width:860px){
+  .mx-next{grid-template-columns:minmax(0,1fr);}
+  .mx-next-duel,.mx-next-info{grid-column:1;}
+  .mx-next-cta{grid-column:1; grid-row:4; justify-self:stretch;}
+  .mx-next-cta .btn{width:100%;}
+}
+@media(max-width:700px){
+  .mx-row{grid-template-columns:54px minmax(0,1fr); gap:8px;}
+  .mx-day{font-size:24px;}
+  .mx-band{padding:16px 14px; gap:12px 10px; border-radius:22px;}
+  .mx-logo{width:42px; height:42px; font-size:12.5px;}
+  .mx-logo.lg{width:60px; height:60px; font-size:17px;}
+  .mx-side{gap:10px;}
+  .mx-tname{font-size:13.5px;}
+  .mx-score{font-size:30px;}
+  .mx-sub{font-size:11px;}
+  .mx-verdict{grid-column:1/-1; grid-row:3; justify-self:center; margin-top:2px;}
+  .mx-acts{grid-column:1/-1; grid-row:4; justify-content:stretch; gap:8px; margin-top:2px;}
+  .mx-acts>*{flex:1 1 0; min-width:0; min-height:42px;}
+  .mx-acts .btn{padding-left:8px; padding-right:8px;}
+  .mx-link{background:var(--field-bg); color:var(--t2); padding:0 8px;}
+}
+@media(max-width:560px){
+  /* la bande garde ses 3 colonnes : écusson + nom empilés de chaque côté du score */
+  .mx-band{padding:16px 12px; column-gap:8px;}
+  .mx-logo{width:40px; height:40px; font-size:12px;}
+  .mx-score{font-size:29px;}
+  .mx-score i{margin:0 5px;}
+  .mx-side,.mx-side.right{flex-direction:column; align-items:center; gap:7px;}
+  .mx-tname{white-space:normal; text-align:center; font-size:11.5px; line-height:1.25;}
+  .mx-duel-team,.mx-duel-team.right{flex-direction:column; gap:10px; text-align:center;}
+  .mx-duel-team.right .mx-duel-name{text-align:center;}
+  .mx-duel-name{font-size:20px;}
+  .mx-next-duel{gap:12px;}
+}
+
 /* ---- Effectif : formulaire d'ajout + tags ---- */
 .ef-form{background:var(--surface-1);border:1px solid var(--hair);border-radius:var(--card-radius);padding:18px 20px;margin-bottom:18px;}
 .ef-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;}

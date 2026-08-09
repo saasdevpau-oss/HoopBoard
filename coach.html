@@ -2927,27 +2927,84 @@ document.addEventListener('click', e => {
   }
   routeHandlers.rapport = p => renderRapport(p.matchId || 'hapoel');
 
-  /* --- Liste des matchs (#/matchs) rendue depuis le store --- */
-  function matchCard(m){
-    const rc = m.result==='win'?'win':(m.result==='loss'?'loss':'');
-    const score = m.status==='upcoming' ? '—' : `${m.home.score}–${m.away.score}`;
-    const actions = m.status==='upcoming'
-      ? `<button class="btn btn-primary sm" data-route="#/matchs/${m.id}/preparation">Préparer</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/live">Démarrer le live</button>`
-      : `<button class="btn btn-primary sm" data-route="#/matchs/${m.id}/rapport">Voir l'analyse</button><button class="btn btn-secondary sm" data-route="#/matchs/${m.id}/feuille">Feuille</button>`;
-    return `<div class="mc-card" data-route="#/matchs/${m.id}">
-      <div class="mc-top"><span class="mc-date">${m.date?fmtDate(m.date):(m.lieu?esc(m.lieu):'Date à venir')}</span>
-        ${m.result?`<span class="result-pill ${rc}">${m.result==='win'?'V':'D'}</span>`:`<span class="fs-status s-${m.status}">${STATUS[m.status]}</span>`}</div>
-      <div class="mc-teams"><span class="mc-team">${esc(m.home.name)}</span><span class="mc-score mono">${score}</span><span class="mc-team away">${esc(m.away.name)}</span></div>
-      <div class="mc-comp">${esc(m.competition)}</div>
-      <div class="mc-actions">${actions}</div></div>`;
+  /* --- Liste des matchs (#/matchs) rendue depuis le store ---
+     Mise en page « calendrier de saison » : un grand bloc « prochain match »
+     en tête, puis les matchs joués en bandes pleine largeur, la journée
+     affichée à gauche EN DEHORS de la bande. Les routes et les actions
+     (Préparer / Voir / Feuille / Analyse) sont inchangées ; seul le bouton
+     Match live a quitté le bloc « prochain match » (il reste accessible
+     depuis l'en-tête de la page et depuis la fiche du match). --- */
+  const teamCode = t => (t && t.code) ? t.code : String((t&&t.name)||'').slice(0,3).toUpperCase();
+  const shortTeam = n => { const s=String(n||''), w=s.split(' '); return (w.length>1 && s.length>13) ? w[0] : s; };
+  function mxLogo(team, home, big){
+    return `<span class="mx-logo${home?' home':''}${big?' lg':''}" aria-hidden="true">${esc(teamCode(team))}</span>`;
+  }
+  /* Bloc « prochain match » : un seul bouton d'action, PRÉPARER. */
+  function nextMatchBlock(m, prochain){
+    const p = prochain || {};
+    const dom = p.domicile === true;
+    const venue = dom ? 'Domicile' : 'Extérieur';
+    const lieu = p.salle || m.lieu || p.lieu || '';
+    const info = [
+      ['Date', m.date ? fmtDate(m.date) : (p.date ? fmtDate(p.date) : 'À confirmer')],
+      ['Heure', p.heure ? p.heure : 'À confirmer'],
+      ['Compétition', m.competition || ''],
+      [venue, lieu || (dom ? ((window.HoopStore.getClub()||{}).court || '') : '')]
+    ].filter(r => r[1]);
+    return `<section class="mx-next">
+      <div class="mx-next-head">
+        <span class="mx-eyebrow">Prochain match</span>
+        <span class="mx-chip venue">${venue}</span>
+        ${m.competition?`<span class="mx-chip">${esc(m.competition)}</span>`:''}
+      </div>
+      <div class="mx-next-duel">
+        <div class="mx-duel-team">${mxLogo(m.home,true,true)}<span class="mx-duel-name">${esc(m.home.name)}</span></div>
+        <div class="mx-vs">vs</div>
+        <div class="mx-duel-team right">${mxLogo(m.away,false,true)}<span class="mx-duel-name">${esc(m.away.name)}</span></div>
+      </div>
+      <div class="mx-next-info">
+        ${info.map(r=>`<div class="mx-info"><span class="mx-info-lab">${esc(r[0])}</span><span class="mx-info-val">${esc(r[1])}</span></div>`).join('')}
+      </div>
+      <div class="mx-next-cta">
+        <button class="btn btn-primary" data-route="#/matchs/${m.id}/preparation">Préparer</button>
+      </div>
+    </section>`;
+  }
+  /* Bande d'un match joué — la journée est rendue hors de la bande. */
+  function matchBand(m, journee){
+    const rc = m.result==='win' ? 'win' : (m.result==='loss' ? 'loss' : '');
+    const verdict = m.result==='win' ? 'Victoire' : (m.result==='loss' ? 'Défaite' : '');
+    const sub = [m.date?fmtDate(m.date):'', m.competition||''].filter(Boolean).join(' · ');
+    return `<li class="mx-row">
+      <div class="mx-day">J${journee}</div>
+      <article class="mx-band" data-route="#/matchs/${m.id}">
+        <div class="mx-side">${mxLogo(m.home,true)}<span class="mx-tname">${esc(shortTeam(m.home.name))}</span></div>
+        <div class="mx-score">${m.home.score}<i>—</i>${m.away.score}</div>
+        <div class="mx-side right">${mxLogo(m.away)}<span class="mx-tname">${esc(shortTeam(m.away.name))}</span></div>
+        ${sub?`<div class="mx-sub">${esc(sub)}</div>`:'<div class="mx-sub"></div>'}
+        ${verdict?`<span class="mx-verdict ${rc}">${verdict}</span>`:''}
+        <div class="mx-acts">
+          <button class="btn btn-primary sm" data-route="#/matchs/${m.id}">Voir</button>
+          <button class="mx-link" data-route="#/matchs/${m.id}/feuille">Feuille</button>
+          <button class="mx-link" data-route="#/matchs/${m.id}/rapport">Analyse</button>
+        </div>
+      </article>
+    </li>`;
   }
   function renderMatchsList(){
     const el = document.getElementById('page-gamecenter'); if(!el) return;
     const Store = window.HoopStore;
     if(!Store){ el.innerHTML = emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
     const all = Store.getMatches();
+    const prochain = (Store.getTournoi()||{}).prochainMatch || {};
+    /* journée = rang chronologique du match dans la saison (stable, indépendant des filtres) */
+    const JOURNEE = {};
+    all.filter(m=>m.status==='final')
+       .slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')))
+       .forEach((m,i)=>{ JOURNEE[m.id] = i+1; });
     el.innerHTML = `<div class="page-head"><div><h2 class="page-title">Matchs</h2>
-        <div class="page-meta">${all.length} matchs · ${esc(Store.getTournoi().nom)}</div></div></div>
+        <div class="page-meta">${all.length} matchs · ${esc(Store.getTournoi().nom)}</div></div>
+        <button class="btn btn-secondary" data-route="#/live">Match live</button></div>
       <div class="mc-filters">
         <input type="search" id="mcSearch" class="mc-input" placeholder="Rechercher un adversaire…" aria-label="Rechercher un adversaire">
         <select id="mcStatus" class="mc-input" aria-label="Filtrer par statut"><option value="">Tous les statuts</option><option value="upcoming">À venir</option><option value="final">Terminés</option></select>
@@ -2956,10 +3013,12 @@ document.addEventListener('click', e => {
     function apply(){
       const q = (search.value||'').toLowerCase().trim(), st = status.value;
       const list = all.filter(m => (!st || m.status===st) && (!q || m.away.name.toLowerCase().indexOf(q)!==-1));
-      const up = list.filter(m=>m.status==='upcoming'), fin = list.filter(m=>m.status==='final');
-      let html = '';
-      if(up.length)  html += `<div class="section-label">Prochain match</div><div class="mc-grid">${up.map(matchCard).join('')}</div>`;
-      if(fin.length) html += `<div class="section-label">Matchs terminés</div><div class="mc-grid">${fin.map(matchCard).join('')}</div>`;
+      const up = list.filter(m=>m.status==='upcoming');
+      const fin = list.filter(m=>m.status==='final')
+        .slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))); // du plus récent au plus ancien
+      let html = up.map(m=>nextMatchBlock(m, prochain)).join('');
+      if(fin.length) html += `<div class="section-label">Matchs précédents</div>
+        <ol class="mx-list">${fin.map(m=>matchBand(m, JOURNEE[m.id]||'—')).join('')}</ol>`;
       results.innerHTML = list.length ? html : emptyState('Aucun match','Aucun match ne correspond à ces critères.','#/matchs','Réinitialiser les filtres');
     }
     search.addEventListener('input', apply); status.addEventListener('change', apply); apply();
