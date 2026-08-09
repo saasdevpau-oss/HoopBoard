@@ -220,15 +220,23 @@
     const niv = (DATA.planningCollectif && DATA.planningCollectif.niveaux) || {};
     return PLAYERS.filter((p) => niv[p.name] != null);
   }
-  function genSessionEval(sessionIdx, roster, cfg) {
+  function genSessionEval(sessionIdx, roster, cfg, total) {
     const joueurs = {}, presence = {};
+    /* Progression du joueur sur la période, NORMALISÉE par le nombre de
+       séances : la pente reste la même d'un bout à l'autre de la saison
+       (≈ ±1,1 point) que le planning compte 12 séances ou 60, au lieu de
+       saturer l'échelle 1-10 dès que la saison s'allonge. */
+    const n = Math.max(2, total || 12), mid = (n - 1) / 2;
+    const span = (sessionIdx - mid) / mid; // -1 (début de saison) → +1 (fin)
+    /* progression d'ensemble du groupe sur la saison (0 = aucune) */
+    const teamProg = (cfg.progressionSaison != null ? cfg.progressionSaison : 0) * span;
     roster.forEach((p, pIdx) => {
       const absent = seeded(pIdx, sessionIdx, 3) < 0.08;
       presence[p.id] = !absent;
       if (absent) return;
-      const base = cfg.niveaux[p.name] != null ? cfg.niveaux[p.name] : 6.2, slope = playerSlope(pIdx), crit = {};
+      const base = cfg.niveaux[p.name] != null ? cfg.niveaux[p.name] : 6.2, prog = playerSlope(pIdx) * 7 * span, crit = {};
       PL_CRIT.forEach((c, ci) => {
-        crit[c.key] = clampNote(base + slope * (sessionIdx - 4) + CRIT_OFFSET[ci] + (seeded(pIdx, sessionIdx, ci) * 2 - 1) * 1.0);
+        crit[c.key] = clampNote(base + prog + teamProg + CRIT_OFFSET[ci] + (seeded(pIdx, sessionIdx, ci) * 2 - 1) * 1.0);
       });
       const avg = mean(PL_CRIT.map((c) => crit[c.key]));
       crit.note = ''; crit.tresBon = avg >= 8.2; crit.aSurveiller = avg <= 5.3;
@@ -251,7 +259,7 @@
         id: 'col-' + sc.date, type: 'collectif', titre: cfg.titre, date: sc.date, heure: cfg.heure,
         duree: cfg.duree, lieu: cfg.lieu, status: sc.status, convoques: roster.map((p) => p.id), presence: {}, eval: null,
       };
-      if (sc.status === 'done') { const e = genSessionEval(i, roster, cfg); s.presence = e.presence; s.eval = { collectif: e.collectif, noteCoach: e.noteCoach, joueurs: e.joueurs }; }
+      if (sc.status === 'done') { const e = genSessionEval(i, roster, cfg, (cfg.seances || []).length); s.presence = e.presence; s.eval = { collectif: e.collectif, noteCoach: e.noteCoach, joueurs: e.joueurs }; }
       else roster.forEach((p) => { s.presence[p.id] = true; });
       return s;
     });
@@ -317,13 +325,26 @@
   function thematicRoster(s) {
     return s.convoques === 'all' ? PLAYERS.slice() : PLAYERS.filter((p) => (s.convoques || []).indexOf(p.id) !== -1);
   }
+  /* Position d'une séance dans la saison, normalisée -1 (1re) → +1 (dernière).
+     Basée sur la DATE, donc indépendante de l'ordre du tableau de données. */
+  function thematicSpan(date) {
+    const l = ((DATA.seancesThematiques && DATA.seancesThematiques.seances) || [])
+      .map((x) => x.date).filter(Boolean).sort();
+    if (l.length < 2 || l[0] === l[l.length - 1] || !date) return 0;
+    const t0 = Date.parse(l[0]), t1 = Date.parse(l[l.length - 1]), t = Date.parse(date);
+    if (!(t1 > t0) || isNaN(t)) return 0;
+    return Math.max(-1, Math.min(1, ((t - t0) / (t1 - t0)) * 2 - 1));
+  }
   function genShootResults(s, sIdx, roster) {
     const reps = s.reps || 10, res = {};
+    /* progression d'adresse du groupe sur la saison (en points de %), pilotée
+       par les données — 0 si absente : l'adresse reste alors stable. */
+    const prog = ((DATA.seancesThematiques && DATA.seancesThematiques.progressionSaison) || 0) * thematicSpan(s.date);
     roster.forEach((p, pIdx) => {
       const cat = posteCat(p.poste), skillAdj = (((p.season && p.season.tirsPct) || 50) - 50) * 0.22;
       const zones = {}; let tm = 0, ta = 0;
       s.zones.forEach((zid, zi) => {
-        const pct = clampPct(SHOT_BASE[zoneType(zid)][cat] + skillAdj + (seeded(pIdx, sIdx * 7 + zi, 21) * 2 - 1) * 8);
+        const pct = clampPct(SHOT_BASE[zoneType(zid)][cat] + skillAdj + prog + (seeded(pIdx, sIdx * 7 + zi, 21) * 2 - 1) * 8);
         const m = Math.max(0, Math.min(reps, Math.round(reps * pct / 100)));
         zones[zid] = { m: m, a: reps }; tm += m; ta += reps;
       });
@@ -350,6 +371,8 @@
     const roster = thematicRoster(s);
     const t = Object.assign({ id: s.id || ('th-' + (sIdx + 1)), demo: true, status: 'done' }, s);
     t.roster = roster.map((p) => p.id);
+    /* une séance à venir n'a ni résultats ni notes : elle n'a pas eu lieu */
+    if (t.status !== 'done') return t;
     if (s.categorie === 'tir') {
       t.resultats = genShootResults(s, sIdx, roster);
       const totM = roster.reduce((a, p) => a + t.resultats[p.id].total.m, 0);
@@ -440,7 +463,7 @@
     return { best: best, worst: worst, pct: tt ? round1(tr / tt * 100) : 0, made: tr, att: tt };
   }
   function playerTrainingZones(id) {
-    const th = allThematic().filter((s) => s.categorie === 'tir'), Z = {};
+    const th = allThematic().filter((s) => s.categorie === 'tir' && s.resultats), Z = {};
     th.forEach((s) => { const r = s.resultats[id]; if (!r) return; s.zones.forEach((zid) => { const z = r.zones[zid], k = Z2S_STORE[zid]; if (!k) return; Z[k] = Z[k] || { tentes: 0, reussis: 0 }; Z[k].tentes += z.a; Z[k].reussis += z.m; }); });
     return Object.keys(Z).length ? withPct(Z) : null;
   }
@@ -464,7 +487,7 @@
   function playerTrainingHistory(id) {
     const out = [];
     getCollectifs().filter((s) => s.eval).forEach((s) => { const present = !!s.presence[id], j = s.eval.joueurs[id]; out.push({ id: s.id, date: s.date, type: 'Collectif', titre: s.titre, present: present, note: (present && j) ? playerAvg(s, id) : null, result: (present && j) ? ('Intensité ' + j.intensite + ' · Effic. ' + j.reussite) : 'Absent' }); });
-    allThematic().forEach((s) => { if ((s.roster || []).indexOf(id) === -1) return; if (s.categorie === 'tir') { const r = s.resultats[id]; out.push({ id: s.id, date: s.date, type: s.type, titre: s.titre, present: true, note: null, pct: r.total.pct, result: r.total.m + '/' + r.total.a + ' (' + r.total.pct + '%)' }); } else { const e = s.evalCoach[id]; out.push({ id: s.id, date: s.date, type: s.type, titre: s.titre, present: true, note: e.note, result: 'Note coach ' + e.note + '/10' }); } });
+    allThematic().forEach((s) => { if ((s.roster || []).indexOf(id) === -1) return; if (s.status !== 'done') return; if (s.categorie === 'tir') { const r = s.resultats[id]; out.push({ id: s.id, date: s.date, type: s.type, titre: s.titre, present: true, note: null, pct: r.total.pct, result: r.total.m + '/' + r.total.a + ' (' + r.total.pct + '%)' }); } else { const e = s.evalCoach[id]; out.push({ id: s.id, date: s.date, type: s.type, titre: s.titre, present: true, note: e.note, result: 'Note coach ' + e.note + '/10' }); } });
     return out.sort((a, b) => (a.date < b.date ? 1 : -1));
   }
   function playerMatchVsTraining(id) {

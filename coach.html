@@ -1909,7 +1909,10 @@
 ============================================================ -->
 <section class="page" id="page-preparation"></section>
 
-<!-- Entraînements : formulaire nouvelle séance + détail d'une séance -->
+<!-- Entraînements : 3 sous-vues + formulaire nouvelle séance + détail d'une séance -->
+<section class="page" id="page-training-collectifs"></section>
+<section class="page" id="page-training-tir"></section>
+<section class="page" id="page-training-perso"></section>
 <section class="page" id="page-training-new"></section>
 <section class="page" id="page-training-detail"></section>
 
@@ -2013,13 +2016,17 @@ const ROUTES = [
   ['^/joueurs/([^/]+)/?$',             'joueur',         ['playerId']],
   ['^/effectif/?$',                    'effectif'],
   ['^/entrainements/nouveau/?$',       'training-new'],
+  /* les 3 sous-vues doivent précéder la route catch-all /entrainements/:id */
+  ['^/entrainements/collectifs/?$',    'training-collectifs'],
+  ['^/entrainements/tir/?$',           'training-tir'],
+  ['^/entrainements/personnalisees/?$','training-perso'],
   ['^/entrainements/([^/]+)/?$',       'training-detail',['trainingId']],
   ['^/entrainements/?$',               'training']
 ];
 /* vues disposant déjà d'une section ; les autres -> placeholder « en construction » */
-const VIEW_SECTION = { saison:'page-saison', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', rapport:'page-rapport', preparation:'page-preparation', live:'page-live', joueur:'page-joueur', 'joueur-match':'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail' };
-const VIEW_TAB     = { saison:'saison', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', rapport:'gamecenter', preparation:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', 'joueur-match':'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training' };
-const VIEW_TITLE   = { saison:'Saison', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', rapport:'Analyse du match', preparation:'Préparation du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', 'joueur-match':'Match du joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', notfound:'Page introuvable' };
+const VIEW_SECTION = { saison:'page-saison', matchs:'page-gamecenter', match:'page-match', feuille:'page-feuille', analyse:'page-analyse', rapport:'page-rapport', preparation:'page-preparation', live:'page-live', joueur:'page-joueur', 'joueur-match':'page-joueur', effectif:'page-effectif', training:'page-training', 'training-new':'page-training-new', 'training-detail':'page-training-detail', 'training-collectifs':'page-training-collectifs', 'training-tir':'page-training-tir', 'training-perso':'page-training-perso' };
+const VIEW_TAB     = { saison:'saison', matchs:'gamecenter', match:'gamecenter', feuille:'gamecenter', analyse:'gamecenter', rapport:'gamecenter', preparation:'gamecenter', 'match-new':'gamecenter', live:'gamecenter', joueur:'effectif', 'joueur-match':'effectif', effectif:'effectif', training:'training', 'training-new':'training', 'training-detail':'training', 'training-collectifs':'training', 'training-tir':'training', 'training-perso':'training' };
+const VIEW_TITLE   = { saison:'Saison', matchs:'Matchs', match:'Match', feuille:'Feuille de match', analyse:'Analyse du match', rapport:'Analyse du match', preparation:'Préparation du match', 'match-new':'Nouveau match', live:'Match live', joueur:'Fiche joueur', 'joueur-match':'Match du joueur', effectif:'Effectif', training:'Entraînement', 'training-new':'Nouvelle séance', 'training-detail':'Séance', 'training-collectifs':'Entraînements collectifs', 'training-tir':'Entraînements tir', 'training-perso':'Séances personnalisées', notfound:'Page introuvable' };
 const PLACEHOLDER  = { 'match-new':'Nouveau match' };
 /* boutons hérités data-goto -> hash (les ids réels arriveront via data-route) */
 const GOTO_HASH = { saison:'#/saison', dashboard:'#/saison', gamecenter:'#/matchs', effectif:'#/effectif', training:'#/entrainements', live:'#/live', joueur:'#/joueurs/sylvain-francisco', match:'#/matchs/hapoel' };
@@ -3282,19 +3289,298 @@ document.addEventListener('click', e => {
     return `<div class="col-trend-row"><span class="col-trend-name">${p.num!=null?'#'+p.num+' ':''}${esc(p.name)}</span>
       <span class="col-trend-d ${kind}">${d}</span><span class="col-trend-avg mono">moy. ${p.avg}</span></div>`;
   }
+  /* ================================================================
+     PAGE ENTRAÎNEMENT — hub de pilotage (#/entrainements)
+     ================================================================
+     Page de synthèse dans l'esprit de la page Saison : un titre plein cadre,
+     les deux prochaines séances, une synthèse en deux colonnes (évolution des
+     notes à gauche, réussite au tir à droite) puis l'accès aux trois familles
+     de séances. Aucune donnée n'est inventée ici : tout est dérivé du store
+     (séances collectives notées + séances de tir jouées).
+     Le détail, la notation et la saisie restent dans les vues existantes. */
+
+  const TR_DAYS = ['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+  function trDay(iso){ const p=(iso||'').split('-').map(Number); return p.length===3?TR_DAYS[new Date(p[0],p[1]-1,p[2]).getDay()]:''; }
+  const trAvg = a => a.length ? a.reduce((x,y)=>x+y,0)/a.length : 0;
+  const trR1 = n => Math.round(n*10)/10;
+
+  /* ---- séries de notes collectives : globale + les 5 critères du store ---- */
+  function trDoneCols(Store){ return Store.getCollectifs().filter(s=>s.eval).slice().sort((a,b)=>a.date<b.date?-1:1); }
+  function trSeries(Store, limit){
+    let d = trDoneCols(Store); if(limit) d = d.slice(-limit);
+    return { done:d, labels:d.map(s=>shortDate(s.date)),
+      series:[{key:'global', label:'Note globale', vals:d.map(s=>Store.collectifAvg(s))}]
+        .concat(Store.collectifCriteria().map(c=>({key:c.key, label:c.label, vals:d.map(s=>s.eval.collectif[c.key])}))) };
+  }
+  /* une couleur par critère — ni vert ni rouge, réservés au sens positif/négatif */
+  const TR_COLORS = { global:'#FF6A00', intensite:'#B0812C', execution:'#3E7BB6',
+    concentration:'#9B6A4E', communication:'#7A8189', engagement:'#2E2A24' };
+
+  /* graphe multi-courbes sur l'échelle 1-10 */
+  function trChart(series, labels, active, aria){
+    const n=labels.length;
+    if(n<2) return '<p class="fs-note">Pas encore assez de séances notées pour tracer une évolution.</p>';
+    const W=680,H=280,pl=30,pr=14,pt=14,pb=26;
+    const X=i=>pl+(i/(n-1))*(W-pl-pr), Y=v=>H-pb-(v/10)*(H-pt-pb);
+    const grid=[0,2,4,6,8,10].map(v=>`<line x1="${pl}" y1="${Y(v).toFixed(1)}" x2="${W-pr}" y2="${Y(v).toFixed(1)}" class="rc-grid"/><text x="${pl-6}" y="${(Y(v)+3.5).toFixed(1)}" class="rc-yl">${v}</text>`).join('');
+    const step=Math.max(1,Math.ceil(n/6));
+    const xl=labels.map((l,i)=>(i%step===0||i===n-1)?`<text x="${X(i).toFixed(1)}" y="${H-6}" class="rc-xl">${esc(l)}</text>`:'').join('');
+    const paths=series.filter(s=>active.indexOf(s.key)!==-1).map(s=>{
+      const d=s.vals.map((v,i)=>(i?'L':'M')+X(i).toFixed(1)+' '+Y(v).toFixed(1)).join(' ');
+      const main=s.key==='global';
+      return `<path d="${d}" fill="none" stroke="${TR_COLORS[s.key]||'#8A8F96'}" stroke-width="${main?3:1.9}" stroke-linecap="round" stroke-linejoin="round" opacity="${main?1:0.8}"/>`;
+    }).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" class="rc-svg tr2-svg" preserveAspectRatio="none" role="img" aria-label="${esc(aria||'Évolution des notes')}">${grid}${xl}${paths}</svg>`;
+  }
+  /* tendance : premier tiers vs dernier tiers de la période affichée */
+  function trTrend(vals){
+    if(!vals || vals.length<4) return null;
+    const k=Math.max(2,Math.round(vals.length/3));
+    const d=trR1(trAvg(vals.slice(-k))-trAvg(vals.slice(0,k)));
+    return { d:d, dir: d>=0.3?'up':(d<=-0.3?'down':'flat') };
+  }
+  function trTrendBadge(t){
+    if(!t) return '';
+    const txt = t.dir==='up' ? 'En progression' : (t.dir==='down' ? 'En baisse' : 'Stable');
+    return `<span class="tr2-trend ${t.dir}">${txt} <b>${t.d>0?'+':''}${t.d.toString().replace('.',',')}</b></span>`;
+  }
+
+  /* ---- séances de tir : agrégation par zone ---- */
+  function trShootDone(Store){
+    return (Store.getThematicSessions()||[]).filter(s=>s.categorie==='tir' && s.status==='done' && s.resultats)
+      .sort((a,b)=>a.date<b.date?-1:1);
+  }
+  function trZones(sessions, pid){
+    const Z={};
+    sessions.forEach(s=>{ (pid?[pid]:s.roster).forEach(id=>{ const r=s.resultats[id]; if(!r) return;
+      s.zones.forEach(zid=>{ const z=r.zones[zid]; if(!z) return; const t=Z[zid]||(Z[zid]={m:0,a:0}); t.m+=z.m; t.a+=z.a; }); }); });
+    Object.keys(Z).forEach(k=>{ Z[k].pct = Z[k].a ? trR1(Z[k].m/Z[k].a*100) : 0; });
+    return Z;
+  }
+  /* échelle de couleur par famille de zone : un 3 pts à 40 % vaut un 2 pts à 65 %.
+     0 = rouge (zone faible), 0.5 = orange, 1 = vert (zone efficace). */
+  const TR_SCALE = { three:[25,45], mid:[32,52], paint:[45,72], rim:[48,78] };
+  function trHeatValue(zid, pct){
+    const g=(window.HoopCourt && HoopCourt.ZONES[zid]) ? HoopCourt.ZONES[zid].group : 'mid';
+    const s=TR_SCALE[g]||TR_SCALE.mid;
+    return Math.max(0, Math.min(1, (pct-s[0])/(s[1]-s[0])));
+  }
+  function trHeatmap(Z){ const h={}; Object.keys(Z).forEach(k=>{ if(Z[k].a) h[k]={value:trHeatValue(k,Z[k].pct), key:k}; }); return h; }
+  function trZoneLabel(zid){ return (window.HoopCourt && HoopCourt.ZONES[zid]) ? HoopCourt.ZONES[zid].label : zid; }
+  function trBestPlayer(sessions, zid, Store){
+    const acc={};
+    sessions.forEach(s=>{ if((s.zones||[]).indexOf(zid)===-1) return;
+      s.roster.forEach(pid=>{ const r=s.resultats[pid], z=r && r.zones[zid]; if(!z) return;
+        const t=acc[pid]||(acc[pid]={m:0,a:0}); t.m+=z.m; t.a+=z.a; }); });
+    let best=null;
+    Object.keys(acc).forEach(pid=>{ const x=acc[pid]; if(x.a<10) return; const pct=x.m/x.a*100;
+      if(!best || pct>best.pct) best={pid:pid, pct:trR1(pct), m:x.m, a:x.a}; });
+    if(best){ const p=Store.getPlayer(best.pid); best.name=p?p.name:best.pid; best.num=p?p.num:null; }
+    return best;
+  }
+  /* panneau de lecture d'une zone : réussis / tentés / % / évolution / meilleur joueur */
+  function trZonePanel(Store, all, sessions, zid, pid, recentLabel){
+    if(!zid) return `<div class="tr2-zone empty">Touchez une zone du terrain pour voir le détail : réussite, volume, évolution et meilleur joueur.</div>`;
+    const z=trZones(sessions, pid)[zid];
+    if(!z || !z.a) return `<div class="tr2-zone"><div class="tr2-zone-t">${esc(trZoneLabel(zid))}</div>
+      <p class="fs-note">Aucun tir enregistré dans cette zone sur la période sélectionnée.</p></div>`;
+    const ref=trZones(all, pid)[zid];
+    const recent=trZones(all.slice(-5), pid)[zid];
+    const delta=(recent && recent.a && ref && ref.a) ? trR1(recent.pct-ref.pct) : null;
+    const best=trBestPlayer(sessions, zid, Store);
+    const cls=trHeatValue(zid,z.pct)>=0.66?'win':(trHeatValue(zid,z.pct)<=0.33?'loss':'neutral');
+    return `<div class="tr2-zone">
+      <div class="tr2-zone-t">${esc(trZoneLabel(zid))}</div>
+      <div class="tr2-zone-big"><span class="tr2-zone-made">${z.m} / ${z.a}</span><span class="tr2-zone-pct ${cls}">${z.pct.toString().replace('.',',')} %</span></div>
+      ${delta!=null?`<div class="tr2-zone-evo ${delta>0?'up':(delta<0?'down':'')}">${delta>0?'+':''}${delta.toString().replace('.',',')} % sur les ${recentLabel||'5 dernières séances'}</div>`:''}
+      ${best?`<div class="tr2-zone-best"><span>Meilleur joueur</span><b>${best.num!=null?'#'+best.num+' ':''}${esc(best.name)} · ${best.pct.toString().replace('.',',')} % (${best.m}/${best.a})</b></div>`:''}
+    </div>`;
+  }
+  function trCourtLegend(){
+    return `<span class="tr2-legend"><i class="lo"></i>zone faible<i class="lm"></i>moyenne<i class="lh"></i>efficace</span>`;
+  }
+
+  /* ---- prochaines séances, toutes familles confondues ---- */
+  function trUpcoming(Store){
+    const cols=Store.getCollectifs().filter(s=>s.status!=='done').map(s=>({
+      id:s.id, kind:'collectif', fam:'Séance collective', titre:s.titre, date:s.date, heure:s.heure,
+      lieu:s.lieu, n:(s.convoques||[]).length, status:s.status }));
+    const th=(Store.getThematicSessions()||[]).filter(s=>s.status!=='done').map(s=>({
+      id:s.id, kind:s.categorie==='tir'?'tir':'perso', fam:s.categorie==='tir'?'Séance de tir':'Séance personnalisée',
+      titre:s.titre, date:s.date, heure:s.heure, lieu:s.lieu, n:(s.roster||[]).length, status:s.status }));
+    return cols.concat(th).sort((a,b)=> a.date===b.date
+      ? String(a.heure||'').localeCompare(String(b.heure||''))
+      : (a.date<b.date?-1:1));
+  }
+  function trNextCard(s, rank){
+    if(!s) return `<div class="tr2-next empty"><div class="tr2-next-rank">${rank}</div>
+      <div class="tr2-next-titre">Aucune séance programmée</div>
+      <div class="tr2-next-l">Créez une séance pour la voir apparaître ici.</div></div>`;
+    const lignes=[
+      `${trDay(s.date).toUpperCase()} ${fmtDate(s.date).toUpperCase()}${s.heure?' · '+esc(s.heure):''}`,
+      (s.lieu||'').toUpperCase(),
+      `${s.n} JOUEUR${s.n>1?'S':''} CONVOQUÉ${s.n>1?'S':''}`
+    ].filter(Boolean);
+    return `<div class="tr2-next" data-route="#/entrainements/${esc(s.id)}">
+      <div class="tr2-next-rank">${rank}${s.status==='live'?' · en cours':''}</div>
+      <div class="tr2-next-fam">${esc(s.fam)}</div>
+      <div class="tr2-next-titre">${esc(s.titre||'Séance')}</div>
+      ${lignes.map(l=>`<div class="tr2-next-l">${esc(l)}</div>`).join('')}
+      <div class="tr2-next-go">Ouvrir la séance</div></div>`;
+  }
+
+  /* ---- séances personnalisées : évolution par catégorie du coach ---- */
+  function trPersoSessions(Store){
+    return (Store.getThematicSessions()||[]).filter(s=>s.categorie==='coach')
+      .sort((a,b)=>a.date<b.date?-1:1);
+  }
+  function trPersoThemes(sessions){
+    const seen=[]; sessions.forEach(s=>{ const t=s.theme||s.type||'Autre'; if(seen.indexOf(t)===-1) seen.push(t); });
+    return seen;
+  }
+  /* une série par catégorie, sur l'axe commun des dates de séances notées */
+  function trPersoSeries(sessions){
+    const done=sessions.filter(s=>s.status==='done' && s.avgNote!=null);
+    const themes=trPersoThemes(done);
+    const labels=done.map(s=>shortDate(s.date));
+    const series=themes.map((t,i)=>({
+      key:'cat'+i, label:t,
+      /* on relie les points de la catégorie entre eux : les séances des autres
+         catégories ne coupent pas la courbe */
+      pts: done.map((s,ix)=>({ i:ix, v:(s.theme||s.type)===t ? s.avgNote : null })).filter(p=>p.v!=null)
+    })).filter(s=>s.pts.length>=1);
+    return { done:done, labels:labels, series:series, themes:themes };
+  }
+  const TR_CAT_COLORS = ['#FF6A00','#B0812C','#3E7BB6','#9B6A4E','#7A8189','#2E2A24','#C4632A','#5C6BC0'];
+  function trPersoChart(ps, active){
+    const n=ps.labels.length;
+    if(n<2) return '<p class="fs-note">Pas encore assez de séances personnalisées notées pour tracer une évolution.</p>';
+    const W=680,H=280,pl=30,pr=14,pt=14,pb=26;
+    const X=i=>pl+(i/(n-1))*(W-pl-pr), Y=v=>H-pb-(v/10)*(H-pt-pb);
+    const grid=[0,2,4,6,8,10].map(v=>`<line x1="${pl}" y1="${Y(v).toFixed(1)}" x2="${W-pr}" y2="${Y(v).toFixed(1)}" class="rc-grid"/><text x="${pl-6}" y="${(Y(v)+3.5).toFixed(1)}" class="rc-yl">${v}</text>`).join('');
+    const step=Math.max(1,Math.ceil(n/6));
+    const xl=ps.labels.map((l,i)=>(i%step===0||i===n-1)?`<text x="${X(i).toFixed(1)}" y="${H-6}" class="rc-xl">${esc(l)}</text>`:'').join('');
+    const paths=ps.series.filter(s=>active.indexOf(s.label)!==-1).map((s)=>{
+      const c=TR_CAT_COLORS[ps.themes.indexOf(s.label)%TR_CAT_COLORS.length];
+      const d=s.pts.map((p,k)=>(k?'L':'M')+X(p.i).toFixed(1)+' '+Y(p.v).toFixed(1)).join(' ');
+      const dots=s.pts.map(p=>`<circle cx="${X(p.i).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3.4" fill="${c}"/>`).join('');
+      return `<path d="${d}" fill="none" stroke="${c}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>${dots}`;
+    }).join('');
+    return `<svg viewBox="0 0 ${W} ${H}" class="rc-svg tr2-svg" preserveAspectRatio="none" role="img" aria-label="Évolution des séances personnalisées">${grid}${xl}${paths}</svg>`;
+  }
+
+  /* ---- barre de navigation vers les 3 familles ---- */
+  function trNav(current){
+    const items=[
+      ['#/entrainements/collectifs','Entraînements collectifs','collectifs'],
+      ['#/entrainements/tir','Entraînements tir','tir'],
+      ['#/entrainements/personnalisees','Séances personnalisées','perso'],
+    ];
+    return `<nav class="tr2-nav" aria-label="Familles d'entraînement">${items.map(i=>
+      `<button class="tr2-navbtn${current===i[2]?' on':''}" data-route="${i[0]}">${i[1]}</button>`).join('')}</nav>`;
+  }
+  /* en-tête commun aux sous-vues */
+  function trSubHead(titre, meta, extra){
+    return `<div class="page-head fs-head"><div>
+        <button class="fs-back" data-route="#/entrainements">${backSvg}Entraînement</button>
+        <h2 class="page-title">${esc(titre)}</h2>
+        <div class="page-meta">${meta}</div></div>
+      ${extra?`<div class="fs-actions">${extra}</div>`:''}</div>`;
+}
+
+  /* ================================================================
+     HUB (#/entrainements)
+     ================================================================ */
   function renderTraining(){
     const el=document.getElementById('page-training'); if(!el) return;
     const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
-    const cols=Store.getCollectifs(), manual=Store.getSessions(), trends=Store.getCollectifTrends();
+    const club=Store.getClub(), tournoi=Store.getTournoi();
+    const up=trUpcoming(Store);
+    const shoot=trShootDone(Store);
+    const cols=trDoneCols(Store);
+
+    el.innerHTML=`
+      <div class="tr2-topbar"><button class="btn btn-secondary sm" data-route="#/entrainements/nouveau">+ Séance manuelle</button></div>
+      <header class="tr2-hero">
+        <h1 class="tr2-hero-t">Entraînement</h1>
+        <p class="tr2-hero-s">${esc(club.nom)} · ${esc(tournoi.nom||('Saison '+(tournoi.saison||'')))}</p>
+      </header>
+
+      <section class="tr2-nexts">${trNextCard(up[0],'Prochaine séance')}${trNextCard(up[1],'Séance suivante')}</section>
+
+      <section class="tr2-synth">
+        <div class="tr2-panel" id="trEvo">
+          <div class="tr2-panel-head">
+            <h2 class="tr2-h2">Évolution des entraînements</h2>
+            <div class="tr2-panel-sub">${cols.length} séances collectives notées · note sur 10</div>
+          </div>
+          <div class="tr2-filters" id="trEvoRange"></div>
+          <div class="tr2-chart" id="trEvoChart"></div>
+          <div class="tr2-toggles" id="trEvoToggles"></div>
+        </div>
+        <div class="tr2-panel" id="trShoot">
+          <div class="tr2-panel-head">
+            <h2 class="tr2-h2">Réussite au tir</h2>
+            <div class="tr2-panel-sub">${shoot.length} séances de tir jouées cette saison ${trCourtLegend()}</div>
+          </div>
+          <div class="tr2-court" id="trCourt"></div>
+          <div id="trCourtInfo"></div>
+        </div>
+      </section>
+
+      ${trNav('')}`;
+
+    /* ---- graphe d'évolution : période + critères affichés ---- */
+    const RANGES=[['Saison',0],['10 dernières',10],['5 dernières',5]];
+    const st={ range:0, active:['global'] };
+    const rangeEl=el.querySelector('#trEvoRange'), chartEl=el.querySelector('#trEvoChart'), togEl=el.querySelector('#trEvoToggles');
+    function paintEvo(){
+      const s=trSeries(Store, st.range||0);
+      const g=s.series[0];
+      const t=trTrend(g.vals);
+      rangeEl.innerHTML=RANGES.map((r,i)=>`<button class="tr2-chip${st.range===r[1]?' on':''}" data-range="${r[1]}">${r[0]}</button>`).join('')
+        + (t?trTrendBadge(t):'');
+      chartEl.innerHTML=trChart(s.series, s.labels, st.active, 'Évolution des notes d’entraînement');
+      togEl.innerHTML=s.series.map(x=>`<button class="tr2-key${st.active.indexOf(x.key)!==-1?' on':''}" data-key="${x.key}">
+        <i style="background:${TR_COLORS[x.key]||'#8A8F96'}"></i>${esc(x.label)}</button>`).join('');
+      rangeEl.querySelectorAll('[data-range]').forEach(b=>b.addEventListener('click',()=>{ st.range=Number(b.dataset.range); paintEvo(); }));
+      togEl.querySelectorAll('[data-key]').forEach(b=>b.addEventListener('click',()=>{
+        const k=b.dataset.key, i=st.active.indexOf(k);
+        if(i===-1) st.active.push(k); else if(st.active.length>1) st.active.splice(i,1);
+        paintEvo(); }));
+    }
+    paintEvo();
+
+    /* ---- terrain de réussite ---- */
+    const courtEl=el.querySelector('#trCourt'), infoEl=el.querySelector('#trCourtInfo');
+    if(!shoot.length){ courtEl.innerHTML=''; infoEl.innerHTML='<p class="fs-note">Aucune séance de tir jouée pour le moment.</p>'; }
+    else if(window.HoopCourt){
+      const Z=trZones(shoot,null);
+      infoEl.innerHTML=trZonePanel(Store, shoot, shoot, null, null);
+      HoopCourt.render(courtEl,{ mode:'analysis', heatmap:trHeatmap(Z),
+        onZoneSelect:z=>{ infoEl.innerHTML=trZonePanel(Store, shoot, shoot, z.id, null); } });
+    }
+  }
+
+  /* ================================================================
+     SOUS-VUE 1 — ENTRAÎNEMENTS COLLECTIFS (#/entrainements/collectifs)
+     Reprend l'intégralité de l'ancienne page : bannière planning, tendances,
+     séances à venir et toutes les séances notées de la saison.
+     ================================================================ */
+  function renderTrainingCollectifs(){
+    const el=document.getElementById('page-training-collectifs'); if(!el) return;
+    const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    const cols=Store.getCollectifs(), trends=Store.getCollectifTrends();
     const aVenir=cols.filter(s=>s.status!=='done'), notees=cols.filter(s=>s.status==='done');
-    let html=`<div class="page-head"><div><h2 class="page-title">Entraînement</h2>
-        <div class="page-meta">${esc(Store.getClub().nom)} · préparation EuroLeague</div></div>
-        <button class="btn btn-secondary" data-route="#/entrainements/nouveau">+ Séance manuelle</button></div>`;
-    /* bannière planning (séances auto) */
+    const mois=[]; notees.forEach(s=>{ const m=(s.date||'').slice(0,7); if(m && mois.indexOf(m)===-1) mois.push(m); });
+    const moisLabel=m=>{ const p=m.split('-'); return `${MONTHS[Number(p[1])-1]||''} ${p[0]}`; };
+
+    let html=trSubHead('Entraînements collectifs',
+      `${esc(Store.getClub().nom)} · ${cols.length} séances · ${notees.length} notées`,
+      `<button class="btn btn-secondary sm" data-route="#/entrainements/nouveau">+ Séance manuelle</button>`);
     html+=`<div class="fs-card col-plan"><div class="col-plan-ic"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
       <div><div class="col-plan-t">Entraînements collectifs générés automatiquement</div>
       <div class="col-plan-s">Lundi · Mercredi · Vendredi — ${esc(cols[0]?cols[0].heure:'10:00')} · ${cols[0]?cols[0].duree:90} min · ${esc(cols[0]?cols[0].lieu:'')}. Vous n’avez rien à recréer : notez simplement le bilan en fin de séance.</div></div></div>`;
-    /* tendances équipe */
     if(trends.sessions.length>=2){
       html+=`<div class="fs-card"><h3 class="fs-h3">Tendance des notes collectives</h3>
         <div class="an-grid">
@@ -3305,14 +3591,145 @@ document.addEventListener('click', e => {
           </div></div></div>`;
     }
     if(aVenir.length) html+=`<div class="section-label">À venir &amp; en cours</div><div class="mc-grid">${aVenir.map(s=>collectifCard(s,Store)).join('')}</div>`;
-    if(notees.length) html+=`<div class="section-label">Séances notées (${notees.length})</div><div class="mc-grid">${notees.map(s=>collectifCard(s,Store)).join('')}</div>`;
-    const themes=Store.getThematicSessions?Store.getThematicSessions():[];
-    const tir=themes.filter(s=>s.categorie==='tir'), tac=themes.filter(s=>s.categorie==='coach');
-    if(tir.length) html+=`<div class="section-label">Séances de tir · résultats par joueur</div><div class="mc-grid">${tir.map(thematicCard).join('')}</div>`;
-    if(tac.length) html+=`<div class="section-label">Séances tactiques · notées par le coach</div><div class="mc-grid">${tac.map(thematicCard).join('')}</div>`;
-    if(manual.length) html+=`<div class="section-label">Autres séances (créées manuellement)</div><div class="mc-grid">${manual.map(sessionCard).join('')}</div>`;
+    html+=`<div class="section-label">Séances notées (${notees.length})</div>
+      <div class="mc-filters"><select id="colMois" class="mc-input" aria-label="Filtrer par mois">
+        <option value="">Toute la saison</option>${mois.map(m=>`<option value="${m}">${moisLabel(m)}</option>`).join('')}</select></div>
+      <div class="mc-grid" id="colList"></div>`;
     el.innerHTML=html;
+    const list=el.querySelector('#colList'), sel=el.querySelector('#colMois');
+    function paint(){
+      const m=sel.value;
+      const l=notees.filter(s=>!m || (s.date||'').slice(0,7)===m);
+      list.innerHTML=l.length?l.map(s=>collectifCard(s,Store)).join(''):'<p class="fs-note">Aucune séance notée sur ce mois.</p>';
+    }
+    sel.addEventListener('change',paint); paint();
   }
+
+  /* ================================================================
+     SOUS-VUE 2 — ENTRAÎNEMENTS TIR (#/entrainements/tir)
+     Terrain détaillé (période + joueur) puis prochaines séances et historique.
+     ================================================================ */
+  function renderTrainingTir(){
+    const el=document.getElementById('page-training-tir'); if(!el) return;
+    const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    const all=trShootDone(Store);
+    const upcoming=(Store.getThematicSessions()||[]).filter(s=>s.categorie==='tir' && s.status!=='done')
+      .sort((a,b)=>a.date<b.date?-1:1);
+    const past=all.slice().reverse();
+    const roster=Store.getPlayers();
+
+    let html=trSubHead('Entraînements tir',
+      `${esc(Store.getClub().nom)} · ${all.length} séances jouées · ${upcoming.length} à venir`);
+    if(!all.length){ el.innerHTML=html+`<div class="fs-card">${emptyState('Aucune séance de tir','Aucune séance de tir n’a encore été jouée cette saison.','#/entrainements','Retour à l’entraînement')}</div>`; return; }
+    html+=`<section class="tr2-panel tr2-panel-wide">
+        <div class="tr2-panel-head"><h2 class="tr2-h2">Réussite au tir</h2>
+          <div class="tr2-panel-sub">Comparez la période choisie à la moyenne de la saison ${trCourtLegend()}</div></div>
+        <div class="tr2-filters">
+          <div class="tr2-chips" id="tirPeriode"></div>
+          <select id="tirJoueur" class="mc-input" aria-label="Filtrer par joueur">
+            <option value="">Toute l’équipe</option>${roster.map(p=>`<option value="${p.id}">${p.num!=null?'#'+p.num+' ':''}${esc(p.name)}</option>`).join('')}</select>
+        </div>
+        <div class="tr2-court-wide">
+          <div class="tr2-court" id="tirCourt"></div>
+          <div class="tr2-court-side"><div id="tirInfo"></div><div id="tirSummary"></div></div>
+        </div>
+      </section>`;
+    if(upcoming.length) html+=`<div class="section-label">Prochaines séances de tir</div><div class="mc-grid">${upcoming.map(thematicCard).join('')}</div>`;
+    html+=`<div class="section-label">Séances jouées (${past.length}) · résultats par joueur</div><div class="mc-grid">${past.map(thematicCard).join('')}</div>
+      <p class="fs-note">Les résultats sont saisis zone par zone par les joueurs depuis leur espace ; le détail complet de chaque séance reste accessible en ouvrant la séance.</p>`;
+    el.innerHTML=html;
+
+    const PER=[['Saison',0],['10 dernières',10],['5 dernières',5],['Dernière séance',1]];
+    const st={ n:0, pid:'', zone:null };
+    const chips=el.querySelector('#tirPeriode'), courtEl=el.querySelector('#tirCourt'),
+      infoEl=el.querySelector('#tirInfo'), sumEl=el.querySelector('#tirSummary'), selJ=el.querySelector('#tirJoueur');
+    let court=null;
+    function subset(){ return st.n ? all.slice(-st.n) : all; }
+    function periodLabel(){ const p=PER.find(x=>x[1]===st.n); return p?p[0].toLowerCase():'saison'; }
+    function paint(){
+      const sess=subset(), Z=trZones(sess, st.pid||null), Zs=trZones(all, st.pid||null);
+      chips.innerHTML=PER.map(p=>`<button class="tr2-chip${st.n===p[1]?' on':''}" data-n="${p[1]}">${p[0]}</button>`).join('');
+      chips.querySelectorAll('[data-n]').forEach(b=>b.addEventListener('click',()=>{ st.n=Number(b.dataset.n); paint(); }));
+      /* zone forte / zone faible + total, comparés à la saison */
+      const ids=Object.keys(Z).filter(k=>Z[k].a);
+      let hi=null, lo=null, m=0, a=0;
+      ids.forEach(k=>{ const v=trHeatValue(k,Z[k].pct); m+=Z[k].m; a+=Z[k].a;
+        if(!hi||v>hi.v) hi={id:k,v:v}; if(!lo||v<lo.v) lo={id:k,v:v}; });
+      const tot=a?trR1(m/a*100):0;
+      /* référence saison calculée sur LES MÊMES ZONES que la période affichée :
+         comparer une séance de 3 pts à la moyenne toutes zones n'aurait aucun sens */
+      let ms=0, as=0; ids.forEach(k=>{ if(Zs[k]){ ms+=Zs[k].m; as+=Zs[k].a; } });
+      const totS=as?trR1(ms/as*100):0, d=trR1(tot-totS);
+      sumEl.innerHTML=`<div class="tr2-sum">
+        <div class="tr2-sum-row"><span>Réussite ${esc(periodLabel())}</span><b>${tot.toString().replace('.',',')} % <i>(${m}/${a})</i></b></div>
+        ${st.n?`<div class="tr2-sum-row"><span>Moyenne de la saison <i>(mêmes zones)</i></span><b>${totS.toString().replace('.',',')} % <i>(${ms}/${as})</i></b></div>
+        <div class="tr2-sum-row"><span>Écart</span><b class="${d>0?'up':(d<0?'down':'')}">${d>0?'+':''}${d.toString().replace('.',',')} %</b></div>`:''}
+        ${hi?`<div class="tr2-sum-row"><span>Zone forte</span><b>${esc(trZoneLabel(hi.id))} · ${Z[hi.id].pct.toString().replace('.',',')} %</b></div>`:''}
+        ${lo?`<div class="tr2-sum-row"><span>Zone faible</span><b>${esc(trZoneLabel(lo.id))} · ${Z[lo.id].pct.toString().replace('.',',')} %</b></div>`:''}
+      </div>`;
+      infoEl.innerHTML=trZonePanel(Store, all, sess, st.zone, st.pid||null, '5 dernières séances');
+      const props={ mode:'analysis', heatmap:trHeatmap(Z), selectedZoneId:st.zone,
+        onZoneSelect:z=>{ st.zone=(z.id==='out-of-bounds')?null:z.id;
+          infoEl.innerHTML=trZonePanel(Store, all, subset(), st.zone, st.pid||null, '5 dernières séances'); } };
+      if(window.HoopCourt) court=HoopCourt.render(courtEl, props);
+    }
+    selJ.addEventListener('change',()=>{ st.pid=selJ.value; paint(); });
+    paint();
+  }
+
+  /* ================================================================
+     SOUS-VUE 3 — SÉANCES PERSONNALISÉES (#/entrainements/personnalisees)
+     Évolution par catégorie créée par le coach, puis séances et historique.
+     ================================================================ */
+  function renderTrainingPerso(){
+    const el=document.getElementById('page-training-perso'); if(!el) return;
+    const Store=window.HoopStore; if(!Store){ el.innerHTML=emptyState('Données indisponibles','Le modèle de données n’a pas pu être chargé.','#/'); return; }
+    const sessions=trPersoSessions(Store);
+    const upcoming=sessions.filter(s=>s.status!=='done');
+    const past=sessions.filter(s=>s.status==='done').slice().reverse();
+    const manual=Store.getSessions();
+    const ps=trPersoSeries(sessions);
+
+    let html=trSubHead('Séances personnalisées',
+      `${esc(Store.getClub().nom)} · ${ps.themes.length} catégories · ${past.length} séances notées`,
+      `<button class="btn btn-secondary sm" data-route="#/entrainements/nouveau">+ Séance manuelle</button>`);
+    html+=`<section class="tr2-panel tr2-panel-wide">
+        <div class="tr2-panel-head"><h2 class="tr2-h2">Évolution des séances personnalisées</h2>
+          <div class="tr2-panel-sub">Note moyenne attribuée par le coach, par catégorie — sur 10</div></div>
+        <div class="tr2-chart" id="perChart"></div>
+        <div class="tr2-toggles" id="perToggles"></div>
+      </section>`;
+    if(upcoming.length) html+=`<div class="section-label">Prochaine séance personnalisée</div><div class="mc-grid">${upcoming.map(thematicCard).join('')}</div>`;
+    html+=`<div class="section-label">Séances notées (${past.length})</div>
+      <div class="mc-filters"><select id="perCat" class="mc-input" aria-label="Filtrer par catégorie">
+        <option value="">Toutes les catégories</option>${ps.themes.map(t=>`<option value="${esc(t)}">${esc(t)}</option>`).join('')}</select></div>
+      <div class="mc-grid" id="perList"></div>`;
+    if(manual.length) html+=`<div class="section-label">Séances créées manuellement (${manual.length})</div><div class="mc-grid">${manual.map(sessionCard).join('')}</div>`;
+    html+=`<p class="fs-note">Chaque séance conserve sa description, sa catégorie, ses critères, ses convocations et ses notes : ouvrez-la pour voir ou modifier le détail.</p>`;
+    el.innerHTML=html;
+
+    /* graphe : au départ, seules les 2 premières catégories sont tracées */
+    const active=ps.themes.slice(0,2);
+    const chartEl=el.querySelector('#perChart'), togEl=el.querySelector('#perToggles');
+    function paintChart(){
+      chartEl.innerHTML=trPersoChart(ps, active);
+      togEl.innerHTML=ps.themes.map((t,i)=>`<button class="tr2-key${active.indexOf(t)!==-1?' on':''}" data-cat="${esc(t)}">
+        <i style="background:${TR_CAT_COLORS[i%TR_CAT_COLORS.length]}"></i>${esc(t)}</button>`).join('');
+      togEl.querySelectorAll('[data-cat]').forEach(b=>b.addEventListener('click',()=>{
+        const c=b.dataset.cat, i=active.indexOf(c);
+        if(i===-1) active.push(c); else if(active.length>1) active.splice(i,1);
+        paintChart(); }));
+    }
+    paintChart();
+
+    const list=el.querySelector('#perList'), sel=el.querySelector('#perCat');
+    function paintList(){
+      const c=sel.value, l=past.filter(s=>!c || (s.theme||s.type)===c);
+      list.innerHTML=l.length?l.map(thematicCard).join(''):'<p class="fs-note">Aucune séance dans cette catégorie.</p>';
+    }
+    sel.addEventListener('change',paintList); paintList();
+  }
+
   /* --- Nouvelle séance : formulaire + sélecteur de zones court.js --- */
   function renderNewSession(){
     const el=document.getElementById('page-training-new'); if(!el) return;
@@ -3469,21 +3886,24 @@ document.addEventListener('click', e => {
   }
   /* --- Séances à thème : carte + fiche (résultats de tir OU notation coach) --- */
   function thematicCard(s){
-    const foot = s.categorie==='tir'
-      ? `<div class="col-card-foot"><span class="col-avg">${s.teamPct}%</span><span class="col-avg-lab">réussite équipe · ${s.teamMade}/${s.teamAtt}</span></div>`
-      : `<div class="col-card-foot"><span class="col-avg">${s.avgNote}</span><span class="col-avg-lab">/10 · note moyenne coach</span></div>`;
+    const foot = s.status!=='done'
+      ? `<div class="col-card-foot cta">${s.categorie==='tir'?'Résultats à saisir après la séance':'À noter après la séance'}</div>`
+      : (s.categorie==='tir'
+        ? `<div class="col-card-foot"><span class="col-avg">${s.teamPct}%</span><span class="col-avg-lab">réussite équipe · ${s.teamMade}/${s.teamAtt}</span></div>`
+        : `<div class="col-card-foot"><span class="col-avg">${s.avgNote}</span><span class="col-avg-lab">/10 · note moyenne coach</span></div>`);
     return `<div class="mc-card col-card" data-route="#/entrainements/${s.id}">
-      <div class="mc-top"><span class="mc-date">${fmtDate(s.date)} · ${esc(s.heure||'')}</span><span class="ef-tag">${esc(s.type||'')}</span></div>
+      <div class="mc-top"><span class="mc-date">${fmtDate(s.date)} · ${esc(s.heure||'')}</span>${s.status!=='done'?colBadge(s.status):`<span class="ef-tag">${esc(s.theme||s.type||'')}</span>`}</div>
       <div class="tr-title">${esc(s.titre||'Séance')}</div>
       <div class="mc-comp">${esc(s.objectif||'')}</div>
-      <div class="col-card-meta"><span>${s.duree||0} min</span><span>${(s.roster||[]).length} joueurs</span><span>${(s.zones||[]).length} zones</span></div>
-      ${foot}</div>`;
+      <div class="col-card-meta"><span>${s.duree||0} min</span><span>${(s.roster||[]).length} convoqués</span><span>${(s.zones||[]).length} zones</span></div>
+      ${foot}
+      <div class="col-card-see"><button class="btn-view" data-route="#/entrainements/${s.id}">Voir</button></div></div>`;
   }
   function shortZone(id){ const l=(window.HoopCourt&&HoopCourt.ZONES[id])?HoopCourt.ZONES[id].label:id; return l.replace(/ [23] pts$/,''); }
   function thematicHeader(s){
     return `<div class="page-head fs-head"><div>
         <button class="fs-back" data-route="#/entrainements">${backSvg}Entraînements</button>
-        <h2 class="page-title">${esc(s.titre||'Séance')} <span class="col-badge done">Terminé</span></h2>
+        <h2 class="page-title">${esc(s.titre||'Séance')} ${colBadge(s.status)}</h2>
         <div class="page-meta">${fmtDate(s.date)} · ${esc(s.heure||'')} · ${s.duree||0} min · ${esc(s.lieu||'')}</div>
       </div></div>
       <div class="fs-card"><h3 class="fs-h3">Détails</h3><div class="tr-detail">
@@ -3540,12 +3960,29 @@ document.addEventListener('click', e => {
             ${s.zones&&s.zones.length&&window.HoopCourt?`<h4 class="col-sub">Zones travaillées</h4><div class="an-court" id="thCourt"></div>`:''}</div></div>`;
     if(s.zones&&s.zones.length&&window.HoopCourt){ const c=document.getElementById('thCourt'); if(c) HoopCourt.render(c,{mode:'readonly', highlightZones:s.zones}); }
   }
+  /* séance à thème PAS ENCORE JOUÉE : détails + convoqués + zones, sans résultats */
+  function renderThematicUpcoming(el, s){
+    const Store=window.HoopStore;
+    const conv=(s.roster||[]).map(pid=>{ const p=Store.getPlayer(pid); return p?(p.num!=null?'#'+p.num+' ':'')+p.name:pid; });
+    el.innerHTML = thematicHeader(s)
+      + `<div class="fs-card"><h3 class="fs-h3">Joueurs convoqués (${conv.length})</h3>
+          ${conv.length?`<div class="tn-zones">${conv.map(n=>`<span class="an-chip">${esc(n)}</span>`).join('')}</div>`:'<p class="fs-note">Aucun joueur convoqué.</p>'}</div>`
+      + (s.zones&&s.zones.length&&window.HoopCourt?`<div class="fs-card"><h3 class="fs-h3">Zones travaillées</h3><div class="an-court" id="thCourt"></div></div>`:'')
+      + `<div class="fs-card"><p class="fs-note">${s.categorie==='tir'
+          ? 'Cette séance n’a pas encore eu lieu : les résultats seront saisis zone par zone par les joueurs depuis leur espace, puis agrégés ici.'
+          : 'Cette séance n’a pas encore eu lieu : le coach notera chaque joueur convoqué à l’issue de la séance.'}</p></div>`;
+    if(s.zones&&s.zones.length&&window.HoopCourt){ const c=document.getElementById('thCourt'); if(c) HoopCourt.render(c,{mode:'readonly', highlightZones:s.zones}); }
+  }
   function renderThematicDetail(el, s){
     if(!s){ el.innerHTML=emptyState('Séance introuvable','Cette séance n’existe pas.','#/entrainements','Retour'); return; }
+    if(s.status!=='done') return renderThematicUpcoming(el, s);
     if(s.categorie==='tir') return renderShootDetail(el, s);
     return renderCoachRatedDetail(el, s);
   }
   routeHandlers.training = renderTraining;
+  routeHandlers['training-collectifs'] = renderTrainingCollectifs;
+  routeHandlers['training-tir'] = renderTrainingTir;
+  routeHandlers['training-perso'] = renderTrainingPerso;
   routeHandlers['training-new'] = renderNewSession;
   routeHandlers['training-detail'] = p => renderSessionDetail(p.trainingId);
 })();
