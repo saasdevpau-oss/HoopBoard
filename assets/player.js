@@ -65,17 +65,6 @@
   };
   const bestGame = RECORDS.eva; // "meilleur match" = meilleure évaluation
 
-  // Badges / accomplissements — comptés sur le match log.
-  const streak10 = (() => { let cur = 0, best = 0; LOG.forEach((g) => { if (g.pts >= 10) { cur++; best = Math.max(best, cur); } else cur = 0; }); return best; })();
-  const BADGES = [
-    { key: '20pts', name: '20+ points', desc: 'Match à 20 points ou plus', ico: '🔥', count: LOG.filter((g) => g.pts >= 20).length },
-    { key: '10ast', name: '10+ passes', desc: 'Match à 10 passes décisives', ico: '🎯', count: LOG.filter((g) => g.pd >= 10).length },
-    { key: '5tp', name: '5+ tirs à 3 pts', desc: '5 paniers primés dans un match', ico: '🏹', count: LOG.filter((g) => g.p3m >= 5).length },
-    { key: 'dd', name: 'Double-double', desc: '10+ dans deux catégories', ico: '💫', count: LOG.filter((g) => [g.pts, g.reb, g.pd].filter((v) => v >= 10).length >= 2).length },
-    { key: 'streak', name: 'Série 10+ pts', desc: 'Matchs consécutifs à 10+ points', ico: '⚡', count: streak10 },
-    { key: '30eva', name: '30 d\'évaluation', desc: 'Évaluation de 30 ou plus', ico: '👑', count: LOG.filter((g) => g.eva >= 30).length },
-  ];
-
   // Séances collectives (store) — vues côté Francisco.
   const COLLECTIFS = S.getCollectifs().filter((s) => s.eval);           // récentes en premier
   const COLL_CHRONO = COLLECTIFS.slice().sort((a, b) => (a.date < b.date ? -1 : 1));
@@ -161,10 +150,17 @@
   function courtLeftPct(nx) { return (16 + nx / 100 * 600) / 632 * 100; }
   function courtTopPct(ny) { return (16 + ny / 100 * 560) / 592 * 100; }
 
-  // Rend un shot chart : `zones8` = {ZONE:{pct,made,att,...}}. Retourne l'API HoopCourt.
-  function renderShotChart(holder, zones8, onSelect) {
+  /* Rend un shot chart : `zones8` = {ZONE:{pct,made,att,...}}. Retourne l'API HoopCourt.
+     `opts.scaled` colore chaque zone par rapport à la référence de sa famille
+     (heatValue) plutôt qu'en pourcentage brut : un 3 pts à 40 % ne doit pas
+     paraître « froid » face à un 2 pts près du cercle à 60 %. */
+  function renderShotChart(holder, zones8, onSelect, opts) {
+    opts = opts || {};
     const heatmap = {};
-    Object.keys(ZONE18_TO_8).forEach((z18) => { const z = zones8[ZONE18_TO_8[z18]]; if (z && z.att > 0) heatmap[z18] = z.pct / 100; });
+    Object.keys(ZONE18_TO_8).forEach((z18) => {
+      const z = zones8[ZONE18_TO_8[z18]]; if (!z || !(z.att > 0)) return;
+      heatmap[z18] = opts.scaled ? heatValue(z18, z.pct) : z.pct / 100;
+    });
     const courtBox = document.createElement('div');
     holder.innerHTML = '';
     holder.appendChild(courtBox);
@@ -209,21 +205,6 @@
     const xlabs = (opts.labels || []).map((l, i) => '<text class="axis-lab" x="' + X(i).toFixed(1) + '" y="' + (h - 6) + '" text-anchor="middle">' + esc(l) + '</text>').join('');
     return '<svg class="chart" viewBox="0 0 ' + w + ' ' + h + '"><defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--orange)" stop-opacity="0.28"/><stop offset="1" stop-color="var(--orange)" stop-opacity="0"/></linearGradient></defs>' + grid + '<path d="' + area + '" fill="url(#' + gid + ')"/><path class="line" d="' + line + '"/>' + dots + xlabs + '</svg>';
   }
-  function barChart(items, opts) {
-    opts = opts || {};
-    const n = items.length, w = 520, h = opts.h || 150, pL = 26, pR = 8, pT = 14, pB = 22;
-    const iw = w - pL - pR, ih = h - pT - pB;
-    const max = opts.max != null ? opts.max : Math.max.apply(null, items.map((it) => it.v)) || 1;
-    const bw = iw / n * 0.62, gap = iw / n;
-    const bars = items.map((it, i) => {
-      const bh = Math.max(1, (it.v / max) * ih), x = pL + i * gap + (gap - bw) / 2, y = pT + ih - bh;
-      const cls = it.win === true ? 'win' : it.win === false ? 'loss' : '';
-      const lab = it.label != null ? '<text class="axis-lab" x="' + (x + bw / 2).toFixed(1) + '" y="' + (h - 6) + '" text-anchor="middle">' + esc(it.label) + '</text>' : '';
-      const vl = opts.showVal ? '<text class="val-lab" x="' + (x + bw / 2).toFixed(1) + '" y="' + (y - 4).toFixed(1) + '">' + it.v + '</text>' : '';
-      return '<rect class="bar ' + cls + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + bh.toFixed(1) + '" rx="2"/>' + vl + lab;
-    }).join('');
-    return '<svg class="chart" viewBox="0 0 ' + w + ' ' + h + '">' + bars + '</svg>';
-  }
   function sparkline(values, accent) {
     if (!values.length) return '';
     const w = 120, h = 34, min = Math.min.apply(null, values), max = Math.max.apply(null, values), span = (max - min) || 1;
@@ -245,12 +226,6 @@
   /* ============================================================
      4. Panneaux réutilisables
      ============================================================ */
-  function tile(val, lab, sub, opts) {
-    opts = opts || {};
-    let delta = '';
-    if (opts.delta != null) { const d = opts.delta, cls = d > 0.05 ? 'up' : d < -0.05 ? 'down' : 'flat', arr = d > 0.05 ? '▲' : d < -0.05 ? '▼' : '▪'; delta = '<div class="tile-delta ' + cls + '">' + arr + ' ' + signed(round1(d)) + (opts.deltaUnit || '') + '</div>'; }
-    return '<div class="tile' + (opts.accent ? ' accent' : '') + '"><div class="tile-val">' + val + '</div><div class="tile-lab">' + lab + '</div>' + (sub ? '<div class="tile-sub">' + sub + '</div>' : '') + delta + '</div>';
-  }
   function critRow(label, val) {
     return '<div class="crit-row"><span class="crit-lab">' + esc(label) + '</span><span class="crit-track"><span class="crit-fill" style="width:' + (val / 10 * 100) + '%"></span></span><span class="crit-val">' + fr(round1(val)) + '</span></div>';
   }
@@ -1130,121 +1105,460 @@
   }
 
   /* ============================================================
-     7. VUE — GAME CENTER (Saison / Matchs)
+     7. VUE — GAME CENTER
+     ------------------------------------------------------------
+     Une seule page qui se lit de haut en bas, dans le langage visuel
+     des pages du coach : hero centré (.tr2-hero), grands panneaux
+     (.tr2-panel), chips (.tr2-chip), carte de tir (.tr2-court-wide),
+     résumés (.tr2-sum). Ordre : hero → période → statistiques →
+     carte de tir → évolution → records → matchs.
+
+     UN SEUL sélecteur de période (saison / 10 derniers / 5 derniers)
+     pilote tout ce qui est affiché : statistiques, carte de tir,
+     graphique et liste des matchs.
+
+     Aucune donnée nouvelle : tout vient de HoopStore — le match log
+     (LOG), les moyennes officielles de la saison (H) et les zones de
+     tir par match (getPlayerGame), la même source que la carte de tir
+     du détail d'un match. Seules l'agrégation et la mise en forme
+     changent.
      ============================================================ */
-  let gameSub = 'saison', seasonFilter = 'saison';
+  const GC_PERIODS = [['saison', 'Saison'], ['10', '10 derniers'], ['5', '5 derniers']];
+  const ZONE8_LAB = {
+    RAQUETTE: 'Raquette', MI_DISTANCE_GAUCHE: 'Mi-distance gauche', MI_DISTANCE_CENTRE: 'Mi-distance centre',
+    MI_DISTANCE_DROITE: 'Mi-distance droite', CORNER_3_GAUCHE: 'Corner 3 gauche', CORNER_3_DROIT: 'Corner 3 droit',
+    TOP_KEY_GAUCHE: 'Aile 3 gauche', TOP_KEY_DROIT: 'Aile 3 droite',
+  };
+  /* Statistiques du graphique — « Évaluation » a remplacé « Points » comme
+     statistique principale : elle résume l'ensemble de la feuille de match. */
+  const GC_STATS = [
+    { key: 'eva', label: 'Évaluation', unit: '', val: (g) => g.eva, avg: H.eva },
+    { key: 'reb', label: 'Rebonds', unit: '', val: (g) => g.reb, avg: H.reb },
+    { key: 'pd', label: 'Passes déc.', unit: '', val: (g) => g.pd, avg: H.pd },
+    { key: 'p3m', label: 'Paniers à 3 pts', unit: '', val: (g) => g.p3m, avg: round1(mean(LOG.map((g) => g.p3m))) },
+    { key: 'min', label: 'Minutes', unit: '', val: (g) => g.min, avg: H.min },
+  ];
+  let gcPeriod = 'saison', gcStat = 'eva', gcShown = 6, gcZone = null;
+
+  const gcDef = () => GC_STATS.filter((s) => s.key === gcStat)[0] || GC_STATS[0];
+  function gcGames() { return gcPeriod === 'saison' ? LOG.slice() : LOG.slice(-Number(gcPeriod)); }
+  const gcPeriodLabel = () => (gcPeriod === 'saison' ? 'Saison complète' : gcPeriod + ' derniers matchs');
+
+  /* ---- 7a. Agrégation d'une période (moyennes + adresse cumulée) ---- */
+  function gcAgg(games) {
+    const a = (k) => (games.length ? round1(mean(games.map((g) => g[k]))) : 0);
+    const t = (k) => sum(games.map((g) => g[k]));
+    const p2m = t('p2m'), p2a = t('p2a'), p3m = t('p3m'), p3a = t('p3a'), ftm = t('ftm'), fta = t('fta');
+    return {
+      n: games.length, wins: games.filter((g) => g.win).length, losses: games.filter((g) => !g.win).length,
+      min: a('min'), pts: a('pts'), reb: a('reb'), pd: a('pd'), int: a('int'), ct: a('ct'), bp: a('bp'), eva: a('eva'),
+      fgm: p2m + p3m, fga: p2a + p3a, fg: pctOf(p2m + p3m, p2a + p3a),
+      p2m: p2m, p2a: p2a, p2: pctOf(p2m, p2a),
+      p3m: p3m, p3a: p3a, p3: pctOf(p3m, p3a),
+      ftm: ftm, fta: fta, lf: pctOf(ftm, fta),
+    };
+  }
+  /* Zones de tir agrégées sur la période — mêmes zones que la carte d'un match. */
+  const GC_ZCACHE = {};
+  function gameZones(gameId) {
+    if (!GC_ZCACHE[gameId]) { const g = S.getPlayerGame(PID, gameId); GC_ZCACHE[gameId] = (g && g.zones) || {}; }
+    return GC_ZCACHE[gameId];
+  }
+  function gcZonesOf(games) {
+    const Z = {};
+    games.forEach((g) => {
+      const z = gameZones(g.gameId);
+      Object.keys(z).forEach((k) => { const c = Z[k] || (Z[k] = { made: 0, att: 0 }); c.made += z[k].reussis; c.att += z[k].tentes; });
+    });
+    Object.keys(Z).forEach((k) => { Z[k].pct = pctOf(Z[k].made, Z[k].att); });
+    return Z;
+  }
+  let SEASON_ZONES = null;
+  const seasonZones = () => (SEASON_ZONES || (SEASON_ZONES = gcZonesOf(LOG)));
+
+  /* ---- 7b. La vue ---- */
   function renderGames() {
-    const html =
-      '<div class="view-head"><h2 class="view-title">Game <em class="serif">Center</em></h2><div class="view-sub">Mes statistiques et le détail de chaque match — ' + esc(tournoi.nom) + '</div></div>'
-      + '<div class="subtabs" data-subtabs="games">'
-      + '<button class="subtab' + (gameSub === 'saison' ? ' active' : '') + '" data-sub="saison">Saison</button>'
-      + '<button class="subtab' + (gameSub === 'matchs' ? ' active' : '') + '" data-sub="matchs">Matchs</button></div>'
-      + '<div class="subpane' + (gameSub === 'saison' ? ' active' : '') + '" id="sub-saison"></div>'
-      + '<div class="subpane' + (gameSub === 'matchs' ? ' active' : '') + '" id="sub-matchs"></div>';
-    $('#pane-games').innerHTML = html;
-    renderSaison();
-    renderMatchs();
+    $('#pane-games').innerHTML =
+      '<header class="tr2-hero gc-hero"><h1 class="tr2-hero-t">Game Center</h1>'
+      + '<p class="tr2-hero-s"><b>' + esc(player.name) + '</b><span class="sep">·</span>' + esc(club.nom)
+      + '<span class="sep">·</span>' + esc(tournoi.nom) + '<span class="sep">·</span>' + LOG.length + ' matchs joués</p></header>'
+      + '<section class="gc-period" aria-label="Période analysée">'
+      + '<div class="gc-period-lab">Période analysée</div>'
+      + '<div class="tr2-chips gc-period-chips" role="group" aria-label="Choisir la période">'
+      + GC_PERIODS.map((p) => '<button type="button" class="tr2-chip" data-gcper="' + p[0] + '">' + p[1] + '</button>').join('')
+      + '</div>'
+      + '<p class="gc-period-note">Statistiques, carte de tir, graphique et liste des matchs suivent la période choisie.</p>'
+      + '</section>'
+      + '<div id="gcBody"></div>';
+    paintGames();
   }
-  function seasonAverages(filter) {
-    if (filter === 'saison') {
-      return { mj: H.mj, min: H.min, pts: H.pts, reb: H.reb, pd: H.pd, int: H.int, ct: player.season.ct, bp: player.season.bp, fg: player.season.tirsPct, p2: H.p2, p3: H.p3, lf: H.lf, label: 'Saison complète' };
+  function paintGames() {
+    gcZone = null;
+    $$('#pane-games [data-gcper]').forEach((b) => b.classList.toggle('on', b.dataset.gcper === gcPeriod));
+    const body = $('#gcBody'); if (!body) return;
+    body.innerHTML = gcStatsPanel() + gcCourtPanel() + gcChartPanel() + gcRecordsSection() + gcMatchesSection();
+    paintGcCourt();
+    paintGcChart();
+  }
+
+  /* ---- 7c. Statistiques principales — un grand panneau pleine largeur ---- */
+  function gcStatsPanel() {
+    const a = gcAgg(gcGames());
+    /* sur une période courte, l'écart affiché compare à la moyenne de la saison */
+    const d = (cur, ref) => (gcPeriod === 'saison' ? null : round1(cur - ref));
+    const sub = (ref) => (gcPeriod === 'saison' ? 'moyenne par match' : 'saison ' + fr(ref));
+    return '<section class="tr2-panel tr2-panel-wide gc-panel">'
+      + '<div class="tr2-panel-head"><h2 class="tr2-h2">Mes statistiques</h2>'
+      + '<div class="tr2-panel-sub"><span>' + gcPeriodLabel() + ' · ' + a.n + ' matchs · '
+      + '<b class="gc-record">' + a.wins + ' V</b> – <b class="gc-record loss">' + a.losses + ' D</b></span>'
+      + (gcPeriod === 'saison' ? '' : '<span class="tr2-trend ' + dirOf(round1(a.eva - H.eva), 1) + '">vs saison <b>' + frS(round1(a.eva - H.eva)) + ' éva</b></span>') + '</div></div>'
+      + '<div class="pd-stats">'
+      + statBlock(a.pts, 'Points', sub(H.pts), d(a.pts, H.pts), '')
+      + statBlock(a.reb, 'Rebonds', sub(H.reb), d(a.reb, H.reb), '')
+      + statBlock(a.pd, 'Passes déc.', sub(H.pd), d(a.pd, H.pd), '')
+      + statBlock(a.eva, 'Évaluation', sub(H.eva), d(a.eva, H.eva), '')
+      + '</div>'
+      + '<div class="pd-stats pd-stats-sec">'
+      + statBlock(a.min, 'Minutes', sub(H.min), d(a.min, H.min), '')
+      + statBlock(a.int, 'Interceptions', sub(H.int), d(a.int, H.int), '')
+      + statBlock(a.ct, 'Contres', sub(player.season.ct), d(a.ct, player.season.ct), '')
+      + statBlock(a.bp, 'Pertes', sub(player.season.bp), d(a.bp, player.season.bp), '')
+      + '</div>'
+      + '<h3 class="gc-h3">Mon adresse sur la période</h3>'
+      + '<div class="pcts gc-pcts">'
+      + pctCell('Tirs', a.fg, a.fgm, a.fga) + pctCell('2 pts', a.p2, a.p2m, a.p2a)
+      + pctCell('3 pts', a.p3, a.p3m, a.p3a) + pctCell('Lancers', a.lf, a.ftm, a.fta)
+      + '</div>'
+      + '<p class="pt-note">Réussite cumulée sur ' + (gcPeriod === 'saison' ? 'les ' + a.n + ' matchs de la saison' : 'les ' + a.n + ' derniers matchs')
+      + ' — soit <b>' + a.fgm + '/' + a.fga + '</b> aux tirs et <b>' + a.ftm + '/' + a.fta + '</b> aux lancers francs.</p>'
+      + '</section>';
+  }
+
+  /* ---- 7d. Carte de tir de la saison (demi-terrain, zone par zone) ---- */
+  function gcCourtPanel() {
+    return '<section class="tr2-panel tr2-panel-wide gc-panel">'
+      + '<div class="tr2-panel-head"><h2 class="tr2-h2">Ma carte de tir</h2>'
+      + '<div class="tr2-panel-sub">Mes réussites au tir zone par zone — ' + gcPeriodLabel().toLowerCase()
+      + '<span class="tr2-legend"><i class="lo"></i>secteur faible<i class="lm"></i>dans la norme<i class="lh"></i>secteur fort</span></div></div>'
+      + '<div class="tr2-court-wide">'
+      + '<div class="tr2-court gc-court"><div class="court-hold" id="gcCourt"></div>'
+      + '<p class="gc-court-help">Touche une zone du terrain pour voir le détail de ce secteur.</p></div>'
+      + '<div class="tr2-court-side"><div id="gcCourtSum"></div><div id="gcCourtZones"></div></div>'
+      + '</div></section>';
+  }
+  function paintGcCourt() {
+    const holder = $('#gcCourt'); if (!holder || !Court) return;
+    const Z = gcZonesOf(gcGames());
+    renderShotChart(holder, Z, (key) => { gcZone = (gcZone === key ? null : key); paintGcCourtSide(Z); }, { scaled: true });
+    paintGcCourtSide(Z);
+  }
+  function paintGcCourtSide(Z) {
+    const sum = $('#gcCourtSum'), list = $('#gcCourtZones');
+    if (!sum || !list) return;
+    const a = gcAgg(gcGames());
+    const ranked = ZONE8.filter((k) => Z[k] && Z[k].att > 0)
+      .map((k) => ({ key: k, z: Z[k], v: heatValue(zone18Of(k), Z[k].pct) }))
+      .sort((x, y) => y.v - x.v);
+    const best = ranked[0], worst = ranked[ranked.length - 1];
+    sum.innerHTML = '<div class="tr2-sum">'
+      + sumRow('Tirs tentés sur la période', a.fga + ' <i>· ' + a.fgm + ' réussis</i>')
+      + sumRow('Réussite globale', fr(a.fg) + ' %')
+      + sumRow('À 2 points', fr(a.p2) + ' % <i>· ' + a.p2m + '/' + a.p2a + '</i>')
+      + sumRow('À 3 points', fr(a.p3) + ' % <i>· ' + a.p3m + '/' + a.p3a + '</i>')
+      + (best ? sumRow('Mon meilleur secteur', esc(ZONE8_LAB[best.key]) + ' <i>· ' + fr(best.z.pct) + ' % · ' + frS(round1(best.z.pct - zoneRef(best.key))) + ' vs attendu</i>', 'up') : '')
+      + (worst && worst !== best ? sumRow('Secteur à travailler', esc(ZONE8_LAB[worst.key]) + ' <i>· ' + fr(worst.z.pct) + ' % · ' + frS(round1(worst.z.pct - zoneRef(worst.key))) + ' vs attendu</i>', 'down') : '')
+      + '</div>';
+    list.innerHTML = '<h3 class="gc-h3">Détail par secteur</h3><div class="pt-rank">'
+      + ranked.map((r, i) => {
+        const cls = gcZone === r.key ? ' on' : (i === 0 ? ' good' : (i === ranked.length - 1 ? ' bad' : ''));
+        const d = round1(r.z.pct - zoneRef(r.key));
+        return '<div class="pt-rank-row gc-zrow' + cls + '" data-gczone="' + r.key + '">'
+          + '<span class="lab">' + esc(ZONE8_LAB[r.key]) + '<small>' + r.z.made + '/' + r.z.att + ' · attendu ' + fr(zoneRef(r.key)) + ' %</small></span>'
+          + '<span class="val">' + fr(r.z.pct) + ' %<span class="d ' + dirOf(d, 1.5) + '">' + frS(d) + '</span></span></div>';
+      }).join('')
+      + '</div>'
+      + '<p class="pt-note">Les secteurs sont classés au regard du standard attendu à cette distance, comme sur ma page '
+      + 'Entraînement : un 3 points à 40 % vaut un 2 points près du cercle à 65 %. La colonne de droite montre mon écart à ce standard.</p>';
+  }
+  /* Une zone8 -> la zone du terrain (18 zones) qui la représente le mieux : sert à
+     retrouver sa famille (paint / mid / three) et donc le standard attendu à cette
+     distance. Même échelle que la page Entraînement (HEAT_SCALE). */
+  const ZONE8_TO_18 = {
+    RAQUETTE: 'paint-center',
+    MI_DISTANCE_GAUCHE: 'midrange-wing-left', MI_DISTANCE_CENTRE: 'midrange-center', MI_DISTANCE_DROITE: 'midrange-wing-right',
+    CORNER_3_GAUCHE: 'three-corner-left', CORNER_3_DROIT: 'three-corner-right',
+    TOP_KEY_GAUCHE: 'three-wing-left', TOP_KEY_DROIT: 'three-wing-right',
+  };
+  const zone18Of = (k) => ZONE8_TO_18[k] || 'midrange-center';
+  /* le « standard attendu » d'une zone : le milieu de la bande de référence de sa famille */
+  function zoneRef(k) {
+    const z = zoneMeta(zone18Of(k)), s = HEAT_SCALE[(z && z.group) || 'mid'] || HEAT_SCALE.mid;
+    return round1((s[0] + s[1]) / 2);
+  }
+
+  /* ---- 7e. Graphique principal — Évaluation match après match ---- */
+  function gcChartPanel() {
+    return '<section class="tr2-panel tr2-panel-wide gc-panel">'
+      + '<div class="tr2-panel-head"><h2 class="tr2-h2">Mon évolution</h2>'
+      + '<div class="tr2-panel-sub">Match après match — <b id="gcChartLab">' + esc(gcDef().label) + '</b> · ' + gcPeriodLabel().toLowerCase() + '</div></div>'
+      + '<div class="tr2-chips gc-statchips" role="group" aria-label="Statistique affichée">'
+      + GC_STATS.map((s) => '<button type="button" class="tr2-chip' + (s.key === gcStat ? ' on' : '') + '" data-gcstat="' + s.key + '">' + esc(s.label) + '</button>').join('')
+      + '</div>'
+      + '<div class="tr2-chart" id="gcChart"></div>'
+      + '<div class="gc-chart-key"><span><i class="win"></i>Victoire</span><span><i class="loss"></i>Défaite</span>'
+      + '<span><i class="avg"></i>Moyenne de la saison</span></div>'
+      + '<div id="gcChartSum" style="margin-top:14px"></div>'
+      + '</section>';
+  }
+  /* Barres : une barre = un match, hauteur = la statistique choisie, couleur =
+     résultat de l'équipe. Base à zéro (pas d'échelle tronquée), ligne pointillée
+     à la moyenne de la saison, dernier match mis en avant. */
+  function gcChartSVG() {
+    const def = gcDef(), games = gcGames();
+    const pts = games.map((g, i) => ({ i: i, g: g, v: def.val(g) })).filter((p) => p.v != null);
+    if (pts.length < 2) return '<p class="pt-empty">Pas encore assez de matchs pour tracer cette évolution.</p>';
+    const W = 680, HT = 268, pl = 34, pr = 14, ptop = 30, pbot = 44;
+    const iw = W - pl - pr, ih = HT - ptop - pbot, n = pts.length;
+    const vals = pts.map((p) => p.v);
+    /* échelle à graduations rondes (1, 2, 5, 10…), base à zéro : des repères
+       lisibles valent mieux qu'un axe collé au maximum exact */
+    const raw = (Math.max(Math.max.apply(null, vals), def.avg != null ? def.avg : 0) || 1) * 1.08;
+    const step = [0.5, 1, 2, 5, 10, 20, 50, 100].filter((s) => raw / s <= 5)[0] || Math.ceil(raw / 5);
+    const top = Math.ceil(raw / step) * step;
+    const Y = (v) => ptop + ih - (v / top) * ih;
+    const gap = iw / n, bw = Math.max(4, Math.min(34, gap * 0.62));
+    const X = (i) => pl + i * gap + (gap - bw) / 2;
+
+    const grid = [];
+    for (let v = 0; v <= top + 0.001; v += step) {
+      const y = Y(v);
+      grid.push('<line class="rc-grid" x1="' + pl + '" y1="' + y.toFixed(1) + '" x2="' + (W - pr) + '" y2="' + y.toFixed(1) + '"/>'
+        + '<text class="rc-yl" x="' + (pl - 8) + '" y="' + (y + 4).toFixed(1) + '">' + fr(round1(v)) + '</text>');
     }
-    const n = filter === '5' ? 5 : 10;
-    const g = LOG.slice(-n);
-    const avg = (k) => round1(mean(g.map((x) => x[k])));
-    const p2m = sum(g.map((x) => x.p2m)), p2a = sum(g.map((x) => x.p2a)), p3m = sum(g.map((x) => x.p3m)), p3a = sum(g.map((x) => x.p3a)), ftm = sum(g.map((x) => x.ftm)), fta = sum(g.map((x) => x.fta));
-    return { mj: g.length, min: avg('min'), pts: avg('pts'), reb: avg('reb'), pd: avg('pd'), int: avg('int'), ct: avg('ct'), bp: avg('bp'), fg: pctOf(p2m + p3m, p2a + p3a), p2: pctOf(p2m, p2a), p3: pctOf(p3m, p3a), lf: pctOf(ftm, fta), label: n + ' derniers matchs' };
+
+    const bars = pts.map((p, j) => {
+      const y = Y(p.v), h = Math.max(2, ptop + ih - y), last = j === n - 1;
+      return '<rect class="gc-bar ' + (p.g.win ? 'win' : 'loss') + (last ? ' hi' : '') + '" x="' + X(p.i).toFixed(1) + '" y="' + y.toFixed(1)
+        + '" width="' + bw.toFixed(1) + '" height="' + h.toFixed(1) + '" rx="' + Math.min(3.5, bw / 2).toFixed(1) + '">'
+        + '<title>' + esc(fmtDate(p.g.date)) + ' · ' + esc(p.g.opponent) + ' — ' + fr(p.v) + ' ' + esc(def.label.toLowerCase()) + '</title></rect>';
+    }).join('');
+
+    const avgLine = def.avg != null
+      ? '<line class="gc-avg" x1="' + pl + '" y1="' + Y(def.avg).toFixed(1) + '" x2="' + (W - pr) + '" y2="' + Y(def.avg).toFixed(1) + '"/>'
+        + '<text class="gc-avg-l" x="' + (W - pr) + '" y="' + Math.max(ptop - 8, Y(def.avg) - 7).toFixed(1) + '">saison ' + fr(def.avg) + def.unit + '</text>'
+      : '';
+
+    const lastP = pts[n - 1];
+    const lastLab = '<text class="gc-barlab" x="' + (X(lastP.i) + bw / 2).toFixed(1) + '" y="' + Math.max(ptop - 9, Y(lastP.v) - 9).toFixed(1) + '">'
+      + fr(lastP.v) + def.unit + '</text>';
+
+    const xStep = Math.max(1, Math.ceil(n / 5));
+    const xl = pts.map((p, i) => ((i % xStep === 0 || i === n - 1)
+      ? '<text class="rc-xl" x="' + (X(p.i) + bw / 2).toFixed(1) + '" y="' + (HT - 22) + '">' + esc(fmtDate(p.g.date)) + '</text>'
+      + '<text class="gc-opp" x="' + (X(p.i) + bw / 2).toFixed(1) + '" y="' + (HT - 8) + '">' + esc(shortOpp(p.g.opponent)) + '</text>' : '')).join('');
+
+    return '<svg class="gc-svg" viewBox="0 0 ' + W + ' ' + HT + '" role="img" aria-label="' + esc(def.label) + ' match après match">'
+      + grid.join('') + bars + avgLine + lastLab + xl + '</svg>';
   }
-  function renderSaison() {
-    const a = seasonAverages(seasonFilter);
-    const statGrid = [
-      ['Matchs', a.mj], ['Minutes', a.min], ['Points', a.pts], ['Rebonds', a.reb],
-      ['Passes déc.', a.pd], ['Interceptions', a.int], ['Contres', a.ct], ['Pertes', a.bp],
-    ];
-    const html =
-      '<div class="chips-filter" data-season-filter>'
-      + [['5', '5 derniers'], ['10', '10 derniers'], ['saison', 'Saison']].map((f) => '<button class="chipf' + (seasonFilter === f[0] ? ' active' : '') + '" data-f="' + f[0] + '">' + f[1] + '</button>').join('')
+  const shortOpp = (name) => (String(name).length > 11 ? String(name).slice(0, 10) + '…' : String(name));
+  function gcChartSummary() {
+    const def = gcDef(), games = gcGames();
+    const pts = games.map((g) => ({ g: g, v: def.val(g) })).filter((p) => p.v != null);
+    if (!pts.length) return '';
+    const vals = pts.map((p) => p.v), avg = round1(mean(vals));
+    const best = pts.reduce((b, p) => (p.v > b.v ? p : b), pts[0]);
+    const seuil = 1;
+    const t = trend(vals, seuil);
+    return '<div class="tr2-sum">'
+      + sumRow('Moyenne sur la période', fr(avg) + def.unit)
+      + (def.avg != null ? sumRow('Moyenne de la saison', fr(def.avg) + def.unit + ' <i>· écart ' + frS(round1(avg - def.avg)) + '</i>', dirOf(round1(avg - def.avg), seuil)) : '')
+      + sumRow('Meilleur match', fr(best.v) + def.unit + ' <i>· ' + esc(best.g.opponent) + ', ' + fmtDate(best.g.date) + '</i>')
+      + sumRow('Dernier match', fr(pts[pts.length - 1].v) + def.unit + ' <i>· ' + esc(pts[pts.length - 1].g.opponent) + ', ' + fmtDate(pts[pts.length - 1].g.date) + '</i>')
+      + (t ? sumRow('Tendance sur la période', frS(t.d) + def.unit, t.dir) : '')
+      + '</div>';
+  }
+  function paintGcChart() {
+    const box = $('#gcChart'); if (box) box.innerHTML = gcChartSVG();
+    const sum = $('#gcChartSum'); if (sum) sum.innerHTML = gcChartSummary();
+    const lab = $('#gcChartLab'); if (lab) lab.textContent = gcDef().label;
+    $$('#pane-games [data-gcstat]').forEach((b) => b.classList.toggle('on', b.dataset.gcstat === gcStat));
+  }
+
+  /* ---- 7f. Records de la saison (toujours la saison entière) ---- */
+  function gcRecordsSection() {
+    const rec = (val, lab, g) => '<div class="gc-rec"><div class="gc-rec-v">' + val + '</div><div class="gc-rec-l">' + lab + '</div>'
+      + '<button type="button" class="gc-rec-g" data-gcopen="' + esc(g.gameId) + '|resume">' + esc(g.opponent) + ' · ' + fmtDate(g.date) + '</button></div>';
+    return '<h2 class="pd-h2">Mes records de la saison</h2>'
+      + '<p class="pd-h2-note">Mes meilleures feuilles de match depuis le début de la saison — touche un match pour l’ouvrir.</p>'
+      + '<div class="gc-recs">'
+      + rec(RECORDS.pts.pts, 'Points', RECORDS.pts)
+      + rec(RECORDS.reb.reb, 'Rebonds', RECORDS.reb)
+      + rec(RECORDS.pd.pd, 'Passes déc.', RECORDS.pd)
+      + rec(RECORDS.int.int, 'Interceptions', RECORDS.int)
+      + rec(RECORDS.p3m.p3m, 'Paniers à 3 pts', RECORDS.p3m)
+      + rec(RECORDS.eva.eva, 'Évaluation', RECORDS.eva)
+      + '</div>';
+  }
+
+  /* ---- 7g. Mes matchs — une carte par match, comme côté coach ---- */
+  function gcMatchesSection() {
+    const games = gcGames().slice().reverse();
+    return '<h2 class="pd-h2">Mes matchs</h2>'
+      + '<p class="pd-h2-note">' + games.length + ' matchs sur la période. Chaque carte donne accès au résumé, à l’analyse du match '
+      + 'et au détail action par action.</p>'
+      + '<div id="gcMatchWrap">' + gcMatchesHTML() + '</div>';
+  }
+  function gcMatchesHTML() {
+    const games = gcGames().slice().reverse();
+    return '<div class="gc-matches" id="gcMatches">' + games.slice(0, gcShown).map(gcMatchCard).join('') + '</div>'
+      + (gcShown < games.length ? '<button type="button" class="pt-more" data-gcmore>Voir plus de matchs</button>' : '');
+  }
+  function paintGcMatches() { const w = $('#gcMatchWrap'); if (w) w.innerHTML = gcMatchesHTML(); }
+  function gcMatchStat(v, l, hot) { return '<div class="gc-ms' + (hot ? ' hot' : '') + '"><b>' + v + '</b><span>' + l + '</span></div>'; }
+  function gcMatchCard(g) {
+    const hl = matchHighlights(g);
+    const act = (tab, lab, ico) => '<button type="button" class="gc-act" data-gcopen="' + esc(g.gameId) + '|' + tab + '">' + ico + '<span>' + lab + '</span></button>';
+    return '<article class="gc-match">'
+      + '<button type="button" class="gc-match-head" data-gcopen="' + esc(g.gameId) + '|resume">'
+      + '<span class="gc-res ' + (g.win ? 'win' : 'loss') + '">' + (g.win ? 'V' : 'D') + '</span>'
+      + '<span class="gc-match-id"><span class="gc-match-opp">' + esc(g.opponent) + '</span>'
+      + '<span class="gc-match-meta">' + esc(fmtDate(g.date, true)) + ' · ' + (g.dom ? 'Domicile' : 'Extérieur') + ' · ' + g.min + ' min</span></span>'
+      + '<span class="gc-match-score">' + g.us + '<i>–</i>' + g.them + '</span></button>'
+      + '<div class="gc-match-stats">'
+      + gcMatchStat(g.pts, 'PTS', true) + gcMatchStat(g.reb, 'REB') + gcMatchStat(g.pd, 'PD')
+      + gcMatchStat(g.int, 'INT') + gcMatchStat(g.eva, 'ÉVA', true)
       + '</div>'
-      + '<div class="tile-sub" style="margin:-6px 0 14px">' + a.label + '</div>'
-      + '<div class="tiles" style="grid-template-columns:repeat(4,1fr);margin-bottom:12px">'
-      + statGrid.map((s, i) => tile(s[1], s[0], null, { accent: i === 2 })).join('')
+      + '<div class="gc-match-chips">'
+      + hl.map((h) => chip(h, 'hot')).join('')
+      + chip(g.fgm + '/' + g.fga + ' aux tirs') + chip(g.p3m + '/' + g.p3a + ' à 3 pts')
       + '</div>'
-      + '<div class="pcts" style="margin-bottom:20px">' + pctCell('FG%', a.fg) + pctCell('2PT%', a.p2) + pctCell('3PT%', a.p3) + pctCell('LF%', a.lf) + '</div>'
-      // évolution match après match
-      + '<div class="panel card-elevated" style="margin-bottom:20px"><div class="panel-head"><div class="sec-title">Points match après match</div><div class="tile-sub">saison complète</div></div>'
-      + barChart(LOG.map((g) => ({ v: g.pts, win: g.win })), { h: 150 })
-      + '<div class="tile-sub" style="margin-top:8px">Barres vertes = victoires · rouges = défaites</div></div>'
-      // records
-      + '<div class="sec-head"><span class="sec-title">Mes records de la saison</span></div>'
-      + '<div class="rec-grid" style="margin-bottom:22px">' + recordsHTML() + '</div>'
-      // statistiques par saison (privé)
-      + '<div class="sec-head"><span class="sec-title">Statistiques par saison</span></div>'
-      + '<div class="panel card-elevated" style="margin-bottom:22px"><div class="table-scroll">' + seasonsTableHTML() + '</div><div class="tile-sub" style="margin-top:8px">Saisons antérieures : données de démonstration en progression.</div></div>'
-      // badges / accomplissements (privé)
-      + '<div class="sec-head"><span class="sec-title">Badges & accomplissements</span></div>'
-      + '<div class="badges">' + BADGES.slice().sort((a, b) => (b.count > 0) - (a.count > 0)).map(badgeHTML).join('') + '</div>';
-    $('#sub-saison').innerHTML = html;
-  }
-  function recordCard(val, lab, g) { return '<div class="rec-card"><div class="rec-val">' + val + '</div><div class="rec-lab">' + lab + '</div><div class="rec-ctx">vs ' + esc(g.opponent) + ' · ' + fmtDate(g.date) + '</div></div>'; }
-  function recordsHTML() {
-    return recordCard(RECORDS.pts.pts, 'Points', RECORDS.pts)
-      + recordCard(RECORDS.reb.reb, 'Rebonds', RECORDS.reb)
-      + recordCard(RECORDS.pd.pd, 'Passes déc.', RECORDS.pd)
-      + recordCard(RECORDS.int.int, 'Interceptions', RECORDS.int)
-      + recordCard(RECORDS.p3m.p3m, 'Paniers à 3 pts', RECORDS.p3m)
-      + recordCard(RECORDS.eva.eva, 'Évaluation', RECORDS.eva);
-  }
-  function renderMatchs() {
-    const rows = LOG.slice().reverse().map(matchRow).join('');
-    $('#sub-matchs').innerHTML = '<div class="tile-sub" style="margin-bottom:12px">' + LOG.length + ' matchs joués · touche un match pour le détail, la carte de tir et les actions</div><div class="match-list">' + rows + '</div>';
-  }
-  function matchRow(g) {
-    return '<div class="match-row" data-match="' + g.gameId + '"><div class="mr-res ' + (g.win ? 'win' : 'loss') + '">' + (g.win ? 'V' : 'D') + '</div>'
-      + '<div><div class="mr-opp">' + esc(g.opponent) + '</div><div class="mr-meta">' + fmtDate(g.date, true) + ' · ' + (g.dom ? 'domicile' : 'extérieur') + '</div>'
-      + '<div class="mr-line"><span><b>' + g.pts + '</b> pts</span><span>' + g.reb + ' reb</span><span>' + g.pd + ' ast</span><span>' + g.eva + ' éva</span></div></div>'
-      + '<div style="text-align:right"><div class="mr-score">' + g.us + '–' + g.them + '</div><svg class="mr-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></div></div>';
+      + '<div class="gc-match-acts">'
+      + act('resume', 'Résumé', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 4h14v16H5z"/><path d="M8 9h8M8 13h8M8 17h5"/></svg>')
+      + act('ia', 'Analyse IA', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l1.9 4.6L18.5 9.5 13.9 11.4 12 16l-1.9-4.6L5.5 9.5l4.6-1.9z"/><path d="M18 15.5l.8 2 2 .8-2 .8-.8 2-.8-2-2-.8 2-.8z"/></svg>')
+      + act('actions', 'Action par action', '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h16M4 18h10"/><circle cx="19.5" cy="18" r="1.6"/></svg>')
+      + '</div></article>';
   }
 
   /* ============================================================
      8. MODAL DÉTAIL MATCH + play-by-play
      ============================================================ */
   let sheetTab = 'resume', pbpQuarter = 'all', pbpFilter = 'all', PBP = [];
-  function openMatch(gameId) {
+  const SHEET_TABS = [['resume', 'Résumé'], ['ia', 'Analyse IA'], ['actions', 'Action par action']];
+  function openMatch(gameId, tab) {
     const g = S.getPlayerGame(PID, gameId);
     if (!g) return;
     const line = g.game;
     PBP = buildPBP(g);
-    sheetTab = 'resume'; pbpQuarter = 'all'; pbpFilter = 'all';
+    sheetTab = SHEET_TABS.some((t) => t[0] === tab) ? tab : 'resume';
+    pbpQuarter = 'all'; pbpFilter = 'all';
     const box = $('#sheetBox');
     box.innerHTML =
       '<div class="sheet-head"><button class="sheet-close" id="sheetClose" aria-label="Fermer"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M6 6l12 12M18 6L6 18"/></svg></button>'
       + '<div class="sheet-eyebrow">' + (line.win ? 'Victoire' : 'Défaite') + ' · ' + fmtDateLong(line.date) + ' · ' + (line.dom ? 'domicile' : 'extérieur') + '</div>'
       + '<div class="sheet-score">Žalgiris <span class="mono">' + line.us + '</span><span class="sep">–</span><span class="mono">' + line.them + '</span> ' + esc(line.opponent) + '</div></div>'
-      + '<div class="sheet-tabs"><button class="sheet-tab active" data-stab="resume">Résumé</button><button class="sheet-tab" data-stab="actions">Actions du match</button></div>'
-      + '<div class="sheet-body"><div class="sheet-pane active" id="spane-resume">' + resumePane(g) + '</div><div class="sheet-pane" id="spane-actions">' + actionsPane(line) + '</div></div>';
+      + '<div class="sheet-tabs">'
+      + SHEET_TABS.map((t) => '<button class="sheet-tab' + (t[0] === sheetTab ? ' active' : '') + '" data-stab="' + t[0] + '">' + t[1] + '</button>').join('')
+      + '</div>'
+      + '<div class="sheet-body">'
+      + '<div class="sheet-pane' + (sheetTab === 'resume' ? ' active' : '') + '" id="spane-resume">' + resumePane(g) + '</div>'
+      + '<div class="sheet-pane' + (sheetTab === 'ia' ? ' active' : '') + '" id="spane-ia">' + aiPane(g) + '</div>'
+      + '<div class="sheet-pane' + (sheetTab === 'actions' ? ' active' : '') + '" id="spane-actions">' + actionsPane(line) + '</div>'
+      + '</div>';
     // shot chart du match
     const zones = {}; ZONE8.forEach((z) => { const zz = g.zones[z]; if (zz) zones[z] = { pct: zz.pct, made: zz.reussis, att: zz.tentes }; });
-    renderShotChart($('#matchCourt'), zones, null);
+    renderShotChart($('#matchCourt'), zones, null, { scaled: true });
     const ov = $('#sheetOverlay'); ov.classList.add('open'); document.body.style.overflow = 'hidden';
     renderPBP();
   }
   function closeMatch() { $('#sheetOverlay').classList.remove('open'); document.body.style.overflow = ''; }
   function resumePane(g) {
     const line = g.game;
-    const statLine = [['PTS', line.pts], ['REB', line.reb], ['AST', line.pd], ['INT', line.int], ['CT', line.ct], ['ÉVA', line.eva]];
+    const statLine = [['PTS', line.pts], ['REB', line.reb], ['PD', line.pd], ['INT', line.int], ['CT', line.ct], ['ÉVA', line.eva]];
     const shoot = [['2 pts', line.p2m, line.p2a], ['3 pts', line.p3m, line.p3a], ['LF', line.ftm, line.fta]];
-    const cmp = g.metrics;
-    return '<div class="tiles" style="grid-template-columns:repeat(6,1fr);gap:8px;margin-bottom:16px">'
-      + statLine.map((s, i) => '<div class="tile" style="padding:12px 10px"><div class="tile-val" style="font-size:22px">' + s[1] + '</div><div class="tile-lab">' + s[0] + '</div></div>').join('')
+    return '<div class="gc-sheet-line">'
+      + statLine.map((s) => '<div class="gc-ms' + (s[0] === 'PTS' || s[0] === 'ÉVA' ? ' hot' : '') + '"><b>' + s[1] + '</b><span>' + s[0] + '</span></div>').join('')
       + '</div>'
-      + '<div class="grid-2" style="margin-bottom:18px"><div><div class="sec-title" style="margin-bottom:10px">Adresse au tir</div>'
-      + '<div class="pcts" style="grid-template-columns:1fr 1fr 1fr">' + shoot.map((s) => pctCell(s[0], pctOf(s[1], s[2]), s[1], s[2])).join('') + '</div>'
-      + '<div style="min-height:0"></div></div>'
-      + '<div><div class="sec-title" style="margin-bottom:10px">Carte de tir</div><div class="court-hold" id="matchCourt" style="max-width:320px"></div></div></div>'
-      // comparaison saison
-      + '<div class="sec-title" style="margin-bottom:12px">Par rapport à mes moyennes</div>'
-      + cmp.map(cmpRow).join('')
+      + '<p class="pt-note gc-sheet-note">' + line.min + ' minutes jouées · ' + (line.dom ? 'à domicile' : 'à l’extérieur') + ' · différentiel ' + signed(line.pm) + '</p>'
+      + '<h3 class="gc-h3">Mon adresse au tir</h3>'
+      + '<div class="pcts gc-pcts gc-pcts-3">' + shoot.map((s) => pctCell(s[0], pctOf(s[1], s[2]), s[1], s[2])).join('') + '</div>'
+      + '<h3 class="gc-h3">Ma carte de tir sur ce match</h3>'
+      + '<div class="tr2-court gc-court"><div class="court-hold" id="matchCourt"></div></div>'
+      + '<h3 class="gc-h3">Par rapport à mes moyennes</h3>'
+      + g.metrics.map(cmpRow).join('')
       + '<div class="coach-quote" style="margin-top:16px">' + esc(g.obs) + '</div>';
+  }
+
+  /* ---- Analyse du match ----
+     Lecture automatique de la feuille de match : chaque phrase est déduite des
+     données déjà présentes dans HoopStore (écarts à mes moyennes de la saison,
+     adresse par secteur, poids dans le score de l'équipe). Rien n'est inventé. */
+  function aiPane(g) {
+    const line = g.game;
+    /* un secteur n'est commenté qu'à partir de 3 tirs : en dessous, un 1/1 ne dit rien */
+    const zones = ZONE8.filter((k) => g.zones[k] && g.zones[k].tentes >= 3)
+      .map((k) => ({ key: k, z: g.zones[k], v: heatValue(zone18Of(k), g.zones[k].pct) }))
+      .sort((x, y) => y.v - x.v);
+    const bestZ = zones.length ? zones[0] : null;
+    const worstZ = zones.length > 1 ? zones[zones.length - 1] : null;
+    const zLab = (z) => esc(ZONE8_LAB[z.key].toLowerCase());
+    const zFrac = (z) => z.z.reussis + '/' + z.z.tentes + ' à ' + fr(z.z.pct) + ' %';
+    const share = line.us > 0 ? Math.round((line.pts / line.us) * 100) : 0;
+    const stat = (m) => '<b>' + fr(m.m) + ' ' + m.label.toLowerCase() + '</b> (' + frS(m.delta) + ' vs ma moyenne)';
+    /* l'évaluation est le sujet de la carte « Lecture du match » : on ne la répète pas ici */
+    const noEva = (list) => list.filter((m) => m.key !== 'eva');
+    const card = (tone, title, text) => '<article class="gc-ai-card ' + tone + '"><h4 class="gc-ai-t">' + title + '</h4><p class="gc-ai-x">' + text + '</p></article>';
+
+    // 1. ce qui a fonctionné
+    const plus = noEva(g.better).slice(0, 2).map(stat);
+    if (bestZ && bestZ.v >= 0.5) plus.push('un bon rendement en <b>' + zLab(bestZ) + '</b> (' + zFrac(bestZ) + ')');
+    if (line.p3m >= 3) plus.push('<b>' + line.p3m + ' paniers à 3 points</b> sur ' + line.p3a + ' tentatives');
+    const bon = (plus.length
+      ? 'J’ai pesé avec ' + plus.slice(0, 3).join(', ') + '. '
+      : 'Pas de pic statistique sur ce match : ' + line.pts + ' points, ' + line.reb + ' rebonds et ' + line.pd + ' passes décisives, dans la lignée de mes moyennes. ')
+      + 'Au total ' + line.pts + ' points, soit ' + share + ' % du score de l’équipe.';
+
+    // 2. ce qui a coûté
+    const moins = noEva(g.worse).slice(0, 2).map(stat);
+    if (worstZ && worstZ.v <= 0.4) moins.push('du déchet en <b>' + zLab(worstZ) + '</b> (' + zFrac(worstZ) + ')');
+    if (line.bp >= 3) moins.push('<b>' + line.bp + ' ballons perdus</b>');
+    if (line.fta >= 3 && pctOf(line.ftm, line.fta) < 70) moins.push('<b>' + line.ftm + '/' + line.fta + ' aux lancers francs</b>');
+    const mauvais = moins.length
+      ? 'Ce qui m’a coûté : ' + moins.slice(0, 3).join(', ') + '.'
+      : 'Rien de marquant au débit : ni déchet au tir, ni excès de pertes de balle sur cette feuille de match.';
+
+    // 3. lecture globale
+    const dEva = round1(line.eva - H.eva);
+    const niveau = dEva >= 4 ? 'C’est un match au-dessus de mes standards.'
+      : (dEva <= -4 ? 'Soirée en dessous de ce que je produis habituellement.' : 'Une contribution conforme à ma moyenne.');
+    const lecture = 'Évaluation de <b>' + line.eva + '</b> pour une moyenne de saison à ' + fr(H.eva) + ' (' + frS(dEva) + '). '
+      + niveau + ' L’équipe ' + (line.win ? 'l’emporte' : 's’incline') + ' ' + line.us + '–' + line.them
+      + ' et j’ai passé ' + line.min + ' minutes sur le parquet.';
+
+    /* 4. la suite — sur un seul match, les volumes par secteur sont trop faibles pour
+       trancher : le chantier est donc lu sur la carte de tir de la saison, et remis
+       en regard de ce que j'ai produit dans ce secteur ce soir-là. */
+    const SZ = seasonZones();
+    const seasonRanked = ZONE8.filter((k) => SZ[k] && SZ[k].att > 0)
+      .map((k) => ({ key: k, z: SZ[k], v: heatValue(zone18Of(k), SZ[k].pct) }))
+      .sort((x, y) => x.v - y.v);
+    const chantier = seasonRanked[0];
+    const here = chantier ? g.zones[chantier.key] : null;
+    const suite = chantier
+      ? 'Mon secteur le plus en retard sur la saison — <b>' + esc(ZONE8_LAB[chantier.key].toLowerCase()) + '</b> : '
+        + fr(chantier.z.pct) + ' % (' + chantier.z.made + '/' + chantier.z.att + ') pour un standard attendu à '
+        + fr(zoneRef(chantier.key)) + ' %. '
+        + (here && here.tentes ? 'Sur ce match : ' + here.reussis + '/' + here.tentes + '. ' : 'Aucun tir pris dans ce secteur sur ce match. ')
+        + 'À croiser avec mes séances de tir sur ce secteur.'
+      : 'Pas encore assez de tirs répertoriés pour dégager un chantier par secteur.';
+
+    return '<p class="gc-ai-intro">Lecture automatique de ma feuille de match, croisée avec mes moyennes de la saison '
+      + 'et ma réussite par secteur. Aucune donnée extérieure n’est utilisée.</p>'
+      + '<div class="gc-ai">'
+      + card('good', 'Ce qui a fonctionné', bon)
+      + card('bad', 'Ce qui m’a coûté', mauvais)
+      + card('neutral', 'Lecture du match', lecture)
+      + card('neutral', 'À travailler ensuite', suite)
+      + '</div>';
   }
   function cmpRow(m) {
     const max = Math.max(m.m, m.s, 1);
@@ -1319,11 +1633,14 @@
     out: { c: 'neutral', s: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H8M13 7l-5 5 5 5M5 5v14"/></svg>' },
   };
   function actionsPane(line) {
-    return '<div class="tile-sub" style="margin-bottom:14px">Temps de jeu de Sylvain : <b style="color:var(--t1)">' + line.min + ' min</b> · déroulé chronologique reconstitué</div>'
-      + '<div class="pbp-filters"><div class="pbp-quarters" data-pbp-q>'
-      + [['all', 'Tout'], ['1', 'Q1'], ['2', 'Q2'], ['3', 'Q3'], ['4', 'Q4']].map((q) => '<button data-q="' + q[0] + '"' + (q[0] === 'all' ? ' class="active"' : '') + '>' + q[1] + '</button>').join('')
-      + '</div><div class="chips-filter" style="margin:0" data-pbp-f>'
-      + [['all', 'Toutes'], ['sf', 'Sylvain Francisco'], ['paniers', 'Paniers'], ['defense', 'Défense']].map((f) => '<button class="chipf' + (f[0] === 'all' ? ' active' : '') + '" data-pf="' + f[0] + '">' + f[1] + '</button>').join('')
+    return '<p class="gc-ai-intro">Le déroulé du match action par action : chaque ligne donne le quart-temps, '
+      + 'le chrono, l’action et le score à cet instant. J’ai joué <b>' + line.min + ' minutes</b> de cette rencontre.</p>'
+      + '<div class="gc-pbp-filters">'
+      + '<div class="tr2-chips" data-pbp-q role="group" aria-label="Quart-temps">'
+      + [['all', 'Tout le match'], ['1', 'Q1'], ['2', 'Q2'], ['3', 'Q3'], ['4', 'Q4']].map((q) => '<button type="button" class="tr2-chip' + (q[0] === 'all' ? ' on' : '') + '" data-q="' + q[0] + '">' + q[1] + '</button>').join('')
+      + '</div>'
+      + '<div class="tr2-chips" data-pbp-f role="group" aria-label="Type d’action">'
+      + [['all', 'Toutes'], ['sf', 'Mes actions'], ['paniers', 'Paniers'], ['defense', 'Défense']].map((f) => '<button type="button" class="tr2-chip' + (f[0] === 'all' ? ' on' : '') + '" data-pf="' + f[0] + '">' + f[1] + '</button>').join('')
       + '</div></div><div class="pbp-list" id="pbpList"></div>';
   }
   function pbpMatch(e) {
@@ -1640,20 +1957,6 @@
     if (sub === 'messages') { const m = $('#dmMsgs'); if (m) m.scrollTop = m.scrollHeight; }
   }
 
-  /* ---- Profil (privé, Game Center) : table par saison + badges ---- */
-  function seasonsTableHTML() {
-    const cur = { season: tournoi.saison, mj: H.mj, min: H.min, pts: H.pts, reb: H.reb, pd: H.pd, p3: H.p3, eva: H.eva, cur: true };
-    const prev = [{ season: '2024–2025', f: 0.86 }, { season: '2023–2024', f: 0.72 }, { season: '2022–2023', f: 0.58 }]
-      .map((s) => ({ season: s.season, mj: Math.round(28 + s.f * 6), min: round1(H.min * (0.82 + s.f * 0.18)), pts: round1(H.pts * s.f), reb: round1(H.reb * (0.8 + s.f * 0.2)), pd: round1(H.pd * (0.75 + s.f * 0.25)), p3: Math.round(H.p3 * (0.9 + s.f * 0.1)), eva: round1(H.eva * s.f) }));
-    const rows = [cur].concat(prev);
-    return '<table class="season-table"><thead><tr><th>Saison</th><th>MJ</th><th>MIN</th><th>PTS</th><th>REB</th><th>PD</th><th>3PT%</th><th>ÉVA</th></tr></thead><tbody>'
-      + rows.map((s) => '<tr class="' + (s.cur ? 'cur' : '') + '"><td>' + esc(s.season) + '</td><td>' + s.mj + '</td><td>' + s.min + '</td><td>' + s.pts + '</td><td>' + s.reb + '</td><td>' + s.pd + '</td><td>' + s.p3 + '%</td><td>' + s.eva + '</td></tr>').join('') + '</tbody></table>';
-  }
-  function badgeHTML(b) {
-    const earned = b.count > 0;
-    return '<div class="badge ' + (earned ? 'earned' : 'locked') + '"><div class="badge-ico">' + b.ico + '</div><div><div class="badge-name">' + b.name + '</div><div class="badge-desc">' + b.desc + '</div>' + (earned ? '<div class="badge-count">✓ ' + b.count + ' fois cette saison</div>' : '<div class="badge-count" style="color:var(--t4)">Non débloqué</div>') + '</div></div>';
-  }
-
   /* ============================================================
      10. Routage & interactions globales
      ============================================================ */
@@ -1675,15 +1978,11 @@
     document.body.classList.remove('nav-open');
     if (opts && opts.subtab) {
       if (view === 'training') setTrainCat(opts.subtab);           // « Collectif » / « Tirs » venus du Dashboard
-      if (view === 'games') { gameSub = opts.subtab; setSubtab('games', opts.subtab); }
+      // Game Center : page unique — « matchs » fait défiler jusqu'à la liste des matchs
+      if (view === 'games' && opts.subtab === 'matchs') {
+        const m = $('#gcMatches'); if (m) m.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     }
-  }
-  function setSubtab(group, sub) {
-    const pane = $('#pane-' + group);
-    if (!pane) return;
-    $$('.subtab', pane).forEach((b) => b.classList.toggle('active', b.dataset.sub === sub));
-    $$('.subpane', pane).forEach((p) => p.classList.remove('active'));
-    const target = $('#sub-' + sub); if (target) target.classList.add('active');
   }
 
   function init() {
@@ -1717,9 +2016,6 @@
       if (fol) { const on = fol.textContent.trim() === 'Suivre'; fol.textContent = on ? 'Abonné' : 'Suivre'; fol.classList.toggle('ghost', on); fol.classList.toggle('primary', !on); return; }
       if (e.target.closest('#hfClose')) { closeHF(); return; }
       const hov = $('#hfOverlay'); if (hov && e.target === hov) { closeHF(); return; }
-      // sous-onglets privés (Game Center : Saison / Matchs)
-      const sub = e.target.closest('.subtab');
-      if (sub) { const group = sub.closest('[data-subtabs]').dataset.subtabs; gameSub = sub.dataset.sub; setSubtab(group, sub.dataset.sub); return; }
       // page Entraînement : familles, période du terrain, catégories, historique, détail
       const ptc = e.target.closest('[data-ptcat]');
       if (ptc) { if (current !== 'training') showView('training'); setTrainCat(ptc.dataset.ptcat, true); return; }
@@ -1739,14 +2035,22 @@
       if (e.target.closest('[data-dactmore]')) { actShown += 6; paintActivity(); return; }
       const dfl = e.target.closest('[data-dactfil]');
       if (dfl) { actFilter = dfl.dataset.dactfil; actShown = 6; paintActivity(); return; }
-      const sfil = e.target.closest('[data-f]');
-      if (sfil && sfil.closest('[data-season-filter]')) { seasonFilter = sfil.dataset.f; renderSaison(); return; }
+      // Game Center : période, statistique du graphique, secteur du terrain, « voir plus »
+      const gper = e.target.closest('[data-gcper]');
+      if (gper) { gcPeriod = gper.dataset.gcper; gcShown = 6; paintGames(); return; }
+      const gst = e.target.closest('[data-gcstat]');
+      if (gst) { gcStat = gst.dataset.gcstat; paintGcChart(); return; }
+      const gz = e.target.closest('[data-gczone]');
+      if (gz) { gcZone = (gcZone === gz.dataset.gczone ? null : gz.dataset.gczone); paintGcCourtSide(gcZonesOf(gcGames())); return; }
+      if (e.target.closest('[data-gcmore]')) { gcShown += 6; paintGcMatches(); return; }
+      const gop = e.target.closest('[data-gcopen]');
+      if (gop) { const p = gop.dataset.gcopen.split('|'); openMatch(p[0], p[1]); return; }
       const mm = e.target.closest('[data-match]');
       if (mm) { openMatch(mm.dataset.match); return; }
       const pq = e.target.closest('[data-q]');
-      if (pq && pq.closest('[data-pbp-q]')) { pbpQuarter = pq.dataset.q; $$('[data-pbp-q] button').forEach((b) => b.classList.toggle('active', b === pq)); renderPBP(); return; }
+      if (pq && pq.closest('[data-pbp-q]')) { pbpQuarter = pq.dataset.q; $$('[data-pbp-q] button').forEach((b) => b.classList.toggle('on', b === pq)); renderPBP(); return; }
       const pf = e.target.closest('[data-pf]');
-      if (pf && pf.closest('[data-pbp-f]')) { pbpFilter = pf.dataset.pf; $$('[data-pbp-f] button').forEach((b) => b.classList.toggle('active', b === pf)); renderPBP(); return; }
+      if (pf && pf.closest('[data-pbp-f]')) { pbpFilter = pf.dataset.pf; $$('[data-pbp-f] button').forEach((b) => b.classList.toggle('on', b === pf)); renderPBP(); return; }
       const st = e.target.closest('[data-stab]');
       if (st) { sheetTab = st.dataset.stab; $$('.sheet-tab').forEach((b) => b.classList.toggle('active', b === st)); $$('.sheet-pane').forEach((p) => p.classList.remove('active')); const sp = $('#spane-' + sheetTab); if (sp) sp.classList.add('active'); return; }
       if (e.target.closest('#sheetClose')) { closeMatch(); return; }
