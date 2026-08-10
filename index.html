@@ -89,8 +89,12 @@ img,svg{max-width:100%;}
 .lp-navlinks a.on{color:var(--orange);}
 .lp-nav .btn{flex-shrink:0;}
 .lp-nav .btn.sm{min-height:38px; padding:0 16px; font-size:13.5px; border-radius:var(--lp-rp);}
-.lp-nav-cta{margin-left:auto;}
+/* les deux démos : la coach porte l'accent, la joueur reste un lien */
+.lp-nav-cta{margin-left:auto; display:flex; align-items:center; gap:4px; flex-shrink:0;}
 .lp-navlinks ~ .lp-nav-cta{margin-left:8px;}
+/* sous cette largeur la pastille serait à l'étroit : la démo joueur
+   reste accessible par le hero, la tab bar et le pied de page */
+@media(max-width:700px){ .lp-nav-alt{display:none;} }
 /* sans les liens, le bouton reprend sa place à droite de la pastille */
 @media(max-width:1000px){
   .lp-navlinks{display:none;}
@@ -746,7 +750,10 @@ img,svg{max-width:100%;}
     <a href="#entrainement" data-nl>Entraînement</a>
     <a href="#joueur" data-nl>Joueur</a>
   </nav>
-  <a class="btn btn-primary sm lp-nav-cta" href="/coach.html"><span class="lp-cta-full">Découvrir HoopBoard</span><span class="lp-cta-short">Découvrir</span></a>
+  <div class="lp-nav-cta">
+    <a class="btn btn-ghost sm lp-nav-alt" href="/joueur.html">Démo joueur</a>
+    <a class="btn btn-primary sm" href="/coach.html"><span class="lp-cta-full">Démo coach</span><span class="lp-cta-short">Démo</span></a>
+  </div>
 </header>
 
 <main id="top">
@@ -759,8 +766,9 @@ img,svg{max-width:100%;}
     <h1 class="lp-display rv">Le tableau de bord du coach amateur</h1>
     <p class="lp-lede rv rv-d1">Suivez vos matchs en direct, analysez votre saison, gérez vos entraînements et accompagnez la progression de vos joueurs.</p>
     <div class="lp-cta rv rv-d2">
-      <a class="btn btn-primary" href="/coach.html">Découvrir HoopBoard</a>
-      <a class="btn btn-secondary" href="#live">Voir comment ça marche</a>
+      <a class="btn btn-primary" href="/coach.html">Démo coach</a>
+      <a class="btn btn-secondary" href="/joueur.html">Démo joueur</a>
+      <a class="btn btn-ghost" href="#live">Voir comment ça marche</a>
     </div>
     <p class="lp-hero-note rv rv-d3">Démo publique · aucun compte à créer</p>
   </div>
@@ -1185,7 +1193,8 @@ img,svg{max-width:100%;}
     <h2 class="lp-display rv">Un seul outil pour coacher, suivre et faire progresser votre équipe.</h2>
     <p class="lp-lede rv rv-d1">HoopBoard fait gagner du temps aux coachs amateurs : plus de feuilles de match à recopier, une vue claire sur l'équipe, et des joueurs qui savent enfin où ils en sont.</p>
     <div class="lp-cta rv rv-d2" style="margin-top:36px">
-      <a class="btn btn-primary" href="/coach.html">Découvrir HoopBoard</a>
+      <a class="btn btn-primary" href="/coach.html">Démo coach</a>
+      <a class="btn btn-secondary" href="/joueur.html">Démo joueur</a>
     </div>
     <p class="lp-hero-note rv rv-d3">Démo publique · aucun compte à créer</p>
   </div>
