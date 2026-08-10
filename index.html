@@ -17,54 +17,80 @@
 <style>
 /* ============================================================
    LANDING HoopBoard — namespace .lp-*
-   Tout ce qui est couleur, typo, rayon, ombre, verre vient des
-   tokens de /assets/app.css. Ici : composition, profondeur,
-   mouvement. Les aperçus produit (.lp-ui) reprennent au pixel
-   les composants de coach.html / joueur.html.
+   Couleurs, typo et matière viennent des tokens de /assets/app.css.
+   Ici : composition, hiérarchie, profondeur.
+
+   Discipline de la page (une seule échelle, pas d'exception) :
+   · 4 rayons          --lp-r1 → --lp-rp
+   · 3 plans de profondeur : page → surface → élément principal
+   · le Liquid Glass fort est réservé à 4 objets : la nav, la tab bar,
+     l'aperçu principal de chaque section et le téléphone. Tout ce qui
+     vit à l'intérieur d'un aperçu est sobre : fond blanc léger,
+     filets très fins, espace et typographie.
 
    Ordre de la page : Hero → Match live → Données → Entraînement
    → Joueur → CTA final.
    ============================================================ */
 
-html{scroll-behavior:smooth; scroll-padding-top:88px;}
+:root{
+  /* rayons — 4 crans, rien d'autre */
+  --lp-r1:14px;     /* petit composant : bouton d'action, puce, chip */
+  --lp-r2:22px;     /* panneau interne */
+  --lp-r3:30px;     /* grande surface : aperçu produit */
+  --lp-rp:999px;    /* pilule */
+  --lp-rphone:46px; /* rayon d'appareil, pas rayon d'interface */
+
+  /* profondeur — 3 plans, ombres volontairement basses :
+     ce qui fait flotter, c'est la transparence et l'espace */
+  --lp-d1:0 1px 2px rgba(28,22,16,0.04);                                    /* élément posé */
+  --lp-d2:0 2px 10px rgba(28,22,16,0.045);                                  /* surface */
+  --lp-d3:0 16px 44px rgba(28,22,16,0.075), 0 2px 6px rgba(28,22,16,0.03);  /* élément principal */
+
+  /* filets — presque imperceptibles */
+  --lp-line:rgba(28,22,16,0.075);
+  --lp-line-soft:rgba(28,22,16,0.045);
+}
+
+html{scroll-behavior:smooth; scroll-padding-top:80px;}
 body{overflow-x:hidden;}
 main{padding-bottom:0;}
 img,svg{max-width:100%;}
 /* même seuil que la barre d'onglets flottante, pour qu'elle ne recouvre
    jamais la fin de la page */
-@media(max-width:1000px){ main{padding-bottom:calc(104px + env(safe-area-inset-bottom,0));} }
+@media(max-width:1000px){ main{padding-bottom:calc(96px + env(safe-area-inset-bottom,0));} }
 
 /* ------------------------------------------------------------
    1. Chrome : en-tête flottant + tab bar mobile (Liquid Glass)
    ------------------------------------------------------------ */
 .lp-nav{
   position:fixed; z-index:120;
-  top:max(12px,env(safe-area-inset-top)); left:max(14px,env(safe-area-inset-left)); right:max(14px,env(safe-area-inset-right));
-  margin:0 auto; max-width:1120px;
-  display:flex; align-items:center; gap:18px;
-  padding:9px 9px 9px 18px;
-  border-radius:999px;
-  background:var(--glass-bg);
-  -webkit-backdrop-filter:var(--blur-strong); backdrop-filter:var(--blur-strong);
-  border:1px solid var(--glass-brd);
-  box-shadow:var(--shadow-md), var(--glass-hi);
+  top:max(10px,env(safe-area-inset-top)); left:max(14px,env(safe-area-inset-left)); right:max(14px,env(safe-area-inset-right));
+  margin:0 auto; max-width:1080px;
+  display:flex; align-items:center; gap:14px;
+  padding:6px 6px 6px 16px;
+  border-radius:var(--lp-rp);
+  background:rgba(255,255,255,0.62);
+  -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
+  border:1px solid rgba(255,255,255,0.62);
+  box-shadow:var(--lp-d2), inset 0 1px 0 rgba(255,255,255,0.8);
   transition:box-shadow .4s ease, background .4s ease;
 }
-.lp-nav.scrolled{box-shadow:var(--shadow-lg), var(--glass-hi);}
-.lp-logo{display:flex; align-items:center; gap:10px; flex-shrink:0;}
-.lp-logo svg{display:block; filter:drop-shadow(0 3px 9px rgba(255,106,0,0.38));}
-.lp-logo b{font-size:17px; font-weight:800; letter-spacing:0.01em; text-transform:uppercase; color:var(--orange);}
-.lp-navlinks{display:flex; align-items:center; gap:4px; margin-left:auto;}
+.lp-nav.scrolled{background:rgba(255,255,255,0.74); box-shadow:var(--lp-d2), 0 8px 26px rgba(28,22,16,0.05), inset 0 1px 0 rgba(255,255,255,0.8);}
+.lp-logo{display:flex; align-items:center; gap:9px; flex-shrink:0;}
+.lp-logo svg{display:block; width:24px; height:24px;}
+.lp-logo b{font-size:15.5px; font-weight:800; letter-spacing:0.01em; text-transform:uppercase; color:var(--orange);}
+.lp-navlinks{display:flex; align-items:center; gap:2px; margin-left:auto;}
 .lp-navlinks a{
-  position:relative; padding:9px 14px; border-radius:999px;
-  font-size:14px; font-weight:600; color:var(--t2); letter-spacing:-0.01em;
-  transition:color .2s ease, background .2s ease;
+  position:relative; padding:8px 13px; border-radius:var(--lp-rp);
+  font-size:13.5px; font-weight:600; color:var(--t3); letter-spacing:-0.01em;
+  transition:color .2s ease;
 }
-.lp-navlinks a:hover{color:var(--t1); background:rgba(255,255,255,0.55);}
-.lp-navlinks a.on{color:var(--orange); background:var(--orange-soft);}
+.lp-navlinks a:hover{color:var(--t1);}
+.lp-navlinks a.on{color:var(--orange);}
 .lp-nav .btn{flex-shrink:0;}
+.lp-nav .btn.sm{min-height:38px; padding:0 16px; font-size:13.5px; border-radius:var(--lp-rp);}
 .lp-nav-cta{margin-left:auto;}
-.lp-navlinks ~ .lp-nav-cta{margin-left:6px;}
+.lp-navlinks ~ .lp-nav-cta{margin-left:8px;}
 /* sans les liens, le bouton reprend sa place à droite de la pastille */
 @media(max-width:1000px){
   .lp-navlinks{display:none;}
@@ -75,41 +101,42 @@ img,svg{max-width:100%;}
 @media(max-width:470px){
   .lp-cta-full{display:none;}
   .lp-cta-short{display:inline;}
-  .lp-nav{padding-left:15px;}
+  .lp-nav{padding-left:14px;}
 }
 @media(max-width:340px){ .lp-logo b{display:none;} }
 
-/* tab bar mobile — exactement la barre flottante de l'application */
+/* tab bar mobile — exactement la barre flottante de l'application,
+   volontairement basse pour ne pas concurrencer les CTA */
 .lp-tabbar{display:none;}
 @media(max-width:1000px){
   .lp-tabbar{
     display:flex; position:fixed; z-index:120; gap:2px;
     left:max(14px,env(safe-area-inset-left)); right:max(14px,env(safe-area-inset-right));
-    bottom:calc(12px + env(safe-area-inset-bottom,0));
-    margin:0 auto; max-width:500px; padding:7px 9px;
-    background:var(--glass-bg);
+    bottom:calc(10px + env(safe-area-inset-bottom,0));
+    margin:0 auto; max-width:460px; padding:5px 7px;
+    background:rgba(255,255,255,0.66);
     -webkit-backdrop-filter:var(--blur-strong); backdrop-filter:var(--blur-strong);
-    border:1px solid var(--glass-brd); border-radius:28px;
-    box-shadow:var(--shadow-lg), var(--glass-hi);
+    border:1px solid rgba(255,255,255,0.62); border-radius:var(--lp-r2);
+    box-shadow:var(--lp-d2), 0 10px 30px rgba(28,22,16,0.06), inset 0 1px 0 rgba(255,255,255,0.8);
   }
   .lp-tab{
-    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
-    min-height:52px; border-radius:19px; padding:6px 3px; color:var(--t3);
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    min-height:48px; border-radius:var(--lp-r1); padding:5px 3px; color:var(--t3);
     font-size:10.5px; font-weight:600; letter-spacing:-0.01em; text-align:center;
     transition:color .18s ease, transform .12s cubic-bezier(.2,.8,.2,1);
   }
-  .lp-tab svg{width:22px; height:22px;}
-  .lp-tab:active{transform:scale(.9);}
+  .lp-tab svg{width:20px; height:20px;}
+  .lp-tab:active{transform:scale(.92);}
   .lp-tab.on{color:var(--orange);}
-  .lp-tab.on svg{filter:drop-shadow(0 2px 6px rgba(255,106,0,0.35));}
 }
 
 /* ------------------------------------------------------------
    2. Rythme des sections & typographie
    ------------------------------------------------------------ */
-.lp-wrap{max-width:1200px; margin:0 auto; padding:0 clamp(18px,4vw,44px);}
-.lp-sec{position:relative; padding:clamp(76px,11vw,152px) 0;}
-.lp-head{max-width:760px; margin-bottom:clamp(34px,5vw,60px);}
+.lp-wrap{max-width:1200px; margin:0 auto; padding:0 clamp(20px,4vw,44px);}
+/* un seul rythme vertical pour toute la page */
+.lp-sec{position:relative; padding:clamp(78px,10vw,140px) 0;}
+.lp-head{max-width:720px; margin-bottom:clamp(36px,4.6vw,58px);}
 .lp-head.center{margin-left:auto; margin-right:auto; text-align:center;}
 
 /* Les grands titres — même matière que les titres de l'application
@@ -118,224 +145,256 @@ img,svg{max-width:100%;}
    fond clair là où #FF6A00 serait trop pâle en très grand. */
 .lp-display{
   font-family:var(--cond); font-weight:700; text-transform:uppercase;
-  color:var(--orange-deep); line-height:0.94; letter-spacing:0.005em;
-  text-wrap:balance; text-shadow:0 1px 0 rgba(255,255,255,0.55);
+  color:var(--orange-deep); line-height:0.92; letter-spacing:0.004em;
+  text-wrap:balance;
 }
 .lp-h2{
-  font-size:clamp(32px,7.2vw,64px);
-  margin-bottom:18px;
+  font-size:clamp(31px,6.6vw,58px);
+  margin-bottom:20px;
 }
-.lp-lede{font-size:clamp(16px,1.7vw,19px); line-height:1.55; color:var(--t2); max-width:56ch; letter-spacing:-0.012em;}
+/* un titre qui vit dans une colonne a moins de largeur qu'un titre
+   centré : il descend d'un cran plutôt que de s'empiler sur 4 lignes */
+@media(min-width:1000px){ .lp-split .lp-h2{font-size:clamp(34px,3.5vw,48px);} }
+.lp-lede{font-size:clamp(16px,1.6vw,18.5px); line-height:1.6; color:var(--t2); max-width:54ch; letter-spacing:-0.012em;}
 
-/* la phrase qui résume la section, posée sur une lame de verre */
+/* la phrase qui résume la section — plus de lame de verre : du texte,
+   de l'espace, et c'est tout */
 .lp-punch{
-  margin-top:clamp(20px,3vw,32px);
-  padding:clamp(20px,2.8vw,30px) clamp(20px,3vw,34px);
-  border-radius:28px; text-align:center;
-  background:linear-gradient(178deg, rgba(255,255,255,0.74), rgba(255,240,230,0.52));
-  -webkit-backdrop-filter:var(--blur-strong); backdrop-filter:var(--blur-strong);
-  border:1px solid var(--glass-brd);
-  box-shadow:var(--shadow-md), var(--glass-hi);
+  margin-top:clamp(46px,6vw,84px); text-align:center;
+  padding:0; background:none; border:0; box-shadow:none;
 }
 .lp-punch b{
   display:block; font-family:var(--cond); font-weight:700; text-transform:uppercase;
-  font-size:clamp(23px,4.6vw,40px); line-height:1; letter-spacing:0.005em;
-  color:var(--orange-deep); text-wrap:balance;
+  font-size:clamp(24px,3.9vw,40px); line-height:1.02; letter-spacing:0.004em;
+  color:var(--orange-deep); text-wrap:balance; max-width:min(100%,760px); margin:0 auto;
 }
-.lp-punch span{display:block; margin:11px auto 0; max-width:60ch; font-size:14.5px; line-height:1.5; color:var(--t2);}
+.lp-punch span{display:block; margin:16px auto 0; max-width:58ch; font-size:15.5px; line-height:1.6; color:var(--t2);}
 .lp-head.center .lp-lede{margin-left:auto; margin-right:auto;}
-.lp-kicker{
-  font-family:var(--cond); font-size:12px; font-weight:700;
-  letter-spacing:0.14em; text-transform:uppercase; color:var(--t4);
-}
 
 /* ------------------------------------------------------------
-   3. Surfaces de verre (le matériau de la page)
+   3. Surfaces — trois plans, pas six
    ------------------------------------------------------------ */
-.lp-glass{
-  position:relative; overflow:hidden;
-  background:linear-gradient(178deg, rgba(255,255,255,0.74), rgba(255,255,255,0.50));
-  -webkit-backdrop-filter:var(--blur-strong); backdrop-filter:var(--blur-strong);
-  border:1px solid var(--glass-brd);
-  border-radius:30px;
-  box-shadow:var(--shadow-lg), var(--glass-hi);
-  transition:transform .5s cubic-bezier(.2,.8,.2,1), box-shadow .5s cubic-bezier(.2,.8,.2,1);
-}
-/* reflet qui suit doucement le curseur — lumière, pas gadget */
-.lp-glass::after{
-  content:""; position:absolute; inset:0; pointer-events:none; opacity:0;
-  background:radial-gradient(320px circle at var(--mx,50%) var(--my,0%), rgba(255,255,255,0.55), transparent 68%);
-  transition:opacity .5s ease;
-}
-.lp-glass:hover::after{opacity:1;}
-.lp-pad{padding:clamp(20px,2.6vw,32px);}
 
-/* fenêtre applicative (desktop) */
-.lp-win{
-  position:relative; overflow:hidden; border-radius:26px;
-  background:linear-gradient(178deg, rgba(255,255,255,0.80), rgba(255,255,255,0.62));
+/* PLAN 2 — la surface : c'est le seul objet vraiment en verre d'une
+   section. Elle contient l'aperçu produit. */
+.lp-surface{
+  position:relative; border-radius:var(--lp-r3);
+  background:linear-gradient(178deg, rgba(255,255,255,0.82), rgba(255,255,255,0.64));
   -webkit-backdrop-filter:var(--blur-strong); backdrop-filter:var(--blur-strong);
-  border:1px solid var(--glass-brd);
-  box-shadow:var(--shadow-lg), var(--glass-hi);
+  border:1px solid rgba(255,255,255,0.66);
+  box-shadow:var(--lp-d3), inset 0 1px 0 rgba(255,255,255,0.85);
+  padding:clamp(18px,2.2vw,28px);
 }
-.lp-win-bar{
-  display:flex; align-items:center; gap:8px; padding:12px 16px;
-  border-bottom:1px solid var(--hair-soft); background:rgba(255,255,255,0.42);
+/* sur téléphone l'aperçu déborde légèrement de la gouttière : chaque
+   pixel repris va au terrain, qui est ce qu'on vient regarder */
+@media(max-width:640px){
+  .lp-surface{
+    margin-inline:calc(8px - clamp(20px,4vw,44px));
+    padding:15px 14px 16px;
+  }
 }
-.lp-win-bar i{width:9px; height:9px; border-radius:50%; background:var(--hair); display:block; flex-shrink:0;}
-.lp-win-bar i:first-child{background:rgba(255,106,0,0.6);}
-.lp-win-t{
-  margin-left:7px; font-family:var(--cond); font-size:12px; font-weight:700;
-  letter-spacing:0.14em; text-transform:uppercase; color:var(--t3);
+/* l'en-tête d'aperçu : un intitulé et rien de plus. Pas de fausse
+   fenêtre, pas de pastilles de système d'exploitation. */
+.lp-surface-head{
+  display:flex; align-items:center; gap:12px;
+  padding-bottom:14px; margin-bottom:clamp(16px,2vw,22px);
+  border-bottom:1px solid var(--lp-line-soft);
+}
+.lp-surface-t{
+  font-family:var(--cond); font-size:12.5px; font-weight:700;
+  letter-spacing:0.15em; text-transform:uppercase; color:var(--t3);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.lp-win-live{
+.lp-live{
   margin-left:auto; display:inline-flex; align-items:center; gap:6px; flex-shrink:0;
-  font-family:var(--mono); font-size:10.5px; font-weight:600; color:var(--orange);
-  padding:4px 10px; border-radius:999px; background:var(--orange-soft);
+  font-family:var(--mono); font-size:11.5px; font-weight:600; color:var(--orange);
+  padding:4px 11px; border-radius:var(--lp-rp); background:var(--orange-soft);
 }
-.lp-win-live b{width:6px; height:6px; border-radius:50%; background:var(--orange); animation:lpPulse 1.6s ease-in-out infinite;}
+.lp-live b{width:6px; height:6px; border-radius:50%; background:var(--orange); animation:lpPulse 1.6s ease-in-out infinite;}
 @keyframes lpPulse{0%,100%{opacity:1; transform:scale(1);} 50%{opacity:.35; transform:scale(.7);}}
-.lp-win-body{padding:clamp(14px,1.9vw,22px);}
 
-/* téléphone */
-.lp-phone{
-  width:100%; max-width:322px; margin:0 auto; padding:9px; border-radius:48px;
-  background:linear-gradient(160deg, rgba(255,255,255,0.88), rgba(255,255,255,0.55));
-  -webkit-backdrop-filter:var(--blur-strong); backdrop-filter:var(--blur-strong);
-  border:1px solid var(--glass-brd);
-  box-shadow:var(--shadow-lg), var(--glass-hi), 0 0 0 1px rgba(28,22,16,0.04);
+/* reflet qui suit le curseur — réservé aux deux surfaces héroïques
+   de la page, et très discret */
+.lp-glow{overflow:hidden;}
+.lp-glow::after{
+  content:""; position:absolute; inset:0; pointer-events:none; opacity:0;
+  background:radial-gradient(420px circle at var(--mx,50%) var(--my,0%), rgba(255,255,255,0.34), transparent 70%);
+  transition:opacity .6s ease;
 }
+.lp-glow:hover::after{opacity:1;}
+
+/* PLAN 3 — le panneau interne : plus de carte dans la carte.
+   Un fond blanc léger, aucun contour, aucune ombre. */
+.lp-ui .lp-panel,.lp-ui .lp-plain,.lp-ui .tr2-panel{
+  background:rgba(255,255,255,0.62); border:0; box-shadow:none;
+  border-radius:var(--lp-r2); padding:clamp(14px,1.6vw,20px);
+  display:flex; flex-direction:column; min-width:0;
+}
+/* variante sans surface du tout : l'espace suffit à séparer */
+.lp-ui .lp-plain{background:none; padding:0;}
+/* bloc de détails secondaires : un filet, et il passe derrière */
+.lp-ui .lp-sub{margin-top:clamp(22px,2.6vw,30px); padding-top:clamp(22px,2.6vw,30px); border-top:1px solid var(--lp-line-soft);}
+
+/* téléphone — la seule autre pièce vraiment en verre */
+.lp-phone{
+  width:100%; max-width:clamp(300px,30vw,380px); margin:0 auto; padding:9px;
+  border-radius:var(--lp-rphone);
+  background:linear-gradient(160deg, rgba(255,255,255,0.9), rgba(255,255,255,0.6));
+  -webkit-backdrop-filter:var(--blur-strong); backdrop-filter:var(--blur-strong);
+  border:1px solid rgba(255,255,255,0.7);
+  box-shadow:var(--lp-d3), inset 0 1px 0 rgba(255,255,255,0.85);
+}
+/* en colonne unique (tablette), le téléphone a de la place : il en profite */
+@media(min-width:700px) and (max-width:999px){ .lp-phone{max-width:344px;} }
 .lp-phone-screen{
-  position:relative; border-radius:40px; overflow:hidden;
-  background:var(--bg); box-shadow:inset 0 0 0 1px rgba(28,22,16,0.07);
-  padding:14px 13px 74px;
+  position:relative; border-radius:calc(var(--lp-rphone) - 9px); overflow:hidden;
+  background:var(--bg); box-shadow:inset 0 0 0 1px rgba(28,22,16,0.06);
+  padding:16px 14px 78px;
 }
 /* le fond liquide de l'app, en miniature, dans l'écran */
 .lp-phone-screen::before{
   content:""; position:absolute; inset:-40%; z-index:0; pointer-events:none;
   background:
-    radial-gradient(42% 40% at 14% 4%, rgba(255,106,0,0.26), transparent 60%),
-    radial-gradient(46% 44% at 92% 10%, rgba(255,150,55,0.22), transparent 62%),
-    radial-gradient(50% 48% at 84% 92%, rgba(56,148,235,0.20), transparent 64%);
+    radial-gradient(42% 40% at 14% 4%, rgba(255,106,0,0.24), transparent 60%),
+    radial-gradient(46% 44% at 92% 10%, rgba(255,150,55,0.20), transparent 62%),
+    radial-gradient(50% 48% at 84% 92%, rgba(56,148,235,0.18), transparent 64%);
   filter:blur(24px) saturate(160%);
 }
 .lp-phone-screen > *{position:relative; z-index:1;}
 .lp-notch{
   position:absolute; top:9px; left:50%; transform:translateX(-50%); z-index:3;
-  width:92px; height:22px; border-radius:999px; background:rgba(28,22,16,0.82);
+  width:92px; height:22px; border-radius:var(--lp-rp); background:rgba(28,22,16,0.82);
 }
-.lp-phone-top{display:flex; align-items:center; gap:9px; padding:14px 4px 12px;}
-.lp-phone-top .nm{font-family:var(--cond); font-size:13px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--t2);}
-.lp-phone-top .ctx{margin-left:auto; font-family:var(--mono); font-size:9.5px; color:var(--t4);}
+.lp-phone-top{display:flex; align-items:baseline; gap:9px; padding:14px 4px 14px;}
+.lp-phone-top .nm{font-family:var(--cond); font-size:13.5px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--t2);}
+.lp-phone-top .ctx{margin-left:auto; font-family:var(--mono); font-size:11.5px; color:var(--t4);}
 /* tab bar dans le téléphone */
 .lp-phone-tabs{
   position:absolute; left:12px; right:12px; bottom:12px; z-index:2;
-  display:flex; gap:2px; padding:6px 8px; border-radius:24px;
-  background:var(--glass-bg);
+  display:flex; gap:2px; padding:6px 8px; border-radius:var(--lp-r2);
+  background:rgba(255,255,255,0.66);
   -webkit-backdrop-filter:var(--blur-strong); backdrop-filter:var(--blur-strong);
-  border:1px solid var(--glass-brd); box-shadow:var(--shadow-md), var(--glass-hi);
+  border:1px solid rgba(255,255,255,0.6); box-shadow:var(--lp-d2), inset 0 1px 0 rgba(255,255,255,0.8);
 }
 .lp-phone-tabs span{
   flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;
-  font-size:9px; font-weight:600; color:var(--t3); padding:4px 2px; border-radius:16px; text-align:center;
+  font-size:10px; font-weight:600; color:var(--t3); padding:4px 2px; border-radius:var(--lp-r1); text-align:center;
 }
 .lp-phone-tabs span svg{width:19px; height:19px;}
 .lp-phone-tabs span.on{color:var(--orange);}
+/* l'écran du téléphone a sa propre échelle : les tailles en vw des
+   aperçus desktop y seraient hors de proportion */
+.lp-phone .lp-panel{padding:14px 14px 15px;}
+.lp-phone .ui-h{font-size:12px; letter-spacing:.12em; margin-bottom:10px;}
+.lp-phone .pd-stats{gap:18px 0;}
+.lp-phone .pd-stat{padding:0 14px;}
+.lp-phone .pd-stat:nth-child(2n+1){padding-left:0;}
+.lp-phone .pd-stat-v{font-size:27px;}
+.lp-phone .pd-stat.hot .pd-stat-v{font-size:31px;}
+.lp-phone .pd-stat-l{font-size:12px; margin-top:7px;}
+.lp-phone .pd-stat-s{font-size:11.5px; margin-top:3px;}
+.lp-phone .ui-sess-b b{font-size:13.5px;}
+.lp-phone .ui-sess-b span{font-size:12px;}
 
 /* ------------------------------------------------------------
    4. HERO
    ------------------------------------------------------------ */
-.lp-hero{padding:calc(clamp(96px,14vw,150px)) 0 clamp(30px,5vw,60px); text-align:center; position:relative;}
+.lp-hero{padding:clamp(112px,15vw,168px) 0 clamp(40px,6vw,72px); text-align:center; position:relative;}
 .lp-hero h1{
-  font-size:clamp(40px,10.6vw,72px);
-  margin:0 auto 22px; max-width:18ch;
+  font-size:clamp(40px,10.2vw,68px);
+  margin:0 auto; max-width:17ch;
 }
 /* une seule ligne dès que la largeur le permet : le titre est une phrase,
    pas un slogan coupé en deux. La taille suit la largeur disponible pour
    qu'il ne déborde jamais — y compris avec la police de repli, plus large
    que Barlow Condensed. */
 @media(min-width:900px){
-  /* 74px : au-delà, la ligne dépasse la zone de texte de .lp-wrap
-     (1200px moins 2×44px de gouttière) et mord sur les marges. */
-  .lp-hero h1{white-space:nowrap; max-width:none; font-size:min(5.2vw,74px);}
+  /* 71px : mesuré en Barlow Condensed 700, la ligne fait alors 1051px
+     dans une zone de texte de 1112px — elle garde de l'air des deux
+     côtés au lieu de venir mordre les marges. */
+  .lp-hero h1{white-space:nowrap; max-width:none; font-size:min(4.95vw,71px);}
 }
-.lp-hero .lp-lede{margin:0 auto; font-size:clamp(16.5px,2vw,21px); max-width:62ch;}
-.lp-cta{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:34px;}
-.lp-cta .btn{min-height:52px; padding:0 26px; border-radius:999px; font-size:16px;}
+.lp-hero .lp-lede{margin:clamp(22px,2.6vw,30px) auto 0; font-size:clamp(16.5px,1.8vw,20px); max-width:min(100%,620px);}
+.lp-cta{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:clamp(30px,3.6vw,40px);}
+.lp-cta .btn{min-height:52px; padding:0 26px; border-radius:var(--lp-rp); font-size:16px;}
+/* une seule intensité d'ombre orange sur toute la page */
+.btn-primary{box-shadow:0 6px 18px rgba(255,106,0,0.24), inset 0 1px 0 rgba(255,255,255,0.25);}
 .lp-hero-note{
-  margin-top:22px; font-family:var(--mono); font-size:11.5px; color:var(--t4);
+  margin-top:20px; font-family:var(--mono); font-size:12px; color:var(--t4);
   letter-spacing:0.04em;
 }
 
-/* l'écran du hero : une seule fenêtre, en lévitation */
-.lp-stage{position:relative; margin-top:clamp(44px,7vw,84px);}
-.lp-stage-main{position:relative; max-width:940px; margin:0 auto;}
-.lp-float{animation:lpFloat 9s ease-in-out infinite;}
-@keyframes lpFloat{
-  0%,100%{transform:translate3d(0,0,0);}
-  50%{transform:translate3d(0,-13px,0);}
+/* l'écran du hero : posé sur la page, pas collé au titre.
+   Une seule lueur derrière lui crée la profondeur — aucune lévitation. */
+.lp-stage{position:relative; margin-top:clamp(56px,8vw,104px);}
+.lp-stage::before{
+  content:""; position:absolute; z-index:0; pointer-events:none;
+  left:6%; right:6%; top:8%; bottom:-6%;
+  background:radial-gradient(60% 60% at 50% 45%, rgba(255,106,0,0.13), transparent 72%);
+  filter:blur(46px);
 }
+.lp-stage-main{position:relative; z-index:1; max-width:980px; margin:0 auto;}
 
 /* ------------------------------------------------------------
-   5. Grilles de composition
+   5. Grilles de composition — chaque section a sa silhouette
    ------------------------------------------------------------ */
-.lp-split{display:grid; grid-template-columns:1fr; gap:clamp(26px,4vw,56px); align-items:center;}
+.lp-split{display:grid; grid-template-columns:1fr; gap:clamp(30px,4vw,56px); align-items:center;}
 /* sans cela, un contenu à défilement (un tableau large) élargit sa colonne
    au lieu de défiler, et toute la section déborde sur téléphone */
-.lp-split>*,.lp-flow>*{min-width:0;}
+.lp-split>*{min-width:0;}
 @media(min-width:1000px){
   .lp-split{grid-template-columns:minmax(0,0.86fr) minmax(0,1.14fr);}
+  /* .rev déplace le texte en second : les colonnes doivent suivre, sinon
+     c'est l'aperçu produit qui hérite de la colonne étroite. */
+  .lp-split.rev{grid-template-columns:minmax(0,1.14fr) minmax(0,0.86fr);}
   .lp-split.rev > *:first-child{order:2;}
+  /* Match live : la démonstration prend la place */
+  .lp-split.live{grid-template-columns:minmax(0,0.74fr) minmax(0,1.26fr); align-items:center;}
+  /* Entraînement : composition asymétrique, dominée par le terrain */
+  .lp-split.train.rev{grid-template-columns:minmax(0,1.2fr) minmax(0,0.8fr); align-items:start;}
+  /* Joueur : le téléphone est le héros */
+  .lp-split.player{grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr);}
 }
-.lp-bullets{display:flex; flex-direction:column; gap:2px; margin-top:26px;}
-.lp-bullet{display:flex; gap:13px; align-items:flex-start; padding:14px 16px; border-radius:18px; transition:background .25s ease;}
-.lp-bullet:hover{background:rgba(255,255,255,0.5);}
+.lp-bullets{display:flex; flex-direction:column; gap:clamp(16px,1.8vw,22px); margin-top:clamp(28px,3.2vw,38px);}
+.lp-bullet{display:flex; gap:14px; align-items:flex-start;}
 .lp-bullet-ic{
-  flex:0 0 auto; width:34px; height:34px; border-radius:12px;
+  flex:0 0 auto; width:32px; height:32px; border-radius:var(--lp-r1);
   display:flex; align-items:center; justify-content:center;
   background:var(--orange-soft); color:var(--orange);
 }
-.lp-bullet-ic svg{width:17px; height:17px;}
-.lp-bullet b{display:block; font-size:15px; font-weight:600; color:var(--t1); letter-spacing:-0.012em;}
-.lp-bullet span{display:block; margin-top:3px; font-size:13.5px; line-height:1.5; color:var(--t3);}
-
-.lp-tile-lab{
-  font-family:var(--cond); font-size:11.5px; font-weight:700;
-  letter-spacing:0.14em; text-transform:uppercase; color:var(--t4); margin-bottom:12px;
-}
+.lp-bullet-ic svg{width:16px; height:16px;}
+.lp-bullet b{display:block; font-size:15.5px; font-weight:600; color:var(--t1); letter-spacing:-0.012em;}
+.lp-bullet span{display:block; margin-top:4px; font-size:14px; line-height:1.55; color:var(--t3);}
 
 /* ------------------------------------------------------------
-   6. Le fil « match → données → décisions »
+   6. Le fil « match → données → décisions » : une ligne, pas
+   quatre boîtes. Desktop : trait horizontal. Mobile : vertical.
    ------------------------------------------------------------ */
 .lp-flow{
-  display:flex; align-items:stretch; justify-content:center; flex-wrap:wrap;
-  gap:8px; margin-bottom:clamp(30px,4vw,48px);
+  position:relative; display:grid; grid-template-columns:minmax(0,1fr);
+  gap:clamp(20px,2.4vw,28px); margin-bottom:clamp(40px,5vw,64px);
+  padding-left:26px;
 }
-.lp-flow-i{
-  flex:1 1 172px; max-width:250px; min-width:0;
-  padding:15px 17px; border-radius:20px; text-align:left;
-  background:rgba(255,255,255,0.55);
-  -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
-  border:1px solid var(--glass-brd);
-  box-shadow:var(--shadow-xs), var(--glass-hi);
-  transition:border-color .35s ease, box-shadow .35s ease, transform .35s ease;
+.lp-flow::before{
+  content:""; position:absolute; left:4px; top:6px; bottom:6px; width:1px; background:var(--lp-line);
 }
-.lp-flow-i.first{border-color:rgba(255,106,0,0.36); box-shadow:var(--shadow-sm), var(--glass-hi);}
+.lp-flow-i{position:relative; min-width:0;}
+.lp-flow-i::before{
+  content:""; position:absolute; left:-26px; top:5px; width:9px; height:9px; border-radius:50%;
+  background:var(--bg); box-shadow:0 0 0 1px var(--lp-line);
+}
+.lp-flow-i.first::before{background:var(--orange); box-shadow:0 0 0 1px var(--orange), 0 0 0 5px rgba(255,106,0,0.13);}
 .lp-flow-i b{
-  display:block; font-family:var(--cond); font-size:12px; font-weight:700;
-  letter-spacing:.13em; text-transform:uppercase; color:var(--t4); margin-bottom:7px;
+  display:block; font-family:var(--cond); font-size:12.5px; font-weight:700;
+  letter-spacing:.14em; text-transform:uppercase; color:var(--t4); margin-bottom:6px;
 }
 .lp-flow-i.first b{color:var(--orange);}
-.lp-flow-i span{display:block; font-size:14px; font-weight:600; color:var(--t1); letter-spacing:-0.014em; line-height:1.35;}
-.lp-flow-i em{display:block; font-style:normal; margin-top:4px; font-size:12px; color:var(--t3); line-height:1.45;}
-.lp-flow-a{
-  flex:0 0 auto; align-self:center; color:var(--t4); display:flex; align-items:center; justify-content:center;
-}
-.lp-flow-a svg{width:18px; height:18px;}
-@media(max-width:700px){
-  .lp-flow-i{flex:1 1 100%; max-width:none;}
-  .lp-flow-a{transform:rotate(90deg);}
+.lp-flow-i span{display:block; font-size:15.5px; font-weight:600; color:var(--t1); letter-spacing:-0.014em; line-height:1.3;}
+.lp-flow-i em{display:block; font-style:normal; margin-top:5px; font-size:13.5px; color:var(--t3); line-height:1.5;}
+@media(min-width:720px){
+  .lp-flow{grid-template-columns:repeat(4,minmax(0,1fr)); gap:clamp(20px,3vw,40px); padding-left:0; padding-top:28px;}
+  .lp-flow::before{left:5px; right:5px; top:4px; bottom:auto; width:auto; height:1px;}
+  .lp-flow-i::before{left:0; top:-28px;}
 }
 
 /* ------------------------------------------------------------
@@ -343,85 +402,129 @@ img,svg{max-width:100%;}
    ------------------------------------------------------------ */
 .lp-ui{font-family:var(--sans); letter-spacing:-0.01em;}
 
-/* titres de section internes (repris de .pd-h2) */
+/* titres internes : discrets, ils ne doivent pas concurrencer
+   les grands titres orange de la page */
 .lp-ui .ui-h{
   font-family:var(--cond); font-weight:700; text-transform:uppercase;
-  font-size:15px; letter-spacing:.09em; line-height:1.05; color:var(--orange); margin-bottom:10px;
+  font-size:13px; letter-spacing:.14em; line-height:1.05; color:var(--t3); margin-bottom:12px;
 }
-.lp-ui .ui-note{font-size:11.5px; color:var(--t4); margin-top:8px; line-height:1.45;}
+.lp-ui .ui-h.hot{color:var(--orange);}
+/* la valeur de référence du graphique, en clair, à droite du titre —
+   plutôt qu'en <text> SVG, dont la taille dépend de l'échelle du dessin */
+.lp-ui .ui-h{display:flex; align-items:baseline; gap:6px 12px; flex-wrap:wrap;}
+.lp-ui .ui-h em{
+  margin-left:auto; font-family:var(--mono); font-style:normal; font-size:12px;
+  font-weight:500; letter-spacing:0; text-transform:none; color:var(--t4); white-space:nowrap;
+}
+
+/* --- graphique en barres : HTML, pour que les libellés restent du texte --- */
+.lp-chart{min-width:0;}
+.lp-bars{
+  position:relative; display:grid; grid-template-columns:repeat(6,minmax(0,1fr));
+  gap:clamp(10px,1.6vw,22px); align-items:end; height:clamp(136px,15vw,186px);
+}
+.lp-bars i{display:block; width:100%; border-radius:8px 8px 3px 3px; background:var(--orange);}
+.lp-bars i.off{background:var(--t4); opacity:.28;}
+.lp-avg{position:absolute; left:0; right:0; height:0; border-top:1px dashed var(--t4); opacity:.5;}
+.lp-xaxis{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:clamp(10px,1.6vw,22px); margin-top:12px;}
+.lp-xaxis span{text-align:center; font-size:12.5px; font-weight:600; color:var(--t4);}
+.lp-ui .ui-note{font-size:12.5px; color:var(--t4); margin-top:10px; line-height:1.5;}
 
 /* grilles internes des aperçus : elles s'empilent avant d'être à l'étroit */
-.lp-ui .ui-grid2,.lp-ui .ui-grid-even{display:grid; gap:12px; grid-template-columns:minmax(0,1fr);}
+.lp-ui .ui-grid2,.lp-ui .ui-grid-even{display:grid; gap:clamp(12px,1.4vw,18px); grid-template-columns:minmax(0,1fr);}
 @media(min-width:620px){
   .lp-ui .ui-grid2{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);}
   .lp-ui .ui-grid-even{grid-template-columns:repeat(2,minmax(0,1fr));}
 }
 
-/* statistiques principales (.pd-stat) */
-.lp-ui .pd-stats{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px;}
+/* --- Statistiques : une ligne de chiffres, pas quatre cartes.
+   La première porte la hiérarchie ; les autres sont des repères. --- */
+.lp-ui .pd-stats{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:22px 0;}
 @media(min-width:620px){
+  .lp-ui .pd-stats{gap:0;}
   .lp-ui .pd-stats.c3{grid-template-columns:repeat(3,minmax(0,1fr));}
   .lp-ui .pd-stats.c4{grid-template-columns:repeat(4,minmax(0,1fr));}
 }
 .lp-ui .pd-stat{
-  min-width:0; padding:13px 13px 12px; border-radius:var(--radius);
-  background:var(--card-bg); border:1px solid var(--hair-soft); box-shadow:var(--shadow-xs);
+  position:relative; min-width:0; padding:0 clamp(12px,1.5vw,22px);
+  background:none; border:0; box-shadow:none; border-radius:0;
+}
+.lp-ui .pd-stat::before{
+  content:""; position:absolute; left:0; top:2px; bottom:2px; width:1px; background:var(--lp-line-soft);
+}
+.lp-ui .pd-stat:nth-child(2n+1)::before{content:none;}
+.lp-ui .pd-stat:nth-child(2n+1){padding-left:0;}
+@media(min-width:620px){
+  .lp-ui .pd-stat:nth-child(2n+1)::before{content:"";}
+  .lp-ui .pd-stat:nth-child(2n+1){padding-left:clamp(12px,1.5vw,22px);}
+  .lp-ui .pd-stat:first-child::before{content:none;}
+  .lp-ui .pd-stat:first-child{padding-left:0;}
 }
 .lp-ui .pd-stat-v{
-  font-family:var(--cond); font-weight:700; line-height:.95; letter-spacing:-.005em;
-  font-size:clamp(30px,6vw,40px); color:var(--t1);
+  font-family:var(--cond); font-weight:700; line-height:.92; letter-spacing:-.005em;
+  font-size:clamp(30px,3.2vw,40px); color:var(--t2);
 }
-.lp-ui .pd-stat-v i{font-style:normal; font-size:.42em; color:var(--t3); margin-left:3px;}
-.lp-ui .pd-stat.hot .pd-stat-v{color:var(--orange);}
-.lp-ui .pd-stat-l{margin-top:7px; font-size:11.5px; font-weight:600; color:var(--t2);}
-.lp-ui .pd-stat-s{margin-top:3px; font-size:10.5px; color:var(--t4); display:flex; align-items:baseline; gap:5px; flex-wrap:wrap;}
+.lp-ui .pd-stat-v i{font-style:normal; font-size:.44em; color:var(--t4); margin-left:3px;}
+/* la métrique principale domine réellement */
+.lp-ui .pd-stat.hot .pd-stat-v{color:var(--orange); font-size:clamp(38px,4.4vw,54px);}
+.lp-ui .pd-stat.hot .pd-stat-l{color:var(--t1);}
+.lp-ui .pd-stat-l{margin-top:10px; font-size:13px; font-weight:600; color:var(--t2); line-height:1.3;}
+.lp-ui .pd-stat-s{margin-top:5px; font-size:12px; color:var(--t4); display:flex; align-items:baseline; gap:5px; flex-wrap:wrap;}
 .lp-ui .pd-stat-d{font-family:var(--mono); font-weight:600;}
 .lp-ui .pd-stat-d.up{color:var(--win);} .lp-ui .pd-stat-d.down{color:var(--loss);} .lp-ui .pd-stat-d.flat{color:var(--t4);}
 
 /* graphique d'évolution (.pd-svg) */
 .lp-ui .pd-svg{width:100%; height:auto; display:block; overflow:visible;}
 .lp-ui .pd-line{fill:none; stroke:var(--orange); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
-.lp-ui .pd-area{fill:url(#lpGrad); opacity:.5;}
-.lp-ui .pd-dot{fill:var(--card-bg); stroke:var(--orange); stroke-width:2.2;}
-.lp-ui .pd-dot.hi{fill:var(--orange); stroke:var(--card-bg); stroke-width:3;}
-.lp-ui .pd-avg{stroke:var(--t4); stroke-width:1.2; stroke-dasharray:5 5;}
-.lp-ui .pd-avg-l{fill:var(--t4); font-family:var(--mono); font-size:10px; text-anchor:end;}
-.lp-ui .pd-last{fill:var(--orange); font-family:var(--cond); font-weight:700; font-size:17px; text-anchor:middle;}
-.lp-ui .gc-opp{fill:var(--t4); font-size:9px; text-anchor:middle;}
-.lp-ui .gc-bar.win{fill:var(--orange);} .lp-ui .gc-bar.loss{fill:var(--t4); opacity:.42;}
+.lp-ui .pd-area{fill:url(#lpGrad); opacity:.55;}
+.lp-ui .pd-dot{fill:#fff; stroke:var(--orange); stroke-width:2.2;}
+.lp-ui .pd-dot.hi{fill:var(--orange); stroke:#fff; stroke-width:3;}
+.lp-ui .pd-avg{stroke:var(--t4); stroke-width:1; stroke-dasharray:5 5; opacity:.5;}
+/* seule étiquette laissée en SVG : un grand chiffre, illisible nulle part */
+.lp-ui .pd-last{fill:var(--orange); font-family:var(--cond); font-weight:700; font-size:19px; text-anchor:middle;}
 
-/* zone de tir (lignes) */
-.lp-ui .ui-zones{display:flex; flex-direction:column; gap:1px; border-radius:12px; overflow:hidden; border:1px solid var(--hair-soft);}
-.lp-ui .ui-zone{display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--card-bg); font-size:12px;}
+/* zones de tir : des lignes de texte séparées par un filet,
+   pas une pile de cartes encadrées */
+.lp-ui .ui-zones{display:flex; flex-direction:column;}
+.lp-ui .ui-zone{
+  display:flex; align-items:baseline; gap:12px; padding:11px 2px; font-size:14px;
+  border-bottom:1px solid var(--lp-line-soft);
+}
+.lp-ui .ui-zone:last-child{border-bottom:0;}
 .lp-ui .ui-zone .nm{flex:1; min-width:0; color:var(--t2); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.lp-ui .ui-zone .val{font-family:var(--mono); font-weight:600; color:var(--t1);}
-.lp-ui .ui-zone.on{background:var(--orange-soft); box-shadow:inset 0 0 0 1px rgba(255,106,0,0.3);}
+.lp-ui .ui-zone .val{font-family:var(--mono); font-weight:600; font-size:13.5px; color:var(--t2);}
+.lp-ui .ui-zone.on .nm{color:var(--t1); font-weight:600;}
 .lp-ui .ui-zone.on .val{color:var(--orange);}
 
-/* séance d'entraînement */
+/* séance d'entraînement — une ligne, un filet, rien d'autre */
 .lp-ui .ui-sess{
-  display:flex; align-items:center; gap:12px; padding:12px 13px; border-radius:var(--radius);
-  background:var(--card-bg); border:1px solid var(--hair-soft); box-shadow:var(--shadow-xs);
+  display:flex; align-items:center; gap:14px; padding:12px 2px;
+  background:none; border:0; border-bottom:1px solid var(--lp-line-soft); box-shadow:none; border-radius:0;
 }
+.lp-ui .ui-sess:last-child{border-bottom:0;}
 .lp-ui .ui-sess-d{
-  flex:0 0 auto; width:42px; text-align:center; font-family:var(--cond);
-  border-right:1px solid var(--hair-soft); padding-right:11px;
+  flex:0 0 auto; width:38px; text-align:center; font-family:var(--cond);
+  border:0; padding:0;
 }
-.lp-ui .ui-sess-d b{display:block; font-size:20px; font-weight:700; line-height:1; color:var(--orange);}
-.lp-ui .ui-sess-d span{display:block; font-size:9px; letter-spacing:.1em; text-transform:uppercase; color:var(--t4); margin-top:3px;}
+.lp-ui .ui-sess-d b{display:block; font-size:21px; font-weight:700; line-height:1; color:var(--orange);}
+.lp-ui .ui-sess-d span{display:block; font-size:11.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--t4); margin-top:3px;}
 .lp-ui .ui-sess-b{flex:1; min-width:0;}
-.lp-ui .ui-sess-b b{display:block; font-size:13px; font-weight:600; color:var(--t1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.lp-ui .ui-sess-b span{display:block; font-size:11px; color:var(--t4); margin-top:2px;}
-.lp-ui .ui-sess-n{flex:0 0 auto; font-family:var(--cond); font-size:19px; font-weight:700; color:var(--t1);}
-.lp-ui .ui-sess-n small{font-size:11px; color:var(--t4); font-family:var(--sans); font-weight:600;}
+/* le titre de séance passe à la ligne plutôt que d'être coupé :
+   un texte tronqué dans une vitrine, c'est un défaut, pas un détail */
+.lp-ui .ui-sess-b b{display:block; font-size:14px; font-weight:600; color:var(--t1); line-height:1.3;}
+.lp-ui .ui-sess-b span{display:block; font-size:12.5px; color:var(--t4); margin-top:3px;}
+.lp-ui .ui-sess-n{flex:0 0 auto; font-family:var(--cond); font-size:20px; font-weight:700; color:var(--t2);}
+.lp-ui .ui-sess-n small{font-size:12px; color:var(--t4); font-family:var(--sans); font-weight:600;}
 
-/* tableau de progression — le <table> de l'application, resserré pour
-   tenir dans un aperçu sur un écran de téléphone */
-.lp-ui .ui-tbl{font-size:12px;}
-.lp-ui .ui-tbl thead th{font-size:10px; padding:6px 8px; letter-spacing:.04em; position:static;}
-.lp-ui .ui-tbl tbody td{padding:8px; font-size:12px;}
-.lp-ui .ui-tbl tbody td:first-child{color:var(--t1); font-weight:600;}
-.lp-ui .ui-tbl .mono{font-family:var(--mono); font-size:11px;}
+/* tableau de progression — volontairement le plus léger de la page :
+   il ne doit jamais peser autant que le terrain */
+.lp-ui .ui-tbl{font-size:13px;}
+.lp-ui .ui-tbl thead th{font-size:11.5px; padding:8px 10px; letter-spacing:.02em; position:static; border-bottom:1px solid var(--lp-line-soft); color:var(--t4);}
+.lp-ui .ui-tbl tbody td{padding:10px; font-size:13px; border-bottom:1px solid var(--lp-line-soft); color:var(--t3);}
+.lp-ui .ui-tbl tbody tr:last-child td{border-bottom:0;}
+.lp-ui .ui-tbl tbody td:first-child{color:var(--t2); font-weight:600;}
+.lp-ui .ui-tbl .mono{font-family:var(--mono); font-size:12.5px;}
+.lp-ui .ui-tbl .cell-hi{color:var(--t1);}
 .lp-ui .ui-tbl .up{color:var(--win); font-weight:600;}
 .lp-ui .ui-tbl .down{color:var(--loss); font-weight:600;}
 .lp-ui .ui-tbl .flat{color:var(--t4);}
@@ -429,147 +532,173 @@ img,svg{max-width:100%;}
    entier dans la carte, sans défilement horizontal */
 @media(max-width:430px){
   .lp-ui .ui-tbl th:nth-child(2),.lp-ui .ui-tbl td:nth-child(2){display:none;}
-  .lp-ui .ui-tbl thead th,.lp-ui .ui-tbl tbody td{padding:8px 6px;}
+  .lp-ui .ui-tbl thead th,.lp-ui .ui-tbl tbody td{padding:9px 6px;}
 }
 
+/* --- Entraînement : le demi-terrain domine, le reste se range autour.
+   Sur téléphone l'ordre du flux est déjà le bon : terrain, courbe,
+   séances, tableau. --- */
+.lp-train{display:grid; grid-template-columns:minmax(0,1fr); gap:clamp(22px,2.6vw,32px);}
+.lp-train-side{display:flex; flex-direction:column; gap:clamp(22px,2.6vw,30px); min-width:0;}
+.lp-train-court #lpCourtTraining{margin-top:4px;}
+@media(min-width:720px){
+  .lp-train{grid-template-columns:minmax(0,1.14fr) minmax(0,0.86fr); column-gap:clamp(24px,2.8vw,36px);}
+  .lp-train-tbl{grid-column:1 / -1;}
+}
+/* le tableau ne doit jamais peser autant que le terrain */
+.lp-train-tbl .ui-h{color:var(--t4);}
+
 /* barre d'onglets interne (reprise de l'app) */
-.lp-ui .ui-tabs{display:flex; gap:2px; padding:4px; background:var(--surface-1); border:1px solid var(--hair); border-radius:10px;}
+.lp-ui .ui-tabs{display:flex; gap:2px; padding:3px; background:rgba(120,110,98,0.07); border:0; border-radius:var(--lp-r1);}
 .lp-ui .ui-tabs span{
   flex:1; min-width:0; display:flex; align-items:center; justify-content:center; gap:6px; padding:8px 6px;
-  border-radius:7px; font-size:11.5px; font-weight:600; color:var(--t3);
+  border-radius:calc(var(--lp-r1) - 3px); font-size:12px; font-weight:600; color:var(--t3);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
 .lp-ui .ui-tabs span svg{width:14px; height:14px; flex-shrink:0;}
-.lp-ui .ui-tabs span.on{background:var(--surface-2); color:var(--orange); box-shadow:inset 0 0 0 1px var(--hair);}
+.lp-ui .ui-tabs span.on{background:#fff; color:var(--orange); box-shadow:var(--lp-d1);}
 
-/* Match Live — repris de .lv2-* */
-.lp-ui .lv-score{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 4px 16px;}
+/* --- Match Live — repris de .lv2-* --- */
+.lp-ui .lv-score{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:2px 4px 18px;}
 .lp-ui .lv-team{flex:1; min-width:0; text-align:center;}
 .lp-ui .lv-tname{
-  font-family:var(--cond); font-size:11.5px; font-weight:700; letter-spacing:.13em;
-  text-transform:uppercase; color:var(--t3);
+  font-family:var(--cond); font-size:12.5px; font-weight:700; letter-spacing:.14em;
+  text-transform:uppercase; color:var(--t4);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
 }
-.lp-ui .lv-tscore{font-family:var(--cond); font-size:clamp(34px,5vw,50px); font-weight:700; line-height:1; color:var(--t1); margin-top:2px;}
+.lp-ui .lv-tscore{font-family:var(--cond); font-size:clamp(36px,4.4vw,52px); font-weight:700; line-height:1; color:var(--t1); margin-top:4px;}
 .lp-ui .lv-clock{
-  flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:2px;
-  padding:8px 16px; border-radius:16px; background:var(--orange-soft);
+  flex:0 0 auto; display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:8px 16px; border-radius:var(--lp-r1); background:var(--orange-soft);
 }
 .lp-ui .lv-q{font-family:var(--cond); font-size:12px; font-weight:800; letter-spacing:.14em; text-transform:uppercase; color:var(--orange);}
 .lp-ui .lv-time{font-size:21px; font-weight:700; color:var(--t1); line-height:1; font-variant-numeric:tabular-nums;}
-.lp-ui .lv-courtwrap{background:var(--card-bg); border-radius:var(--card-radius); box-shadow:var(--shadow-xs); padding:12px; position:relative;}
-.lp-ui .lv-acts{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:12px;}
+/* le terrain n'est plus dans une carte : il occupe toute la surface */
+.lp-ui .lv-courtwrap{position:relative; background:none; border-radius:0; box-shadow:none; padding:0;}
+.lp-ui .lv-acts{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:18px;}
 .lp-ui .lv-act{
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
-  min-height:56px; padding:10px; border-radius:16px; background:var(--field-bg); color:var(--t1);
-  font-size:13.5px; font-weight:600; text-align:center; line-height:1.2;
-  transition:background .2s ease, color .2s ease, transform .2s ease;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  min-height:58px; padding:10px; border-radius:var(--lp-r1); background:var(--field-bg); color:var(--t1);
+  font-size:14px; font-weight:600; text-align:center; line-height:1.2;
+  transition:background .25s ease, color .25s ease;
 }
 .lp-ui .lv-act.made{background:var(--win-soft); color:var(--win);}
 .lp-ui .lv-act.miss{background:var(--loss-soft); color:var(--loss);}
-.lp-ui .lv-act.on{background:linear-gradient(180deg,var(--orange-vif),var(--orange-deep)); color:#fff; box-shadow:var(--shadow-orange); transform:translateY(-2px);}
-.lp-ui .lv-act n{display:block; font-family:var(--mono); font-size:10px; font-weight:500; opacity:.8;}
-.lp-ui .lv-players{display:grid; grid-template-columns:repeat(auto-fit,minmax(74px,1fr)); gap:7px; margin-top:12px;}
+.lp-ui .lv-act.on{background:linear-gradient(180deg,var(--orange-vif),var(--orange-deep)); color:#fff; box-shadow:0 6px 16px rgba(255,106,0,0.24);}
+.lp-ui .lv-act n{display:block; font-family:var(--mono); font-size:11px; font-weight:500; opacity:.75;}
+.lp-ui .lv-players{display:grid; grid-template-columns:repeat(auto-fit,minmax(78px,1fr)); gap:8px; margin-top:10px;}
 .lp-ui .lv-pbtn{
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px;
-  min-height:66px; border-radius:16px; background:var(--field-bg); color:var(--t1);
-  transition:background .2s ease, transform .2s ease, box-shadow .2s ease;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px;
+  min-height:66px; border-radius:var(--lp-r1); background:var(--field-bg); color:var(--t1);
+  transition:background .25s ease, color .25s ease;
 }
-.lp-ui .lv-pbtn b{font-family:var(--cond); font-size:20px; font-weight:700; line-height:1;}
-.lp-ui .lv-pbtn span{font-size:10px; color:var(--t3);}
-.lp-ui .lv-pbtn.on{background:linear-gradient(180deg,var(--orange-vif),var(--orange-deep)); color:#fff; box-shadow:var(--shadow-orange); transform:translateY(-2px);}
+.lp-ui .lv-pbtn b{font-family:var(--cond); font-size:21px; font-weight:700; line-height:1;}
+.lp-ui .lv-pbtn span{font-size:11.5px; color:var(--t3);}
+.lp-ui .lv-pbtn.on{background:linear-gradient(180deg,var(--orange-vif),var(--orange-deep)); color:#fff; box-shadow:0 6px 16px rgba(255,106,0,0.24);}
 .lp-ui .lv-pbtn.on span{color:rgba(255,255,255,.85);}
 .lp-ui .lv-foot{
-  display:flex; align-items:center; gap:10px; margin-top:12px; padding:13px 16px;
-  border-radius:var(--card-radius); background:var(--card-bg); box-shadow:var(--shadow-xs);
+  display:flex; align-items:center; gap:11px; margin-top:16px; padding-top:14px;
+  border-top:1px solid var(--lp-line-soft); background:none; box-shadow:none; border-radius:0;
 }
-.lp-ui .lv-foot .dot{width:9px; height:9px; border-radius:50%; background:var(--win); flex-shrink:0;}
-.lp-ui .lv-foot .txt{flex:1; min-width:0; font-size:12.5px; color:var(--t1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.lp-ui .lv-foot .tm{font-family:var(--mono); font-size:10.5px; color:var(--t4); flex-shrink:0;}
+.lp-ui .lv-foot .dot{width:8px; height:8px; border-radius:50%; background:var(--win); flex-shrink:0;}
+.lp-ui .lv-foot .txt{flex:1; min-width:0; font-size:13.5px; color:var(--t1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.lp-ui .lv-foot .tm{font-family:var(--mono); font-size:12px; color:var(--t4); flex-shrink:0;}
 
 /* marqueur animé sur le terrain */
 .lp-shotdot{
   position:absolute; width:20px; height:20px; margin:-10px 0 0 -10px; border-radius:50%;
-  background:var(--orange); box-shadow:0 0 0 6px rgba(255,106,0,0.20), var(--shadow-orange);
+  background:var(--orange); box-shadow:0 0 0 6px rgba(255,106,0,0.18), 0 4px 12px rgba(255,106,0,0.3);
   opacity:0; transform:scale(.4); transition:opacity .35s ease, transform .35s cubic-bezier(.2,1.5,.4,1);
   pointer-events:none; z-index:3;
 }
 .lp-shotdot.on{opacity:1; transform:scale(1);}
 .lp-shotdot::after{
   content:""; position:absolute; inset:-6px; border-radius:50%;
-  border:2px solid rgba(255,106,0,0.5); animation:lpRipple 1.8s ease-out infinite;
+  border:2px solid rgba(255,106,0,0.45); animation:lpRipple 1.9s ease-out infinite;
 }
-@keyframes lpRipple{0%{transform:scale(.6); opacity:.9;} 100%{transform:scale(2.1); opacity:0;}}
+@keyframes lpRipple{0%{transform:scale(.6); opacity:.85;} 100%{transform:scale(2.1); opacity:0;}}
 
-/* fil d'étapes du Match Live */
-.lp-steps{display:flex; flex-direction:column; gap:6px; margin-top:26px;}
-.lp-step{
-  display:flex; gap:14px; align-items:center; padding:14px 16px; border-radius:18px;
-  border:1px solid transparent; transition:all .45s cubic-bezier(.2,.8,.2,1);
+/* --- Fil des étapes du Match Live : une timeline, pas quatre cartes.
+   L'étape active passe en orange, les autres s'effacent. --- */
+.lp-steps{position:relative; display:flex; flex-direction:column; gap:clamp(20px,2.6vw,32px); margin-top:clamp(30px,3.6vw,42px);}
+.lp-steps::before{
+  content:""; position:absolute; left:15px; top:16px; bottom:16px; width:1px; background:var(--lp-line);
 }
-.lp-step.on{background:rgba(255,255,255,0.62); border-color:var(--glass-brd); box-shadow:var(--shadow-sm), var(--glass-hi);}
+.lp-step{display:flex; gap:16px; align-items:flex-start; padding:0; background:none; border:0; box-shadow:none;}
 .lp-step-n{
-  flex:0 0 auto; width:30px; height:30px; border-radius:11px;
+  position:relative; z-index:1; flex:0 0 auto; width:31px; height:31px; border-radius:var(--lp-rp);
   display:flex; align-items:center; justify-content:center;
-  font-family:var(--cond); font-size:14px; font-weight:700;
-  background:var(--field-bg); color:var(--t3); transition:all .45s ease;
+  font-family:var(--cond); font-size:14.5px; font-weight:700;
+  background:var(--bg); color:var(--t4); box-shadow:0 0 0 1px var(--lp-line);
+  transition:background .4s ease, color .4s ease, box-shadow .4s ease;
 }
-.lp-step.on .lp-step-n{background:linear-gradient(180deg,var(--orange-vif),var(--orange-deep)); color:#fff; box-shadow:var(--shadow-orange);}
-.lp-step b{display:block; font-size:14.5px; font-weight:600; color:var(--t1); letter-spacing:-0.012em;}
-.lp-step span{display:block; font-size:12.5px; color:var(--t3); margin-top:2px;}
+.lp-step.on .lp-step-n{
+  background:var(--orange); color:#fff;
+  box-shadow:0 0 0 1px var(--orange), 0 0 0 6px rgba(255,106,0,0.11);
+}
+.lp-step-n svg{width:15px; height:15px;}
+.lp-step-b{padding-top:3px; min-width:0;}
+.lp-step b{
+  display:block; font-family:var(--cond); font-size:19px; font-weight:700;
+  letter-spacing:.06em; text-transform:uppercase; color:var(--t4);
+  transition:color .4s ease;
+}
+.lp-step.on b{color:var(--orange);}
+.lp-step span{display:block; font-size:14px; line-height:1.5; color:var(--t4); margin-top:5px; opacity:.62; transition:opacity .4s ease, color .4s ease;}
+.lp-step.on span{color:var(--t2); opacity:1;}
 
 /* ------------------------------------------------------------
-   8. Rapport IA
+   8. Rapport IA — quatre colonnes de texte séparées par un filet
    ------------------------------------------------------------ */
-.lp-ai{display:grid; grid-template-columns:1fr; gap:10px;}
-@media(min-width:700px){ .lp-ai{grid-template-columns:1fr 1fr;} }
-.lp-ai-card{padding:20px 22px; border-radius:20px; background:var(--card-bg); border:1px solid var(--hair-soft); box-shadow:var(--shadow-xs);}
+.lp-ai{display:grid; grid-template-columns:1fr; gap:clamp(20px,2.4vw,30px);}
+@media(min-width:760px){ .lp-ai{grid-template-columns:1fr 1fr; column-gap:clamp(30px,4vw,54px);} }
+.lp-ai-card{padding:0; border-radius:0; background:none; border:0; box-shadow:none;}
 .lp-ai-card h4{
   display:flex; align-items:center; gap:9px; margin-bottom:12px;
-  font-family:var(--cond); font-size:13px; font-weight:700; letter-spacing:.11em; text-transform:uppercase;
+  font-family:var(--cond); font-size:13.5px; font-weight:700; letter-spacing:.13em; text-transform:uppercase;
 }
-.lp-ai-card h4 i{width:22px; height:22px; border-radius:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+.lp-ai-card h4 i{width:22px; height:22px; border-radius:var(--lp-rp); display:flex; align-items:center; justify-content:center; flex-shrink:0;}
 .lp-ai-card h4 svg{width:13px; height:13px;}
 .lp-ai-card.good h4{color:var(--win);} .lp-ai-card.good h4 i{background:var(--win-soft); color:var(--win);}
 .lp-ai-card.work h4{color:var(--orange);} .lp-ai-card.work h4 i{background:var(--orange-soft); color:var(--orange);}
 .lp-ai-card.key h4{color:var(--gold);} .lp-ai-card.key h4 i{background:var(--gold-soft); color:var(--gold);}
 .lp-ai-card.cmp h4{color:var(--t2);} .lp-ai-card.cmp h4 i{background:var(--field-bg); color:var(--t2);}
-.lp-ai-li{display:flex; gap:10px; font-size:13.5px; line-height:1.5; color:var(--t2); padding:7px 0;}
-.lp-ai-li + .lp-ai-li{border-top:1px solid var(--hair-soft);}
+.lp-ai-li{display:flex; gap:12px; font-size:14.5px; line-height:1.55; color:var(--t2); padding:9px 0;}
+.lp-ai-li + .lp-ai-li{border-top:1px solid var(--lp-line-soft);}
 .lp-ai-li b{font-weight:600; color:var(--t1);}
-.lp-ai-li .mono{font-family:var(--mono); font-size:12px; color:var(--orange); flex-shrink:0;}
+.lp-ai-li .mono{font-family:var(--mono); font-size:13px; font-weight:600; color:var(--orange); flex-shrink:0; min-width:44px;}
 .lp-ai-typing{
-  display:inline-flex; align-items:center; gap:7px; margin-bottom:16px;
-  font-family:var(--mono); font-size:11px; color:var(--orange);
-  padding:6px 13px; border-radius:999px; background:var(--orange-soft);
+  display:inline-flex; align-items:center; gap:7px; margin-bottom:clamp(20px,2.4vw,28px);
+  font-family:var(--mono); font-size:12px; color:var(--orange);
+  padding:6px 14px; border-radius:var(--lp-rp); background:var(--orange-soft);
 }
 .lp-ai-typing i{width:5px; height:5px; border-radius:50%; background:var(--orange); animation:lpPulse 1.4s ease-in-out infinite;}
 .lp-ai-typing i:nth-child(2){animation-delay:.2s;} .lp-ai-typing i:nth-child(3){animation-delay:.4s;}
 
-/* pastilles de catégories */
-.lp-verbs{display:flex; flex-wrap:wrap; gap:9px; margin-top:24px;}
-.lp-verbs span{
-  padding:10px 18px; border-radius:999px; font-family:var(--cond); font-size:15px;
-  font-weight:700; letter-spacing:.09em; text-transform:uppercase; color:var(--orange);
-  background:rgba(255,255,255,0.55);
-  -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
-  border:1px solid var(--glass-brd); box-shadow:var(--shadow-xs), var(--glass-hi);
+/* pastilles de catégories — plates, sans verre */
+.lp-verbs{display:flex; flex-wrap:wrap; gap:8px; margin-top:clamp(26px,3vw,34px);}
+.lp-verbs span,.lp-chip{
+  display:inline-block;
+  padding:9px 17px; border-radius:var(--lp-rp); font-family:var(--cond); font-size:15px;
+  font-weight:700; letter-spacing:.11em; text-transform:uppercase; color:var(--orange);
+  background:var(--orange-soft); border:0; box-shadow:none; line-height:1;
 }
+.lp-chip{font-size:13px; padding:8px 15px;}
 
 /* ------------------------------------------------------------
    9. CTA final + pied de page
    ------------------------------------------------------------ */
-.lp-final{padding:clamp(80px,12vw,160px) 0 clamp(60px,8vw,110px); text-align:center;}
+.lp-final{padding:clamp(88px,12vw,150px) 0 clamp(64px,8vw,110px); text-align:center;}
 .lp-final h2{
-  font-size:clamp(33px,7.4vw,68px);
-  max-width:17ch; margin:0 auto;
+  font-size:clamp(32px,6.8vw,62px);
+  max-width:min(100%,940px); margin:0 auto;
 }
-.lp-final .lp-lede{margin:22px auto 0; text-align:center;}
+.lp-final .lp-lede{margin:clamp(22px,2.6vw,30px) auto 0; text-align:center; max-width:52ch;}
 
 .lp-foot{padding:0 0 clamp(40px,6vw,70px);}
 .lp-foot-in{
   display:flex; align-items:center; gap:20px; flex-wrap:wrap;
-  padding-top:30px; border-top:1px solid var(--hair-soft);
+  padding-top:30px; border-top:1px solid var(--lp-line-soft);
   font-size:13px; color:var(--t4);
 }
 .lp-foot-in nav{display:flex; gap:20px; margin-left:auto; flex-wrap:wrap;}
@@ -577,17 +706,16 @@ img,svg{max-width:100%;}
 .lp-foot-in nav a:hover{color:var(--orange);}
 
 /* ------------------------------------------------------------
-   10. Apparition au scroll & parallaxe
+   10. Apparition au scroll — fondu + très léger décalage, rien d'autre
    ------------------------------------------------------------ */
 /* .js n'est posé que si le script tourne : sans JS, la page reste lisible */
-.js .rv{opacity:0; transform:translateY(26px); transition:opacity .9s cubic-bezier(.2,.8,.2,1), transform .9s cubic-bezier(.2,.8,.2,1);}
+.js .rv{opacity:0; transform:translateY(16px); transition:opacity .7s cubic-bezier(.2,.8,.2,1), transform .7s cubic-bezier(.2,.8,.2,1);}
 .js .rv.in{opacity:1; transform:none;}
-.rv-d1{transition-delay:.09s;} .rv-d2{transition-delay:.18s;} .rv-d3{transition-delay:.27s;} .rv-d4{transition-delay:.36s;}
+.rv-d1{transition-delay:.07s;} .rv-d2{transition-delay:.14s;} .rv-d3{transition-delay:.21s;} .rv-d4{transition-delay:.28s;}
 @media(prefers-reduced-motion:reduce){
   .js .rv{opacity:1; transform:none; transition:none;}
-  .lp-float,.lp-shotdot::after,.lp-win-live b,.lp-ai-typing i{animation:none!important;}
+  .lp-shotdot::after,.lp-live b,.lp-ai-typing i{animation:none!important;}
   html{scroll-behavior:auto;}
-  [data-par]{transform:none!important;}
 }
 </style>
 <script>document.documentElement.classList.add('js');</script>
@@ -637,17 +765,19 @@ img,svg{max-width:100%;}
     <p class="lp-hero-note rv rv-d3">Démo publique · aucun compte à créer</p>
   </div>
 
-  <!-- composition d'écrans : l'app elle-même, en verre, en lévitation -->
+  <!-- l'aperçu produit, posé sur la page : une seule surface, une seule
+       lueur derrière elle pour la profondeur, aucune lévitation -->
   <div class="lp-wrap">
     <div class="lp-stage">
 
       <!-- écran principal : le tableau de bord du coach -->
       <div class="lp-stage-main rv rv-d2">
-        <div class="lp-win lp-float" data-par="0.05">
-          <div class="lp-win-bar"><i></i><i></i><i></i><span class="lp-win-t">Tableau de bord</span>
-            <span class="lp-win-live"><b></b>EN DIRECT</span>
+        <div class="lp-surface lp-glow">
+          <div class="lp-surface-head">
+            <span class="lp-surface-t">Tableau de bord</span>
+            <span class="lp-live"><b></b>En direct</span>
           </div>
-          <div class="lp-win-body lp-ui">
+          <div class="lp-ui">
             <div class="pd-stats c4">
               <div class="pd-stat hot">
                 <div class="pd-stat-v" data-count="23"><i>–15</i></div>
@@ -671,12 +801,11 @@ img,svg{max-width:100%;}
               </div>
             </div>
 
-            <div class="ui-grid2" style="margin-top:12px">
-              <div class="tr2-panel" style="padding:16px">
-                <div class="ui-h">Niveau de l'équipe · 6 derniers matchs</div>
+            <div class="ui-grid2" style="margin-top:clamp(20px,2.4vw,28px)">
+              <div class="lp-panel">
+                <div class="ui-h">Niveau de l'équipe · 6 derniers matchs<em>moy. 88</em></div>
                 <svg class="pd-svg" viewBox="0 0 320 132" preserveAspectRatio="none" role="img" aria-label="Courbe d'évaluation de l'équipe en progression">
                   <line class="pd-avg" x1="0" y1="72" x2="320" y2="72"/>
-                  <text class="pd-avg-l" x="316" y="66">moy. 88</text>
                   <path class="pd-area" d="M14,96 L74,78 L134,86 L194,54 L254,60 L308,28 L308,132 L14,132 Z"/>
                   <polyline class="pd-line" points="14,96 74,78 134,86 194,54 254,60 308,28"/>
                   <circle class="pd-dot" cx="14" cy="96" r="4"/><circle class="pd-dot" cx="74" cy="78" r="4"/>
@@ -686,11 +815,11 @@ img,svg{max-width:100%;}
                 </svg>
                 <div class="ui-note">Calculé à partir des actions du match — vous ne saisissez rien d'autre.</div>
               </div>
-              <div class="tr2-panel" style="padding:16px">
+              <div class="lp-panel">
                 <div class="ui-h">Prochain match</div>
-                <div style="font-family:var(--cond); font-size:26px; font-weight:700; line-height:1.05; color:var(--t1)">Samedi<br>21 avril</div>
-                <div style="font-size:11.5px; color:var(--t4); margin-top:8px; line-height:1.5">20 h 00 · 9e journée<br>Déplacement à 40 min</div>
-                <div style="margin-top:14px"><span class="tr2-chip on">Extérieur</span></div>
+                <div style="font-family:var(--cond); font-size:28px; font-weight:700; line-height:1.05; color:var(--t1)">Samedi<br>21 avril</div>
+                <div style="font-size:13px; color:var(--t4); margin-top:10px; line-height:1.55">20 h 00 · 9<sup>e</sup> journée<br>Déplacement à 40 min</div>
+                <div style="margin-top:auto; padding-top:16px"><span class="lp-chip">Extérieur</span></div>
               </div>
             </div>
           </div>
@@ -710,22 +839,23 @@ img,svg{max-width:100%;}
       <p class="lp-lede">Tout commence ici. Sur le banc, vous enregistrez les actions au fur et à mesure : l'endroit sur le terrain, l'action, le joueur. Pas de menus, pas de réglages — trois appuis et c'est dans la feuille de match.</p>
     </div>
 
-    <div class="lp-split" id="liveBlock">
+    <div class="lp-split live" id="liveBlock">
       <div class="rv rv-d1">
         <div class="lp-steps" id="lpSteps">
-          <div class="lp-step" data-step="0"><span class="lp-step-n">1</span><div><b>Le terrain</b><span>Un appui à l'endroit du tir. La zone et les points sont trouvés tout seuls.</span></div></div>
-          <div class="lp-step" data-step="1"><span class="lp-step-n">2</span><div><b>L'action</b><span>Tir réussi, tir manqué, faute, rebond, perte de balle — de gros boutons.</span></div></div>
-          <div class="lp-step" data-step="2"><span class="lp-step-n">3</span><div><b>Le joueur</b><span>Les cinq joueurs sur le terrain, en grand. Un appui suffit.</span></div></div>
-          <div class="lp-step" data-step="3"><span class="lp-step-n">4</span><div><b>C'est enregistré</b><span>Le score, la feuille de match et les statistiques se mettent à jour.</span></div></div>
+          <div class="lp-step" data-step="0"><span class="lp-step-n">1</span><div class="lp-step-b"><b>Le terrain</b><span>Un appui à l'endroit du tir. La zone et les points sont trouvés tout seuls.</span></div></div>
+          <div class="lp-step" data-step="1"><span class="lp-step-n">2</span><div class="lp-step-b"><b>L'action</b><span>Tir réussi, tir manqué, faute, rebond, perte de balle — de gros boutons.</span></div></div>
+          <div class="lp-step" data-step="2"><span class="lp-step-n">3</span><div class="lp-step-b"><b>Le joueur</b><span>Les cinq joueurs sur le terrain, en grand. Un appui suffit.</span></div></div>
+          <div class="lp-step" data-step="3"><span class="lp-step-n"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5 9.5 17.5 19.5 7"/></svg></span><div class="lp-step-b"><b>Stat enregistrée</b><span>Le score, la feuille de match et les statistiques se mettent à jour.</span></div></div>
         </div>
       </div>
 
       <div class="rv rv-d2">
-        <div class="lp-win" data-par="0.05">
-          <div class="lp-win-bar"><i></i><i></i><i></i><span class="lp-win-t">Match live</span>
-            <span class="lp-win-live"><b></b>Q3 · 06:12</span>
+        <div class="lp-surface">
+          <div class="lp-surface-head">
+            <span class="lp-surface-t">Match live</span>
+            <span class="lp-live"><b></b>Q3 · 06:12</span>
           </div>
-          <div class="lp-win-body lp-ui">
+          <div class="lp-ui">
             <div class="lv-score">
               <div class="lv-team"><div class="lv-tname">Mon équipe</div><div class="lv-tscore" id="lvHome">68</div></div>
               <div class="lv-clock"><span class="lv-q">Q3</span><span class="lv-time">06:12</span></div>
@@ -771,22 +901,19 @@ img,svg{max-width:100%;}
       <p class="lp-lede">Vous ne remplissez aucun tableau. À partir de ce que vous avez saisi pendant le match, HoopBoard construit vos statistiques, votre rapport, et votre saison.</p>
     </div>
 
-    <!-- le fil logique, en une ligne -->
+    <!-- le fil logique : une ligne fine, quatre étapes -->
     <div class="lp-flow rv rv-d1">
-      <div class="lp-flow-i first"><b>1 · Pendant</b><span>Le match en direct</span><em>Vos appuis sur le terrain</em></div>
-      <span class="lp-flow-a" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12h15M13 6l6 6-6 6"/></svg></span>
-      <div class="lp-flow-i"><b>2 · Après le match</b><span>Les statistiques</span><em>Feuille de match, tirs, temps forts</em></div>
-      <span class="lp-flow-a" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12h15M13 6l6 6-6 6"/></svg></span>
-      <div class="lp-flow-i"><b>3 · Le lendemain</b><span>L'analyse IA</span><em>Ce qui a marché, ce qui coince</em></div>
-      <span class="lp-flow-a" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 12h15M13 6l6 6-6 6"/></svg></span>
-      <div class="lp-flow-i"><b>4 · Toute l'année</b><span>La saison</span><em>Tendances et progression</em></div>
+      <div class="lp-flow-i first"><b>Pendant</b><span>Le match en direct</span><em>Vos appuis sur le terrain</em></div>
+      <div class="lp-flow-i"><b>Après le match</b><span>Les statistiques</span><em>Feuille de match, tirs, temps forts</em></div>
+      <div class="lp-flow-i"><b>Le lendemain</b><span>L'analyse IA</span><em>Ce qui a marché, ce qui coince</em></div>
+      <div class="lp-flow-i"><b>Toute l'année</b><span>La saison</span><em>Tendances et progression</em></div>
     </div>
 
     <!-- l'écran des statistiques -->
     <div class="rv rv-d1">
-      <div class="lp-win" data-par="0.03">
-        <div class="lp-win-bar"><i></i><i></i><i></i><span class="lp-win-t">Statistiques · saison</span></div>
-        <div class="lp-win-body lp-ui">
+      <div class="lp-surface">
+        <div class="lp-surface-head"><span class="lp-surface-t">Statistiques · saison</span></div>
+        <div class="lp-ui">
           <div class="pd-stats c4">
             <div class="pd-stat hot"><div class="pd-stat-v" data-count="17.4"></div><div class="pd-stat-l">Points par match</div><div class="pd-stat-s"><span class="pd-stat-d up">▲ 1,8</span> sur 5 matchs</div></div>
             <div class="pd-stat"><div class="pd-stat-v" data-count="55.4"><i>%</i></div><div class="pd-stat-l">Réussite aux tirs</div><div class="pd-stat-s"><span class="pd-stat-d up">▲ 2,2</span></div></div>
@@ -794,30 +921,33 @@ img,svg{max-width:100%;}
             <div class="pd-stat"><div class="pd-stat-v" data-count="15.2"></div><div class="pd-stat-l">Niveau moyen</div><div class="pd-stat-s"><span class="pd-stat-d up">▲ 2,4</span></div></div>
           </div>
 
-          <div class="tr2-panel" style="padding:16px; margin-top:12px">
-            <div class="ui-h">Points marqués · 6 derniers matchs</div>
-            <svg class="pd-svg" viewBox="0 0 320 116" role="img" aria-label="Points marqués sur les six derniers matchs">
-              <line class="pd-avg" x1="0" y1="64" x2="290" y2="64"/>
-              <text class="pd-avg-l" x="318" y="60">moy. 17,4</text>
-              <rect class="gc-bar loss" x="10" y="70" width="30" height="28" rx="4"/>
-              <rect class="gc-bar win" x="58" y="52" width="30" height="46" rx="4"/>
-              <rect class="gc-bar win" x="106" y="60" width="30" height="38" rx="4"/>
-              <rect class="gc-bar win" x="154" y="34" width="30" height="64" rx="4"/>
-              <rect class="gc-bar win" x="202" y="44" width="30" height="54" rx="4"/>
-              <rect class="gc-bar win" x="250" y="22" width="30" height="76" rx="4"/>
-              <text class="gc-opp" x="25" y="110">J1</text><text class="gc-opp" x="73" y="110">J2</text>
-              <text class="gc-opp" x="121" y="110">J3</text><text class="gc-opp" x="169" y="110">J4</text>
-              <text class="gc-opp" x="217" y="110">J5</text><text class="gc-opp" x="265" y="110">J6</text>
-            </svg>
+          <!-- l'évolution : la grande visualisation de la section.
+               Barres et libellés en HTML — un texte de graphique ne doit
+               pas rétrécir avec le viewport comme le ferait du <text> SVG. -->
+          <div class="lp-panel" style="margin-top:clamp(20px,2.4vw,28px)">
+            <div class="ui-h hot">Points marqués · 6 derniers matchs<em>moy. 17,4</em></div>
+            <div class="lp-chart" role="img" aria-label="Points marqués sur les six derniers matchs : 12, 20, 16, 27, 23 et 28 points">
+              <div class="lp-bars">
+                <span class="lp-avg" style="bottom:45%"></span>
+                <i class="off" style="height:37%"></i>
+                <i style="height:61%"></i>
+                <i style="height:50%"></i>
+                <i style="height:84%"></i>
+                <i style="height:71%"></i>
+                <i style="height:100%"></i>
+              </div>
+              <div class="lp-xaxis"><span>J1</span><span>J2</span><span>J3</span><span>J4</span><span>J5</span><span>J6</span></div>
+            </div>
           </div>
 
-          <div class="ui-grid-even" style="margin-top:12px">
-            <div class="tr2-panel" style="padding:16px">
+          <!-- détails secondaires : plus de panneau, seulement un filet -->
+          <div class="ui-grid-even lp-sub">
+            <div class="lp-plain">
               <div class="ui-h">Carte de tir</div>
-              <div id="lpCourtGC" style="max-width:280px; margin:0 auto"></div>
+              <div id="lpCourtGC" style="max-width:300px; margin:0 auto"></div>
               <div class="ui-note" style="text-align:center">Chaque tir saisi pendant le match, à sa place sur le terrain.</div>
             </div>
-            <div class="tr2-panel" style="padding:16px">
+            <div class="lp-plain">
               <div class="ui-h">Où marquez-vous le plus ?</div>
               <div class="ui-zones">
                 <div class="ui-zone on"><span class="nm">Sous le panier</span><span class="val">69 %</span></div>
@@ -832,8 +962,8 @@ img,svg{max-width:100%;}
       </div>
     </div>
 
-    <!-- le rapport écrit tout seul -->
-    <div class="lp-glass lp-pad rv rv-d2" style="margin-top:clamp(14px,2vw,20px)">
+    <!-- le rapport écrit tout seul — l'autre élément dominant de la section -->
+    <div class="lp-surface rv rv-d2" style="margin-top:clamp(18px,2.2vw,26px)">
       <div class="lp-ai-typing"><i></i><i></i><i></i> Rapport du match · écrit automatiquement</div>
       <div class="lp-ai">
         <div class="lp-ai-card good">
@@ -871,7 +1001,7 @@ img,svg{max-width:100%;}
      ============================================================ -->
 <section class="lp-sec" id="entrainement">
   <div class="lp-wrap">
-    <div class="lp-split rev">
+    <div class="lp-split train rev">
       <div>
         <div class="lp-head rv" style="margin-bottom:0">
           <h2 class="lp-display lp-h2">Organisez vos séances. Mesurez les progrès.</h2>
@@ -897,50 +1027,55 @@ img,svg{max-width:100%;}
       </div>
 
       <div class="rv rv-d2">
-        <div class="lp-win" data-par="-0.04">
-          <div class="lp-win-bar"><i></i><i></i><i></i><span class="lp-win-t">Mes séances</span></div>
-          <div class="lp-win-body lp-ui">
-            <div class="lp-tile-lab" style="margin-bottom:10px">Cette semaine</div>
-            <div style="display:flex; flex-direction:column; gap:8px">
-              <div class="ui-sess">
-                <div class="ui-sess-d"><b>22</b><span>Avr</span></div>
-                <div class="ui-sess-b"><b>Tir extérieur · sortie d'écran</b><span>Collectif · 75 min</span></div>
-                <div class="ui-sess-n">8,4<small>/10</small></div>
-              </div>
-              <div class="ui-sess">
-                <div class="ui-sess-d"><b>24</b><span>Avr</span></div>
-                <div class="ui-sess-b"><b>Finitions main gauche</b><span>Individuel · 45 min</span></div>
-                <div class="ui-sess-n">7,9<small>/10</small></div>
-              </div>
-              <div class="ui-sess">
-                <div class="ui-sess-d"><b>26</b><span>Avr</span></div>
-                <div class="ui-sess-b"><b>Défense sur écran porté</b><span>Collectif · 60 min</span></div>
-                <div class="ui-sess-n">8,1<small>/10</small></div>
-              </div>
+        <div class="lp-surface">
+          <div class="lp-surface-head"><span class="lp-surface-t">Mes séances</span></div>
+          <div class="lp-ui lp-train">
+
+            <!-- 1. le demi-terrain : l'élément principal de la section -->
+            <div class="lp-train-court">
+              <div class="ui-h hot">Réussite au tir · par zone</div>
+              <div id="lpCourtTraining"></div>
+              <div class="ui-note">Vert : ça rentre. Rouge : à travailler.</div>
             </div>
 
-            <div class="ui-grid-even" style="margin-top:14px">
-              <div class="tr2-panel" style="padding:16px">
-                <div class="ui-h">Réussite au tir · par zone</div>
-                <div id="lpCourtTraining" style="max-width:250px; margin:0 auto"></div>
-                <div class="ui-note" style="text-align:center">Vert : ça rentre. Rouge : à travailler.</div>
-              </div>
-              <div class="tr2-panel" style="padding:16px">
-                <div class="ui-h">Notes de séance</div>
+            <div class="lp-train-side">
+              <!-- 2. l'évolution collective, juste à côté -->
+              <div class="lp-plain">
+                <div class="ui-h">Notes de séance<em>moy. 7,6</em></div>
                 <svg class="pd-svg" viewBox="0 0 300 110" role="img" aria-label="Progression des notes d'entraînement">
-                  <line class="pd-avg" x1="0" y1="62" x2="270" y2="62"/>
-                  <text class="pd-avg-l" x="298" y="58">moy. 7,6</text>
+                  <line class="pd-avg" x1="0" y1="62" x2="300" y2="62"/>
                   <path class="pd-area" d="M14,84 L70,72 L126,76 L182,50 L238,42 L288,30 L288,110 L14,110 Z"/>
                   <polyline class="pd-line" points="14,84 70,72 126,76 182,50 238,42 288,30"/>
                   <circle class="pd-dot" cx="14" cy="84" r="4"/><circle class="pd-dot" cx="70" cy="72" r="4"/>
                   <circle class="pd-dot" cx="126" cy="76" r="4"/><circle class="pd-dot" cx="182" cy="50" r="4"/>
                   <circle class="pd-dot" cx="238" cy="42" r="4"/><circle class="pd-dot hi" cx="288" cy="30" r="5.5"/>
-                  <text class="pd-last" x="280" y="20">8,4</text>
+                  <text class="pd-last" x="279" y="19">8,4</text>
                 </svg>
+              </div>
+
+              <!-- 3. les prochaines séances, volontairement secondaires -->
+              <div class="lp-plain">
+                <div class="ui-h">Cette semaine</div>
+                <div class="ui-sess">
+                  <div class="ui-sess-d"><b>22</b><span>Avr</span></div>
+                  <div class="ui-sess-b"><b>Tir extérieur · sortie d'écran</b><span>Collectif · 75 min</span></div>
+                  <div class="ui-sess-n">8,4<small>/10</small></div>
+                </div>
+                <div class="ui-sess">
+                  <div class="ui-sess-d"><b>24</b><span>Avr</span></div>
+                  <div class="ui-sess-b"><b>Finitions main gauche</b><span>Individuel · 45 min</span></div>
+                  <div class="ui-sess-n">7,9<small>/10</small></div>
+                </div>
+                <div class="ui-sess">
+                  <div class="ui-sess-d"><b>26</b><span>Avr</span></div>
+                  <div class="ui-sess-b"><b>Défense sur écran porté</b><span>Collectif · 60 min</span></div>
+                  <div class="ui-sess-n">8,1<small>/10</small></div>
+                </div>
               </div>
             </div>
 
-            <div class="tr2-panel" style="padding:16px; margin-top:12px">
+            <!-- 4. le tableau : la surface la plus légère de la page -->
+            <div class="lp-plain lp-sub lp-train-tbl">
               <div class="ui-h">Progression de l'équipe · 4 dernières semaines</div>
               <div class="table-scroll">
                 <table class="ui-tbl">
@@ -955,7 +1090,6 @@ img,svg{max-width:100%;}
                   </tbody>
                 </table>
               </div>
-              <div class="ui-note">Présence, réussite au tir et note de séance : la même ligne pour chaque joueur, mise à jour à chaque entraînement.</div>
             </div>
           </div>
         </div>
@@ -974,7 +1108,7 @@ img,svg{max-width:100%;}
      ============================================================ -->
 <section class="lp-sec" id="joueur">
   <div class="lp-wrap">
-    <div class="lp-split">
+    <div class="lp-split player">
       <div>
         <div class="lp-head rv" style="margin-bottom:0">
           <h2 class="lp-display lp-h2">Vos joueurs ont aussi leur outil pour progresser.</h2>
@@ -994,28 +1128,28 @@ img,svg{max-width:100%;}
             <div><b>Ses entraînements et ses tirs</b><span>Les séances du coach, ses zones de réussite, ce qu'il doit travailler.</span></div>
           </div>
         </div>
-        <div class="rv rv-d2" style="margin-top:28px"><a class="btn btn-secondary" href="/joueur.html">Voir l'espace joueur</a></div>
+        <div class="rv rv-d2" style="margin-top:clamp(30px,3.4vw,40px)"><a class="btn btn-secondary" href="/joueur.html">Voir l'espace joueur</a></div>
       </div>
 
       <div class="rv rv-d2" style="display:flex; justify-content:center">
-        <div class="lp-phone" data-par="0.06">
+        <div class="lp-phone">
           <div class="lp-phone-screen lp-ui">
             <div class="lp-notch"></div>
             <div class="lp-phone-top">
               <span class="nm" style="color:var(--orange)">Mon espace</span>
               <span class="ctx">Saison en cours</span>
             </div>
-            <div class="ui-tabs" style="margin-bottom:12px">
+            <div class="ui-tabs" style="margin-bottom:16px">
               <span class="on">Accueil</span><span>Entraînement</span><span>Matchs</span>
             </div>
-            <div class="pd-stats" style="gap:7px">
-              <div class="pd-stat hot" style="padding:11px"><div class="pd-stat-v" style="font-size:27px">17,4</div><div class="pd-stat-l">Points / match</div><div class="pd-stat-s"><span class="pd-stat-d up">▲ 1,8</span></div></div>
-              <div class="pd-stat" style="padding:11px"><div class="pd-stat-v" style="font-size:27px">5,8</div><div class="pd-stat-l">Passes déc.</div><div class="pd-stat-s"><span class="pd-stat-d up">▲ 0,6</span></div></div>
-              <div class="pd-stat" style="padding:11px"><div class="pd-stat-v" style="font-size:27px">4,2</div><div class="pd-stat-l">Rebonds</div><div class="pd-stat-s"><span class="pd-stat-d flat">▬</span></div></div>
-              <div class="pd-stat" style="padding:11px"><div class="pd-stat-v" style="font-size:27px">55<i>%</i></div><div class="pd-stat-l">Réussite tirs</div><div class="pd-stat-s"><span class="pd-stat-d up">▲ 2,2</span></div></div>
+            <div class="pd-stats lp-phone-stats">
+              <div class="pd-stat hot"><div class="pd-stat-v">17,4</div><div class="pd-stat-l">Points / match</div><div class="pd-stat-s"><span class="pd-stat-d up">▲ 1,8</span></div></div>
+              <div class="pd-stat"><div class="pd-stat-v">5,8</div><div class="pd-stat-l">Passes déc.</div><div class="pd-stat-s"><span class="pd-stat-d up">▲ 0,6</span></div></div>
+              <div class="pd-stat"><div class="pd-stat-v">4,2</div><div class="pd-stat-l">Rebonds</div><div class="pd-stat-s"><span class="pd-stat-d flat">▬</span></div></div>
+              <div class="pd-stat"><div class="pd-stat-v">55<i>%</i></div><div class="pd-stat-l">Réussite tirs</div><div class="pd-stat-s"><span class="pd-stat-d up">▲ 2,2</span></div></div>
             </div>
-            <div class="tr2-panel" style="padding:13px; margin-top:9px">
-              <div class="ui-h" style="font-size:13px">Ma progression</div>
+            <div class="lp-panel" style="margin-top:14px">
+              <div class="ui-h">Ma progression</div>
               <svg class="pd-svg" viewBox="0 0 260 80" role="img" aria-label="Courbe de progression du joueur sur la saison">
                 <path class="pd-area" d="M10,62 L58,50 L106,54 L154,34 L202,28 L250,16 L250,80 L10,80 Z"/>
                 <polyline class="pd-line" points="10,62 58,50 106,54 154,34 202,28 250,16"/>
@@ -1024,10 +1158,10 @@ img,svg{max-width:100%;}
                 <circle class="pd-dot" cx="202" cy="28" r="3.4"/><circle class="pd-dot hi" cx="250" cy="16" r="5"/>
               </svg>
             </div>
-            <div class="tr2-panel" style="padding:13px; margin-top:9px">
-              <div class="ui-h" style="font-size:13px">Ma prochaine séance</div>
-              <div class="ui-sess" style="padding:10px; box-shadow:none">
-                <div class="ui-sess-d" style="width:36px"><b>24</b><span>Avr</span></div>
+            <div class="lp-panel" style="margin-top:12px">
+              <div class="ui-h">Ma prochaine séance</div>
+              <div class="ui-sess" style="padding:2px">
+                <div class="ui-sess-d"><b>24</b><span>Avr</span></div>
                 <div class="ui-sess-b"><b>Finitions main gauche</b><span>Individuel · 45 min</span></div>
               </div>
             </div>
@@ -1195,32 +1329,11 @@ img,svg{max-width:100%;}
     watch(el, 0.9, function (t) { t.style.width = t.dataset.bar + '%'; });
   });
 
-  /* ---- 5. Parallaxe très légère ---- */
-  var parallax = $$('[data-par]');
-  if (parallax.length && !reduced) {
-    var ticking = false;
-    var onScroll = function () {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(function () {
-        var vh = window.innerHeight;
-        parallax.forEach(function (el) {
-          var r = el.getBoundingClientRect();
-          if (r.bottom < -200 || r.top > vh + 200) return;
-          var mid = r.top + r.height / 2 - vh / 2;
-          el.style.transform = 'translate3d(0,' + (-mid * parseFloat(el.dataset.par)).toFixed(1) + 'px,0)';
-        });
-        ticking = false;
-      });
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', onScroll);
-    onScroll();
-  }
-
-  /* ---- 6. Reflet qui suit le curseur sur les surfaces de verre ---- */
+  /* ---- 5. Reflet qui suit le curseur ----
+     Volontairement limité à .lp-glow (la seule surface héroïque de la
+     page) : sur toutes les surfaces, l'effet devient démonstratif. */
   if (!reduced && window.matchMedia('(hover: hover)').matches) {
-    $$('.lp-glass').forEach(function (el) {
+    $$('.lp-glow').forEach(function (el) {
       el.addEventListener('mousemove', function (e) {
         var r = el.getBoundingClientRect();
         el.style.setProperty('--mx', (e.clientX - r.left) + 'px');
@@ -1229,7 +1342,7 @@ img,svg{max-width:100%;}
     });
   }
 
-  /* ---- 7. En-tête : ombre au scroll + lien de section actif ---- */
+  /* ---- 6. En-tête : ombre au scroll + lien de section actif ---- */
   var nav = $('#lpNav');
   var links = $$('[data-nl]');
   var sections = links.map(function (a) { return document.getElementById(a.getAttribute('href').slice(1)); });
@@ -1246,7 +1359,7 @@ img,svg{max-width:100%;}
   window.addEventListener('scroll', onScrollNav, { passive: true });
   onScrollNav();
 
-  /* ---- 8. Match Live : terrain → action → joueur → statistique ---- */
+  /* ---- 7. Match Live : terrain → action → joueur → statistique ---- */
   (function liveSequence() {
     var block = $('#liveBlock'); if (!block) return;
     var steps = $$('#lpSteps .lp-step');
