@@ -30,7 +30,9 @@ html{scroll-behavior:smooth; scroll-padding-top:88px;}
 body{overflow-x:hidden;}
 main{padding-bottom:0;}
 img,svg{max-width:100%;}
-@media(max-width:1080px){ main{padding-bottom:calc(104px + env(safe-area-inset-bottom,0));} }
+/* même seuil que la barre d'onglets flottante, pour qu'elle ne recouvre
+   jamais la fin de la page */
+@media(max-width:1000px){ main{padding-bottom:calc(104px + env(safe-area-inset-bottom,0));} }
 
 /* ------------------------------------------------------------
    1. Chrome : en-tête flottant + tab bar mobile (Liquid Glass)
@@ -109,17 +111,6 @@ img,svg{max-width:100%;}
 .lp-sec{position:relative; padding:clamp(76px,11vw,152px) 0;}
 .lp-head{max-width:760px; margin-bottom:clamp(34px,5vw,60px);}
 .lp-head.center{margin-left:auto; margin-right:auto; text-align:center;}
-.lp-eyebrow{
-  display:inline-flex; align-items:center; gap:8px;
-  font-family:var(--cond); font-size:13px; font-weight:700;
-  letter-spacing:0.16em; text-transform:uppercase; color:var(--t3);
-  padding:7px 15px; border-radius:999px; margin-bottom:18px;
-  background:rgba(255,255,255,0.55);
-  -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
-  border:1px solid var(--glass-brd);
-  box-shadow:var(--shadow-xs), var(--glass-hi);
-}
-.lp-eyebrow i{width:6px; height:6px; border-radius:50%; background:var(--orange); display:block;}
 
 /* Les grands titres — même matière que les titres de l'application
    (.tr2-h2 : Barlow Condensed, majuscules, orange), passés à l'échelle
@@ -265,14 +256,11 @@ img,svg{max-width:100%;}
    qu'il ne déborde jamais — y compris avec la police de repli, plus large
    que Barlow Condensed. */
 @media(min-width:900px){
-  /* 78px : au-delà, la ligne dépasse la largeur maximale de .lp-wrap (1200px). */
-  .lp-hero h1{white-space:nowrap; max-width:none; font-size:min(5.4vw,78px);}
+  /* 74px : au-delà, la ligne dépasse la zone de texte de .lp-wrap
+     (1200px moins 2×44px de gouttière) et mord sur les marges. */
+  .lp-hero h1{white-space:nowrap; max-width:none; font-size:min(5.2vw,74px);}
 }
 .lp-hero .lp-lede{margin:0 auto; font-size:clamp(16.5px,2vw,21px); max-width:62ch;}
-.lp-hero-sub{
-  margin:14px auto 0; max-width:52ch;
-  font-size:clamp(14px,1.4vw,15.5px); line-height:1.5; color:var(--t3);
-}
 .lp-cta{display:flex; gap:12px; justify-content:center; flex-wrap:wrap; margin-top:34px;}
 .lp-cta .btn{min-height:52px; padding:0 26px; border-radius:999px; font-size:16px;}
 .lp-hero-note{
@@ -280,46 +268,26 @@ img,svg{max-width:100%;}
   letter-spacing:0.04em;
 }
 
-/* la composition d'écrans du hero */
+/* l'écran du hero : une seule fenêtre, en lévitation */
 .lp-stage{position:relative; margin-top:clamp(44px,7vw,84px);}
-.lp-stage-main{position:relative; z-index:2; max-width:940px; margin:0 auto;}
-.lp-stage-side{display:none;}
-@media(min-width:1100px){
-  .lp-stage{padding:0 40px;}
-  .lp-stage-main{max-width:800px;}
-  .lp-stage-side{display:block; position:absolute; z-index:3; width:290px;}
-  .lp-stage-side.left{left:0; bottom:-26px; z-index:4;}
-  .lp-stage-side.right{right:0; top:24px; width:330px;}
-}
+.lp-stage-main{position:relative; max-width:940px; margin:0 auto;}
 .lp-float{animation:lpFloat 9s ease-in-out infinite;}
-.lp-float.b{animation-duration:11s; animation-delay:-3s;}
-.lp-float.c{animation-duration:13s; animation-delay:-6s;}
 @keyframes lpFloat{
   0%,100%{transform:translate3d(0,0,0);}
   50%{transform:translate3d(0,-13px,0);}
 }
 
-/* bandeau de confiance */
-.lp-trust{display:flex; flex-wrap:wrap; justify-content:center; gap:10px; margin-top:clamp(36px,5vw,56px);}
-.lp-trust span{
-  display:inline-flex; align-items:center; gap:8px;
-  padding:9px 16px; border-radius:999px; font-size:13px; font-weight:600; color:var(--t2);
-  background:rgba(255,255,255,0.5);
-  -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
-  border:1px solid var(--glass-brd); box-shadow:var(--shadow-xs), var(--glass-hi);
-}
-.lp-trust span b{font-family:var(--cond); font-size:16px; font-weight:700; color:var(--orange);}
-
 /* ------------------------------------------------------------
    5. Grilles de composition
    ------------------------------------------------------------ */
 .lp-split{display:grid; grid-template-columns:1fr; gap:clamp(26px,4vw,56px); align-items:center;}
+/* sans cela, un contenu à défilement (un tableau large) élargit sa colonne
+   au lieu de défiler, et toute la section déborde sur téléphone */
+.lp-split>*,.lp-flow>*{min-width:0;}
 @media(min-width:1000px){
   .lp-split{grid-template-columns:minmax(0,0.86fr) minmax(0,1.14fr);}
   .lp-split.rev > *:first-child{order:2;}
 }
-.lp-duo{display:grid; grid-template-columns:1fr; gap:clamp(12px,1.6vw,18px);}
-@media(min-width:860px){ .lp-duo{grid-template-columns:repeat(2,minmax(0,1fr));} }
 .lp-bullets{display:flex; flex-direction:column; gap:2px; margin-top:26px;}
 .lp-bullet{display:flex; gap:13px; align-items:flex-start; padding:14px 16px; border-radius:18px; transition:background .25s ease;}
 .lp-bullet:hover{background:rgba(255,255,255,0.5);}
@@ -336,8 +304,6 @@ img,svg{max-width:100%;}
   font-family:var(--cond); font-size:11.5px; font-weight:700;
   letter-spacing:0.14em; text-transform:uppercase; color:var(--t4); margin-bottom:12px;
 }
-.lp-tile-t{font-size:17px; font-weight:700; letter-spacing:-0.02em; color:var(--t1); margin-bottom:6px;}
-.lp-tile-s{font-size:13.5px; line-height:1.5; color:var(--t3);}
 
 /* ------------------------------------------------------------
    6. Le fil « match → données → décisions »
@@ -424,42 +390,6 @@ img,svg{max-width:100%;}
 .lp-ui .gc-opp{fill:var(--t4); font-size:9px; text-anchor:middle;}
 .lp-ui .gc-bar.win{fill:var(--orange);} .lp-ui .gc-bar.loss{fill:var(--t4); opacity:.42;}
 
-/* cartes de match (.gc-match) */
-.lp-ui .gc-matches{display:flex; flex-direction:column; gap:9px;}
-.lp-ui .gc-match{
-  background:var(--card-bg); border:1px solid var(--hair-soft); border-radius:var(--radius);
-  padding:12px 13px; box-shadow:var(--shadow-xs);
-  transition:border-color .18s ease, box-shadow .18s ease, transform .18s ease;
-}
-.lp-ui .gc-match:hover{border-color:rgba(255,106,0,0.32); box-shadow:var(--shadow-sm); transform:translateY(-1px);}
-.lp-ui .gc-match-head{display:flex; align-items:center; gap:11px;}
-.lp-ui .gc-res{
-  flex:0 0 auto; width:30px; height:30px; border-radius:10px;
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--cond); font-weight:700; font-size:14px;
-}
-.lp-ui .gc-res.win{background:var(--win-soft); color:var(--win);}
-.lp-ui .gc-res.loss{background:var(--loss-soft); color:var(--loss);}
-.lp-ui .gc-match-id{flex:1 1 auto; min-width:0;}
-.lp-ui .gc-match-opp{font-size:13.5px; font-weight:600; color:var(--t1); line-height:1.25; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
-.lp-ui .gc-match-meta{font-size:10.5px; color:var(--t4); margin-top:1px;}
-.lp-ui .gc-match-score{flex:0 0 auto; font-family:var(--mono); font-size:13.5px; font-weight:600; color:var(--t2); white-space:nowrap;}
-.lp-ui .gc-match-score i{font-style:normal; color:var(--t4); margin:0 2px;}
-.lp-ui .gc-match-stats{display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:5px; margin-top:10px;}
-.lp-ui .gc-ms{background:var(--field-bg); border-radius:10px; padding:7px 3px; text-align:center; min-width:0;}
-.lp-ui .gc-ms b{display:block; font-family:var(--cond); font-size:17px; font-weight:700; line-height:1; color:var(--t1);}
-.lp-ui .gc-ms span{display:block; margin-top:3px; font-size:8.5px; font-weight:600; letter-spacing:.05em; color:var(--t4);}
-.lp-ui .gc-ms.hot{background:var(--orange-soft);}
-.lp-ui .gc-ms.hot b{color:var(--orange);}
-
-/* pourcentages / cellules (.pct-cell) */
-.lp-ui .ui-pcts{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
-.lp-ui .ui-pct{background:var(--field-bg); border-radius:12px; padding:11px 12px;}
-.lp-ui .ui-pct b{display:block; font-family:var(--cond); font-size:24px; font-weight:700; line-height:1; color:var(--t1);}
-.lp-ui .ui-pct span{display:block; margin-top:5px; font-size:10.5px; font-weight:600; color:var(--t3);}
-.lp-ui .ui-pct .bar{margin-top:8px; height:5px; border-radius:3px; background:rgba(28,22,16,0.08); overflow:hidden;}
-.lp-ui .ui-pct .bar i{display:block; height:100%; border-radius:3px; background:linear-gradient(90deg,var(--orange-vif),var(--orange)); width:0; transition:width 1.2s cubic-bezier(.22,.8,.24,1);}
-
 /* zone de tir (lignes) */
 .lp-ui .ui-zones{display:flex; flex-direction:column; gap:1px; border-radius:12px; overflow:hidden; border:1px solid var(--hair-soft);}
 .lp-ui .ui-zone{display:flex; align-items:center; gap:10px; padding:10px 12px; background:var(--card-bg); font-size:12px;}
@@ -495,6 +425,12 @@ img,svg{max-width:100%;}
 .lp-ui .ui-tbl .up{color:var(--win); font-weight:600;}
 .lp-ui .ui-tbl .down{color:var(--loss); font-weight:600;}
 .lp-ui .ui-tbl .flat{color:var(--t4);}
+/* sur téléphone la colonne « Séances » saute : le tableau tient alors
+   entier dans la carte, sans défilement horizontal */
+@media(max-width:430px){
+  .lp-ui .ui-tbl th:nth-child(2),.lp-ui .ui-tbl td:nth-child(2){display:none;}
+  .lp-ui .ui-tbl thead th,.lp-ui .ui-tbl tbody td{padding:8px 6px;}
+}
 
 /* barre d'onglets interne (reprise de l'app) */
 .lp-ui .ui-tabs{display:flex; gap:2px; padding:4px; background:var(--surface-1); border:1px solid var(--hair); border-radius:10px;}
@@ -694,7 +630,6 @@ img,svg{max-width:100%;}
   <div class="lp-wrap">
     <h1 class="lp-display rv">Le tableau de bord du coach amateur</h1>
     <p class="lp-lede rv rv-d1">Suivez vos matchs en direct, analysez votre saison, gérez vos entraînements et accompagnez la progression de vos joueurs.</p>
-    <p class="lp-hero-sub rv rv-d1">Une seule application, du premier ballon au bilan de saison.</p>
     <div class="lp-cta rv rv-d2">
       <a class="btn btn-primary" href="/coach.html">Découvrir HoopBoard</a>
       <a class="btn btn-secondary" href="#live">Voir comment ça marche</a>
@@ -709,7 +644,7 @@ img,svg{max-width:100%;}
       <!-- écran principal : le tableau de bord du coach -->
       <div class="lp-stage-main rv rv-d2">
         <div class="lp-win lp-float" data-par="0.05">
-          <div class="lp-win-bar"><i></i><i></i><i></i><span class="lp-win-t">Tableau de bord · mon équipe</span>
+          <div class="lp-win-bar"><i></i><i></i><i></i><span class="lp-win-t">Tableau de bord</span>
             <span class="lp-win-live"><b></b>EN DIRECT</span>
           </div>
           <div class="lp-win-body lp-ui">
@@ -761,80 +696,6 @@ img,svg{max-width:100%;}
           </div>
         </div>
       </div>
-
-      <!-- téléphone : l'espace du joueur -->
-      <div class="lp-stage-side left rv rv-d3" aria-hidden="true">
-        <div class="lp-phone lp-float b" data-par="-0.09">
-          <div class="lp-phone-screen lp-ui">
-            <div class="lp-notch"></div>
-            <div class="lp-phone-top">
-              <span class="nm" style="color:var(--orange)">Mon espace</span>
-              <span class="ctx">Joueur</span>
-            </div>
-            <div class="pd-stats" style="gap:7px">
-              <div class="pd-stat hot" style="padding:11px"><div class="pd-stat-v" style="font-size:28px">17,4</div><div class="pd-stat-l">Points / match</div></div>
-              <div class="pd-stat" style="padding:11px"><div class="pd-stat-v" style="font-size:28px">5,8</div><div class="pd-stat-l">Passes déc.</div></div>
-            </div>
-            <div class="tr2-panel" style="padding:13px; margin-top:9px">
-              <div class="ui-h" style="font-size:13px">Ma progression</div>
-              <svg class="pd-svg" viewBox="0 0 260 86" role="img" aria-label="Courbe de progression du joueur">
-                <path class="pd-area" d="M10,66 L60,54 L110,58 L160,38 L210,32 L250,20 L250,86 L10,86 Z"/>
-                <polyline class="pd-line" points="10,66 60,54 110,58 160,38 210,32 250,20"/>
-                <circle class="pd-dot hi" cx="250" cy="20" r="5"/>
-              </svg>
-            </div>
-            <div class="lp-phone-tabs">
-              <span class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Accueil</span>
-              <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg>Entraînement</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- panneau : les derniers matchs -->
-      <div class="lp-stage-side right rv rv-d4" aria-hidden="true">
-        <div class="lp-glass lp-pad lp-float c lp-ui" data-par="0.11" style="border-radius:26px">
-          <div class="ui-h">Mes derniers matchs</div>
-          <div class="gc-matches">
-            <div class="gc-match">
-              <div class="gc-match-head">
-                <span class="gc-res win">V</span>
-                <span class="gc-match-id">
-                  <span class="gc-match-opp">Match du 20 mars</span>
-                  <span class="gc-match-meta">à domicile · 8e journée</span>
-                </span>
-                <span class="gc-match-score">87<i>–</i>85</span>
-              </div>
-              <div class="gc-match-stats">
-                <div class="gc-ms hot"><b>20</b><span>PTS</span></div>
-                <div class="gc-ms"><b>5</b><span>REB</span></div>
-                <div class="gc-ms"><b>7</b><span>PD</span></div>
-                <div class="gc-ms"><b>3</b><span>3PT</span></div>
-                <div class="gc-ms"><b>24</b><span>ÉVAL</span></div>
-              </div>
-            </div>
-            <div class="gc-match">
-              <div class="gc-match-head">
-                <span class="gc-res win">V</span>
-                <span class="gc-match-id">
-                  <span class="gc-match-opp">Match du 25 février</span>
-                  <span class="gc-match-meta">à l'extérieur · 7e journée</span>
-                </span>
-                <span class="gc-match-score">99<i>–</i>94</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <div class="lp-wrap">
-    <div class="lp-trust rv">
-      <span><b>3</b> appuis pour saisir une action</span>
-      <span><b>0</b> tableur à remplir</span>
-      <span><b>1</b> saisie — tout le reste est calculé</span>
     </div>
   </div>
 </section>
@@ -845,7 +706,6 @@ img,svg{max-width:100%;}
 <section class="lp-sec" id="live">
   <div class="lp-wrap">
     <div class="lp-head center rv">
-      <span class="lp-eyebrow"><i></i>Match live</span>
       <h2 class="lp-display lp-h2">Rentrez vos stats. En direct, simplement.</h2>
       <p class="lp-lede">Tout commence ici. Sur le banc, vous enregistrez les actions au fur et à mesure : l'endroit sur le terrain, l'action, le joueur. Pas de menus, pas de réglages — trois appuis et c'est dans la feuille de match.</p>
     </div>
@@ -858,7 +718,6 @@ img,svg{max-width:100%;}
           <div class="lp-step" data-step="2"><span class="lp-step-n">3</span><div><b>Le joueur</b><span>Les cinq joueurs sur le terrain, en grand. Un appui suffit.</span></div></div>
           <div class="lp-step" data-step="3"><span class="lp-step-n">4</span><div><b>C'est enregistré</b><span>Le score, la feuille de match et les statistiques se mettent à jour.</span></div></div>
         </div>
-        <p class="lp-lede rv rv-d2" style="margin-top:26px; font-size:15px">Moins de deux secondes par action. Sans quitter le terrain des yeux.</p>
       </div>
 
       <div class="rv rv-d2">
@@ -892,7 +751,7 @@ img,svg{max-width:100%;}
 
             <div class="lv-foot" id="lvFoot">
               <span class="dot"></span>
-              <span class="txt" id="lvFootTxt">Touchez le terrain à l'endroit de l'action.</span>
+              <span class="txt" id="lvFootTxt">Touchez le terrain</span>
               <span class="tm">Q3 · 06:12</span>
             </div>
           </div>
@@ -908,7 +767,6 @@ img,svg{max-width:100%;}
 <section class="lp-sec" id="stats">
   <div class="lp-wrap">
     <div class="lp-head center rv">
-      <span class="lp-eyebrow"><i></i>Statistiques &amp; analyse</span>
       <h2 class="lp-display lp-h2">Après le match, l'IA fait le bilan.</h2>
       <p class="lp-lede">Vous ne remplissez aucun tableau. À partir de ce que vous avez saisi pendant le match, HoopBoard construit vos statistiques, votre rapport, et votre saison.</p>
     </div>
@@ -927,7 +785,7 @@ img,svg{max-width:100%;}
     <!-- l'écran des statistiques -->
     <div class="rv rv-d1">
       <div class="lp-win" data-par="0.03">
-        <div class="lp-win-bar"><i></i><i></i><i></i><span class="lp-win-t">Statistiques · saison en cours</span></div>
+        <div class="lp-win-bar"><i></i><i></i><i></i><span class="lp-win-t">Statistiques · saison</span></div>
         <div class="lp-win-body lp-ui">
           <div class="pd-stats c4">
             <div class="pd-stat hot"><div class="pd-stat-v" data-count="17.4"></div><div class="pd-stat-l">Points par match</div><div class="pd-stat-s"><span class="pd-stat-d up">▲ 1,8</span> sur 5 matchs</div></div>
@@ -968,10 +826,6 @@ img,svg{max-width:100%;}
                 <div class="ui-zone"><span class="nm">3 pts corner</span><span class="val">41 %</span></div>
                 <div class="ui-zone"><span class="nm">3 pts axe</span><span class="val">28 %</span></div>
               </div>
-              <div class="ui-pcts" style="margin-top:12px">
-                <div class="ui-pct"><b>69<span style="font-size:14px">%</span></b><span>à 2 points</span><div class="bar"><i data-bar="69"></i></div></div>
-                <div class="ui-pct"><b>93<span style="font-size:14px">%</span></b><span>lancers francs</span><div class="bar"><i data-bar="93"></i></div></div>
-              </div>
             </div>
           </div>
         </div>
@@ -984,27 +838,23 @@ img,svg{max-width:100%;}
       <div class="lp-ai">
         <div class="lp-ai-card good">
           <h4><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M4 12.5 9.5 18 20 6.5"/></svg></i>Ce qui a marché</h4>
-          <div class="lp-ai-li"><span class="mono">69 %</span><span>Très efficace près du panier : <b>29 tirs sur 42</b>, votre meilleur total de la saison.</span></div>
+          <div class="lp-ai-li"><span class="mono">69 %</span><span>Près du panier : <b>29 tirs sur 42</b>, votre meilleur total de la saison.</span></div>
           <div class="lp-ai-li"><span class="mono">+10</span><span>Le <b>4e quart-temps</b> (30–20) a fait basculer le match.</span></div>
-          <div class="lp-ai-li"><span class="mono">93 %</span><span>Sérénité aux lancers francs : <b>14 sur 15</b>.</span></div>
         </div>
         <div class="lp-ai-card work">
           <h4><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg></i>Ce qu'il faut travailler</h4>
           <div class="lp-ai-li"><span class="mono">30 %</span><span>Adresse à 3 points : <b>7 sur 23</b>, en dessous de votre moyenne.</span></div>
-          <div class="lp-ai-li"><span class="mono">9</span><span><b>Ballons perdus</b> — dont 5 sur la première passe de contre-attaque.</span></div>
-          <div class="lp-ai-li"><span class="mono">26</span><span>Rebonds pris : trop peu face à un adversaire plus grand.</span></div>
+          <div class="lp-ai-li"><span class="mono">9</span><span><b>Ballons perdus</b>, dont 5 sur la première passe de contre-attaque.</span></div>
         </div>
         <div class="lp-ai-card key">
           <h4><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 3 2.6 5.6 6.1.8-4.5 4.2 1.2 6-5.4-3-5.4 3 1.2-6L3.3 9.4l6.1-.8z"/></svg></i>Vos joueurs du match</h4>
           <div class="lp-ai-li"><span class="mono">34</span><span><b>Moses Wright</b> — 25 pts, 6 rebonds, 8 tirs sur 10 à 2 pts.</span></div>
           <div class="lp-ai-li"><span class="mono">20</span><span><b>Maodo Lô</b> — 13 pts, 7 passes décisives.</span></div>
-          <div class="lp-ai-li"><span class="mono">13</span><span><b>Nigel Williams-Goss</b> — 4 interceptions en 21 minutes.</span></div>
         </div>
         <div class="lp-ai-card cmp">
           <h4><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19V9M10 19V5M16 19v-7M22 19h-20"/></svg></i>Par rapport à la saison</h4>
           <div class="lp-ai-li"><span class="mono">+6,1</span><span>Points marqués au-dessus de votre moyenne (<b>93</b> contre 86,9).</span></div>
           <div class="lp-ai-li"><span class="mono">−4,9</span><span>Adresse à 3 points en dessous de la moyenne (<b>30 %</b> contre 35 %).</span></div>
-          <div class="lp-ai-li"><span class="mono">1er</span><span>Meilleur niveau d'équipe de la saison (<b>106</b>).</span></div>
         </div>
       </div>
     </div>
@@ -1024,7 +874,6 @@ img,svg{max-width:100%;}
     <div class="lp-split rev">
       <div>
         <div class="lp-head rv" style="margin-bottom:0">
-          <span class="lp-eyebrow"><i></i>Entraînement</span>
           <h2 class="lp-display lp-h2">Organisez vos séances. Mesurez les progrès.</h2>
           <p class="lp-lede">Créez une séance en quelques secondes, notez le travail de chacun, suivez la réussite au tir. La progression se dessine toute seule, semaine après semaine.</p>
         </div>
@@ -1049,7 +898,7 @@ img,svg{max-width:100%;}
 
       <div class="rv rv-d2">
         <div class="lp-win" data-par="-0.04">
-          <div class="lp-win-bar"><i></i><i></i><i></i><span class="lp-win-t">Entraînement · mes séances</span></div>
+          <div class="lp-win-bar"><i></i><i></i><i></i><span class="lp-win-t">Mes séances</span></div>
           <div class="lp-win-body lp-ui">
             <div class="lp-tile-lab" style="margin-bottom:10px">Cette semaine</div>
             <div style="display:flex; flex-direction:column; gap:8px">
@@ -1088,9 +937,6 @@ img,svg{max-width:100%;}
                   <circle class="pd-dot" cx="238" cy="42" r="4"/><circle class="pd-dot hi" cx="288" cy="30" r="5.5"/>
                   <text class="pd-last" x="280" y="20">8,4</text>
                 </svg>
-                <div class="ui-pcts" style="grid-template-columns:1fr; margin-top:10px">
-                  <div class="ui-pct"><b>62<span style="font-size:14px">%</span></b><span>Tirs en catch &amp; shoot</span><div class="bar"><i data-bar="62"></i></div></div>
-                </div>
               </div>
             </div>
 
@@ -1131,7 +977,6 @@ img,svg{max-width:100%;}
     <div class="lp-split">
       <div>
         <div class="lp-head rv" style="margin-bottom:0">
-          <span class="lp-eyebrow"><i></i>Espace joueur</span>
           <h2 class="lp-display lp-h2">Vos joueurs ont aussi leur outil pour progresser.</h2>
           <p class="lp-lede">Chaque joueur a son propre espace : ses statistiques, ses matchs, ses entraînements. Il voit ses points forts, ses axes de progression, et où il en est depuis le début de la saison.</p>
         </div>
@@ -1195,49 +1040,6 @@ img,svg{max-width:100%;}
         </div>
       </div>
     </div>
-
-    <!-- ce que le joueur regarde le plus -->
-    <div class="lp-duo" style="margin-top:clamp(26px,4vw,44px)">
-      <div class="lp-glass lp-pad lp-ui rv">
-        <div class="lp-tile-lab">Ses zones de tir</div>
-        <div class="lp-tile-t" style="margin-bottom:14px">Où il marque, où il doit travailler.</div>
-        <div id="lpCourtPlayer" style="max-width:290px; margin:0 auto"></div>
-      </div>
-      <div class="lp-glass lp-pad lp-ui rv rv-d1">
-        <div class="lp-tile-lab">Ses derniers matchs</div>
-        <div class="lp-tile-t" style="margin-bottom:14px">Chaque match, en un coup d'œil.</div>
-        <div class="gc-matches">
-          <div class="gc-match">
-            <div class="gc-match-head">
-              <span class="gc-res win">V</span>
-              <span class="gc-match-id"><span class="gc-match-opp">Match du 20 mars</span><span class="gc-match-meta">à domicile</span></span>
-              <span class="gc-match-score">87<i>–</i>85</span>
-            </div>
-            <div class="gc-match-stats">
-              <div class="gc-ms hot"><b>20</b><span>PTS</span></div>
-              <div class="gc-ms"><b>5</b><span>REB</span></div>
-              <div class="gc-ms"><b>7</b><span>PD</span></div>
-              <div class="gc-ms"><b>3</b><span>3PT</span></div>
-              <div class="gc-ms"><b>24</b><span>ÉVAL</span></div>
-            </div>
-          </div>
-          <div class="gc-match">
-            <div class="gc-match-head">
-              <span class="gc-res loss">D</span>
-              <span class="gc-match-id"><span class="gc-match-opp">Match du 12 mars</span><span class="gc-match-meta">à l'extérieur</span></span>
-              <span class="gc-match-score">74<i>–</i>81</span>
-            </div>
-            <div class="gc-match-stats">
-              <div class="gc-ms"><b>12</b><span>PTS</span></div>
-              <div class="gc-ms"><b>3</b><span>REB</span></div>
-              <div class="gc-ms"><b>6</b><span>PD</span></div>
-              <div class="gc-ms"><b>1</b><span>3PT</span></div>
-              <div class="gc-ms"><b>11</b><span>ÉVAL</span></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -1262,10 +1064,6 @@ img,svg{max-width:100%;}
     <div class="lp-foot-in">
       <span>© 2026 HoopBoard · démo publique</span>
       <nav aria-label="Liens de bas de page">
-        <a href="#live">Match live</a>
-        <a href="#stats">Statistiques</a>
-        <a href="#entrainement">Entraînement</a>
-        <a href="#joueur">Joueur</a>
         <a href="/coach.html">Espace coach</a>
         <a href="/joueur.html">Espace joueur</a>
       </nav>
@@ -1458,11 +1256,13 @@ img,svg{max-width:100%;}
     var footTxt = $('#lvFootTxt');
     var home = $('#lvHome');
     var spots = [{ l: 38, t: 46 }, { l: 61, t: 33 }, { l: 30, t: 62 }, { l: 55, t: 55 }];
+    /* libellés courts : la ligne du bas ne fait qu'une ligne, elle ne doit
+       jamais être coupée par les points de suspension sur un téléphone */
     var picks = [
-      { pl: 1, name: 'Moses Wright', label: 'Tir à 2 points réussi · sous le panier', pts: 2 },
-      { pl: 0, name: 'Sylvain Francisco', label: 'Tir à 3 points réussi · aile droite', pts: 3 },
-      { pl: 2, name: 'Maodo Lô', label: 'Tir à 2 points réussi · mi-distance', pts: 2 },
-      { pl: 3, name: 'Nigel Williams-Goss', label: 'Tir à 2 points réussi · sous le panier', pts: 2 }
+      { pl: 1, name: 'Wright', label: '2 pts · sous le panier', pts: 2 },
+      { pl: 0, name: 'Francisco', label: '3 pts · aile droite', pts: 3 },
+      { pl: 2, name: 'Lô', label: '2 pts · mi-distance', pts: 2 },
+      { pl: 3, name: 'Williams-G.', label: '2 pts · sous le panier', pts: 2 }
     ];
     var i = 0, phase = 0, timer = null, score = 68, running = false;
 
@@ -1478,10 +1278,10 @@ img,svg{max-width:100%;}
       players.forEach(function (p, k) { p.classList.toggle('on', phase >= 2 && k === pick.pl); });
       if (footTxt) {
         footTxt.textContent =
-          phase === 0 ? 'Terrain · ' + (pick.pts === 3 ? '3 points' : '2 points') + ' — zone trouvée' :
+          phase === 0 ? 'Terrain · zone trouvée' :
           phase === 1 ? 'Action · tir réussi' :
           phase === 2 ? 'Joueur · ' + pick.name :
-                        pick.name + ' — ' + pick.label;
+                        pick.name + ' · ' + pick.label;
       }
       if (phase === 3 && home) {
         score += pick.pts;
