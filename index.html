@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>HoopBoard — L'outil tout-en-un des coachs amateurs.</title>
-<meta name="description" content="HoopBoard aide les coachs de basket amateurs : suivez le match en direct, obtenez vos statistiques et vos analyses automatiquement, gérez vos entraînements et aidez vos joueurs à progresser.">
+<title>HoopBoard — Le tableau de bord du coach amateur</title>
+<meta name="description" content="Le tableau de bord du coach amateur : rentrez vos stats en direct pendant le match, laissez l'IA faire le bilan, organisez vos séances et donnez à vos joueurs leur propre espace de progression.">
 <meta name="theme-color" content="#F4F3F0">
-<meta property="og:title" content="HoopBoard — L'outil tout-en-un des coachs amateurs.">
-<meta property="og:description" content="Le match en direct, les statistiques, l'analyse de la saison, les entraînements et l'espace joueur. Une seule application.">
+<meta property="og:title" content="HoopBoard — Le tableau de bord du coach amateur">
+<meta property="og:description" content="Le match en direct, les statistiques, l'analyse IA de la saison, les entraînements et l'espace joueur. Une seule application.">
 <meta property="og:type" content="website">
 
 <!-- Le design system de l'application. La landing n'invente rien : mêmes
@@ -112,21 +112,46 @@ img,svg{max-width:100%;}
 .lp-eyebrow{
   display:inline-flex; align-items:center; gap:8px;
   font-family:var(--cond); font-size:13px; font-weight:700;
-  letter-spacing:0.16em; text-transform:uppercase; color:var(--orange);
-  padding:7px 15px; border-radius:999px; margin-bottom:20px;
+  letter-spacing:0.16em; text-transform:uppercase; color:var(--t3);
+  padding:7px 15px; border-radius:999px; margin-bottom:18px;
   background:rgba(255,255,255,0.55);
   -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
   border:1px solid var(--glass-brd);
   box-shadow:var(--shadow-xs), var(--glass-hi);
 }
 .lp-eyebrow i{width:6px; height:6px; border-radius:50%; background:var(--orange); display:block;}
-.lp-h2{
-  font-family:var(--sans); font-weight:800;
-  font-size:clamp(31px,5.4vw,58px); line-height:1.02; letter-spacing:-0.035em;
-  color:var(--t1); margin-bottom:18px; text-wrap:balance;
+
+/* Les grands titres — même matière que les titres de l'application
+   (.tr2-h2 : Barlow Condensed, majuscules, orange), passés à l'échelle
+   d'une landing. L'orange profond garde un contraste suffisant sur le
+   fond clair là où #FF6A00 serait trop pâle en très grand. */
+.lp-display{
+  font-family:var(--cond); font-weight:700; text-transform:uppercase;
+  color:var(--orange-deep); line-height:0.94; letter-spacing:0.005em;
+  text-wrap:balance; text-shadow:0 1px 0 rgba(255,255,255,0.55);
 }
-.lp-h2 em{font-style:normal; color:var(--orange);}
+.lp-h2{
+  font-size:clamp(32px,7.2vw,64px);
+  margin-bottom:18px;
+}
 .lp-lede{font-size:clamp(16px,1.7vw,19px); line-height:1.55; color:var(--t2); max-width:56ch; letter-spacing:-0.012em;}
+
+/* la phrase qui résume la section, posée sur une lame de verre */
+.lp-punch{
+  margin-top:clamp(20px,3vw,32px);
+  padding:clamp(20px,2.8vw,30px) clamp(20px,3vw,34px);
+  border-radius:28px; text-align:center;
+  background:linear-gradient(178deg, rgba(255,255,255,0.74), rgba(255,240,230,0.52));
+  -webkit-backdrop-filter:var(--blur-strong); backdrop-filter:var(--blur-strong);
+  border:1px solid var(--glass-brd);
+  box-shadow:var(--shadow-md), var(--glass-hi);
+}
+.lp-punch b{
+  display:block; font-family:var(--cond); font-weight:700; text-transform:uppercase;
+  font-size:clamp(23px,4.6vw,40px); line-height:1; letter-spacing:0.005em;
+  color:var(--orange-deep); text-wrap:balance;
+}
+.lp-punch span{display:block; margin:11px auto 0; max-width:60ch; font-size:14.5px; line-height:1.5; color:var(--t2);}
 .lp-head.center .lp-lede{margin-left:auto; margin-right:auto;}
 .lp-kicker{
   font-family:var(--cond); font-size:12px; font-weight:700;
@@ -232,17 +257,17 @@ img,svg{max-width:100%;}
    ------------------------------------------------------------ */
 .lp-hero{padding:calc(clamp(96px,14vw,150px)) 0 clamp(30px,5vw,60px); text-align:center; position:relative;}
 .lp-hero h1{
-  font-family:var(--sans); font-weight:800;
-  font-size:clamp(31px,7.6vw,44px); line-height:1.02; letter-spacing:-0.042em;
-  color:var(--t1); margin:0 auto 20px; max-width:18ch; text-wrap:balance;
+  font-size:clamp(40px,10.6vw,72px);
+  margin:0 auto 22px; max-width:18ch;
 }
 /* une seule ligne dès que la largeur le permet : le titre est une phrase,
    pas un slogan coupé en deux. La taille suit la largeur disponible pour
-   qu'il ne déborde jamais. */
-@media(min-width:820px){
-  .lp-hero h1{white-space:nowrap; max-width:none; font-size:min(4.62vw,58px);}
+   qu'il ne déborde jamais — y compris avec la police de repli, plus large
+   que Barlow Condensed. */
+@media(min-width:900px){
+  /* 78px : au-delà, la ligne dépasse la largeur maximale de .lp-wrap (1200px). */
+  .lp-hero h1{white-space:nowrap; max-width:none; font-size:min(5.4vw,78px);}
 }
-.lp-hero h1 em{font-style:normal; color:var(--orange);}
 .lp-hero .lp-lede{margin:0 auto; font-size:clamp(16.5px,2vw,21px); max-width:62ch;}
 .lp-hero-sub{
   margin:14px auto 0; max-width:52ch;
@@ -460,6 +485,17 @@ img,svg{max-width:100%;}
 .lp-ui .ui-sess-n{flex:0 0 auto; font-family:var(--cond); font-size:19px; font-weight:700; color:var(--t1);}
 .lp-ui .ui-sess-n small{font-size:11px; color:var(--t4); font-family:var(--sans); font-weight:600;}
 
+/* tableau de progression — le <table> de l'application, resserré pour
+   tenir dans un aperçu sur un écran de téléphone */
+.lp-ui .ui-tbl{font-size:12px;}
+.lp-ui .ui-tbl thead th{font-size:10px; padding:6px 8px; letter-spacing:.04em; position:static;}
+.lp-ui .ui-tbl tbody td{padding:8px; font-size:12px;}
+.lp-ui .ui-tbl tbody td:first-child{color:var(--t1); font-weight:600;}
+.lp-ui .ui-tbl .mono{font-family:var(--mono); font-size:11px;}
+.lp-ui .ui-tbl .up{color:var(--win); font-weight:600;}
+.lp-ui .ui-tbl .down{color:var(--loss); font-weight:600;}
+.lp-ui .ui-tbl .flat{color:var(--t4);}
+
 /* barre d'onglets interne (reprise de l'app) */
 .lp-ui .ui-tabs{display:flex; gap:2px; padding:4px; background:var(--surface-1); border:1px solid var(--hair); border-radius:10px;}
 .lp-ui .ui-tabs span{
@@ -589,11 +625,9 @@ img,svg{max-width:100%;}
    ------------------------------------------------------------ */
 .lp-final{padding:clamp(80px,12vw,160px) 0 clamp(60px,8vw,110px); text-align:center;}
 .lp-final h2{
-  font-family:var(--sans); font-weight:800;
-  font-size:clamp(30px,5.6vw,60px); line-height:1.04; letter-spacing:-0.04em;
-  color:var(--t1); max-width:20ch; margin:0 auto; text-wrap:balance;
+  font-size:clamp(33px,7.4vw,68px);
+  max-width:17ch; margin:0 auto;
 }
-.lp-final h2 em{font-style:normal; color:var(--orange);}
 .lp-final .lp-lede{margin:22px auto 0; text-align:center;}
 
 .lp-foot{padding:0 0 clamp(40px,6vw,70px);}
@@ -658,8 +692,8 @@ img,svg{max-width:100%;}
      ============================================================ -->
 <section class="lp-hero">
   <div class="lp-wrap">
-    <h1 class="rv">L'outil <em>tout-en-un</em> des coachs amateurs.</h1>
-    <p class="lp-lede rv rv-d1">Suivez votre match en direct, retrouvez toutes vos statistiques, analysez votre saison, gérez vos entraînements et aidez vos joueurs à progresser.</p>
+    <h1 class="lp-display rv">Le tableau de bord du coach amateur</h1>
+    <p class="lp-lede rv rv-d1">Suivez vos matchs en direct, analysez votre saison, gérez vos entraînements et accompagnez la progression de vos joueurs.</p>
     <p class="lp-hero-sub rv rv-d1">Une seule application, du premier ballon au bilan de saison.</p>
     <div class="lp-cta rv rv-d2">
       <a class="btn btn-primary" href="/coach.html">Découvrir HoopBoard</a>
@@ -812,8 +846,8 @@ img,svg{max-width:100%;}
   <div class="lp-wrap">
     <div class="lp-head center rv">
       <span class="lp-eyebrow"><i></i>Match live</span>
-      <h2 class="lp-h2">Tout commence <em>pendant le match.</em></h2>
-      <p class="lp-lede">Sur le banc, vous enregistrez les actions au fur et à mesure : l'endroit sur le terrain, l'action, le joueur. Pas de menus, pas de réglages — trois appuis et c'est enregistré.</p>
+      <h2 class="lp-display lp-h2">Rentrez vos stats. En direct, simplement.</h2>
+      <p class="lp-lede">Tout commence ici. Sur le banc, vous enregistrez les actions au fur et à mesure : l'endroit sur le terrain, l'action, le joueur. Pas de menus, pas de réglages — trois appuis et c'est dans la feuille de match.</p>
     </div>
 
     <div class="lp-split" id="liveBlock">
@@ -875,8 +909,8 @@ img,svg{max-width:100%;}
   <div class="lp-wrap">
     <div class="lp-head center rv">
       <span class="lp-eyebrow"><i></i>Statistiques &amp; analyse</span>
-      <h2 class="lp-h2">Chaque action <em>devient une donnée utile.</em></h2>
-      <p class="lp-lede">Vous ne remplissez aucun tableau. À partir de ce que vous avez saisi pendant le match, HoopBoard construit vos statistiques, votre saison et votre analyse.</p>
+      <h2 class="lp-display lp-h2">Après le match, l'IA fait le bilan.</h2>
+      <p class="lp-lede">Vous ne remplissez aucun tableau. À partir de ce que vous avez saisi pendant le match, HoopBoard construit vos statistiques, votre rapport, et votre saison.</p>
     </div>
 
     <!-- le fil logique, en une ligne -->
@@ -974,6 +1008,11 @@ img,svg{max-width:100%;}
         </div>
       </div>
     </div>
+
+    <div class="lp-punch rv rv-d2">
+      <b>Traquez votre saison. Repérez vos faiblesses.</b>
+      <span>Match après match, les tendances se dessinent : ce qui progresse, ce qui recule, et les deux ou trois choses à travailler avant le prochain entraînement.</span>
+    </div>
   </div>
 </section>
 
@@ -986,7 +1025,7 @@ img,svg{max-width:100%;}
       <div>
         <div class="lp-head rv" style="margin-bottom:0">
           <span class="lp-eyebrow"><i></i>Entraînement</span>
-          <h2 class="lp-h2">Gérez vos entraînements <em>simplement.</em></h2>
+          <h2 class="lp-display lp-h2">Organisez vos séances. Mesurez les progrès.</h2>
           <p class="lp-lede">Créez une séance en quelques secondes, notez le travail de chacun, suivez la réussite au tir. La progression se dessine toute seule, semaine après semaine.</p>
         </div>
         <div class="lp-bullets rv rv-d1">
@@ -1054,9 +1093,32 @@ img,svg{max-width:100%;}
                 </div>
               </div>
             </div>
+
+            <div class="tr2-panel" style="padding:16px; margin-top:12px">
+              <div class="ui-h">Progression de l'équipe · 4 dernières semaines</div>
+              <div class="table-scroll">
+                <table class="ui-tbl">
+                  <thead>
+                    <tr><th>Joueur</th><th>Séances</th><th>Tir</th><th>Note</th><th>Évol.</th></tr>
+                  </thead>
+                  <tbody>
+                    <tr><td>Moses Wright</td><td class="mono">11/12</td><td class="mono">61 %</td><td class="cell-hi">8,6</td><td class="up">▲ 0,7</td></tr>
+                    <tr><td>Maodo Lô</td><td class="mono">12/12</td><td class="mono">54 %</td><td class="cell-hi">8,2</td><td class="up">▲ 0,4</td></tr>
+                    <tr><td>Sylvain Francisco</td><td class="mono">10/12</td><td class="mono">47 %</td><td class="cell-hi">7,8</td><td class="flat">▬ 0,0</td></tr>
+                    <tr><td>Nigel Williams-Goss</td><td class="mono">9/12</td><td class="mono">39 %</td><td class="cell-hi">7,1</td><td class="down">▼ 0,3</td></tr>
+                  </tbody>
+                </table>
+              </div>
+              <div class="ui-note">Présence, réussite au tir et note de séance : la même ligne pour chaque joueur, mise à jour à chaque entraînement.</div>
+            </div>
           </div>
         </div>
       </div>
+    </div>
+
+    <div class="lp-punch rv rv-d1">
+      <b>Suivez l'évolution de votre équipe, collectivement et au tir.</b>
+      <span>Les notes de séance, la présence et les zones de réussite se cumulent semaine après semaine. Vous voyez d'un coup d'œil qui progresse et ce qui doit repasser à l'entraînement.</span>
     </div>
   </div>
 </section>
@@ -1070,7 +1132,7 @@ img,svg{max-width:100%;}
       <div>
         <div class="lp-head rv" style="margin-bottom:0">
           <span class="lp-eyebrow"><i></i>Espace joueur</span>
-          <h2 class="lp-h2">Le joueur progresse <em>aussi de son côté.</em></h2>
+          <h2 class="lp-display lp-h2">Vos joueurs ont aussi leur outil pour progresser.</h2>
           <p class="lp-lede">Chaque joueur a son propre espace : ses statistiques, ses matchs, ses entraînements. Il voit ses points forts, ses axes de progression, et où il en est depuis le début de la saison.</p>
         </div>
         <div class="lp-bullets rv rv-d1">
@@ -1184,7 +1246,7 @@ img,svg{max-width:100%;}
      ============================================================ -->
 <section class="lp-final">
   <div class="lp-wrap">
-    <h2 class="rv">Un seul outil pour coacher, suivre et <em>faire progresser votre équipe.</em></h2>
+    <h2 class="lp-display rv">Un seul outil pour coacher, suivre et faire progresser votre équipe.</h2>
     <p class="lp-lede rv rv-d1">HoopBoard fait gagner du temps aux coachs amateurs : plus de feuilles de match à recopier, une vue claire sur l'équipe, et des joueurs qui savent enfin où ils en sont.</p>
     <div class="lp-cta rv rv-d2" style="margin-top:36px">
       <a class="btn btn-primary" href="/coach.html">Découvrir HoopBoard</a>
