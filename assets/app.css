@@ -706,14 +706,46 @@ input[type="text"],input[type="email"],textarea,select{
 
 /* ---- Analyse complète d'un match (rapport) ---- */
 .rap-chart{display:flex;flex-direction:column;gap:10px;}
-.rc-svg{width:100%;height:auto;max-width:640px;display:block;}
+
+/* ---- Graphique de courbes responsive (namespace .rc2-*) ----
+   Géométrie en SVG étiré (preserveAspectRatio="none" + non-scaling-stroke),
+   libellés en HTML positionnés en pourcentage. La hauteur vient du CSS :
+   traits, points et texte gardent la même taille de 320 à 1440 px, et rien
+   ne peut sortir du cadre (overflow:hidden sur le conteneur). */
+.rc2{
+  --rc-h:clamp(180px,25vw,240px);
+  display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;
+  column-gap:9px;row-gap:7px;width:100%;min-width:0;padding:4px 5px 0;overflow:hidden;
+}
+.rc2-y{grid-column:1;grid-row:1;position:relative;min-width:22px;height:var(--rc-h);}
+.rc2-y>span{
+  position:absolute;right:0;transform:translateY(-50%);white-space:nowrap;
+  font-family:var(--mono);font-size:11px;line-height:1;color:var(--t4);
+}
+.rc2-plot{grid-column:2;grid-row:1;position:relative;height:var(--rc-h);min-width:0;}
+.rc2-svg{position:absolute;inset:0;width:100%;height:100%;display:block;overflow:visible;}
+.rc2-grid{stroke:var(--hair-soft);stroke-width:1;}
+.rc2-vsep{stroke:var(--hair-soft);stroke-width:1;stroke-dasharray:3 4;}
+.rc2-dot{fill:none;stroke-width:5.4;stroke-linecap:round;}
+.rc2-x{grid-column:2;grid-row:2;position:relative;height:14px;min-width:0;}
+.rc2-x>span{
+  position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;
+  font-family:var(--mono);font-size:11px;line-height:1.2;color:var(--t4);
+}
+.rc2-x>span.first{transform:none;}
+.rc2-x>span.last{transform:translateX(-100%);}
+@media(max-width:400px){
+  .rc2{column-gap:7px;}
+  .rc2-y{min-width:20px;}
+  .rc2-y>span,.rc2-x>span{font-size:10px;}
+}
+
+/* Grille et libellés des deux graphes de l'espace joueur qui gardent leur
+   ratio à dessein (.pd-svg du dashboard, .gc-svg du Game Center) : ceux-là
+   dessinent encore leur texte en SVG, sans étirement. */
 .rc-grid{stroke:var(--hair-soft);stroke-width:1;}
-.rc-qsep{stroke:var(--hair-soft);stroke-width:1;stroke-dasharray:3 4;}
 .rc-yl{fill:var(--t3);font-size:11px;text-anchor:end;font-family:var(--mono);}
 .rc-xl{fill:var(--t3);font-size:11px;text-anchor:middle;}
-.rc-line{fill:none;stroke-width:2.4;stroke-linejoin:round;stroke-linecap:round;}
-.rc-home{stroke:var(--orange);}
-.rc-away{stroke:var(--t4);}
 .rap-legend{display:flex;gap:18px;flex-wrap:wrap;}
 .rap-lg{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--t3);}
 .rap-lg b{color:var(--t1);font-family:var(--cond);font-size:15px;}
@@ -758,7 +790,6 @@ input[type="text"],input[type="email"],textarea,select{
 }
 
 /* ---- Entraînements collectifs ---- */
-.ml-dot{fill:var(--orange);}
 .col-badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:3px 9px;border-radius:100px;white-space:nowrap;}
 .col-badge.up{background:var(--gold-soft);color:var(--gold);}
 .col-badge.live{background:var(--orange-soft);color:var(--orange);}
@@ -1236,8 +1267,10 @@ input[type="text"],input[type="email"],textarea,select{
 .tr2-trend.down{background:var(--loss-soft); color:var(--loss);}
 .tr2-trend.flat{background:var(--orange-soft); color:var(--orange);}
 
+/* le graphe d'évolution des notes est le sujet principal du panneau :
+   il monte un peu plus haut que le gabarit .rc2 par défaut */
 .tr2-chart{width:100%; min-width:0;}
-.tr2-svg{width:100%; height:clamp(210px,26vw,290px); display:block;}
+.tr2-chart .rc2{--rc-h:clamp(200px,24vw,270px);}
 .tr2-toggles{display:flex; flex-wrap:wrap; gap:6px; margin-top:14px;}
 .tr2-key{
   font:inherit; font-size:12px; font-weight:600; color:var(--t3);
@@ -1332,7 +1365,7 @@ input[type="text"],input[type="email"],textarea,select{
 @media(max-width:560px){
   .tr2-next{min-height:0; padding:20px 18px;}
   .tr2-panel{padding:18px 16px;}
-  .tr2-svg{height:230px;}
+  .tr2-chart .rc2{--rc-h:210px;}
   .tr2-chip{min-height:42px; padding:0 16px;}
   .tr2-key{min-height:42px; padding:0 14px;}
   .tr2-trend{margin-left:0;}

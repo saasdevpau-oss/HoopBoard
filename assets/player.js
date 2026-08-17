@@ -262,6 +262,42 @@
       + (xLab ? '<div class="chart2-x">' + xLab + '</div>' : '')
       + '</div>';
   }
+  /* Même cadre responsive que lineChart, pour plusieurs courbes de couleurs
+     différentes (une par thème de séance). La couleur est posée en `style`
+     inline : une règle CSS l'emporterait sur un simple attribut `stroke`.
+     `series` : [{ pts:[[x,y],…] en pourcentages, y=0 en bas, color }]. */
+  function multiChart(o) {
+    const flip = (v) => (100 - v).toFixed(2);
+    const grid = (o.yTicks || []).map((t) => '<line class="grid-ln" x1="0" y1="' + flip(t.y) + '" x2="100" y2="' + flip(t.y) + '" vector-effect="non-scaling-stroke"/>').join('');
+    const paths = (o.series || []).map((s) => {
+      if (!s.pts || !s.pts.length) return '';
+      const d = s.pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(2) + ' ' + flip(p[1])).join(' ');
+      const dots = s.pts.map((p) => '<path class="dot" style="stroke:' + s.color + '" d="M' + p[0].toFixed(2) + ' ' + flip(p[1])
+        + 'L' + p[0].toFixed(2) + ' ' + flip(p[1]) + '" vector-effect="non-scaling-stroke"/>').join('');
+      return '<path class="line" style="stroke:' + s.color + '" d="' + d + '" vector-effect="non-scaling-stroke"/>' + dots;
+    }).join('');
+    const yLab = (o.yTicks || []).map((t) => '<span style="top:' + flip(t.y) + '%">' + esc(String(t.label)) + '</span>').join('');
+    /* au plus quatre étiquettes en X, extrémités toujours conservées */
+    let X = (o.xLabels || []).filter((t) => t.label !== '' && t.label != null);
+    if (X.length > 4) {
+      const keep = [X[0]];
+      for (let k = 1; k <= 2; k++) keep.push(X[Math.round((k * (X.length - 1)) / 3)]);
+      keep.push(X[X.length - 1]);
+      X = keep.filter((v, i, a) => a.indexOf(v) === i);
+    }
+    const xLab = X.map((t, i) => {
+      const first = i === 0 && t.x < 1, last = i === X.length - 1 && t.x > 99;
+      if (!first && !last && (t.x < 12 || t.x > 88) && X.length > 2) return '';
+      return '<span class="' + (first ? 'first' : (last ? 'last' : '')) + '" style="left:' + t.x.toFixed(2) + '%">' + esc(String(t.label)) + '</span>';
+    }).join('');
+    return '<div class="chart2"' + (o.h ? ' style="--ch-h:' + o.h + '"' : '') + '>'
+      + '<div class="chart2-y">' + yLab + '</div>'
+      + '<div class="chart2-plot">'
+      + '<svg class="chart2-svg" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-label="' + esc(o.aria || 'Graphique') + '">'
+      + grid + paths + '</svg></div>'
+      + (xLab ? '<div class="chart2-x">' + xLab + '</div>' : '')
+      + '</div>';
+  }
   function sparkline(values, accent) {
     if (!values.length) return '';
     const w = 120, h = 34, min = Math.min.apply(null, values), max = Math.max.apply(null, values), span = (max - min) || 1;
@@ -1068,23 +1104,19 @@
   function persoChart(active) {
     const n = PERSO.length;
     if (n < 2) return '<p class="pt-empty">Pas encore assez de séances notées pour tracer une évolution.</p>';
-    const W = 680, H = 280, pl = 30, pr = 14, pt = 14, pb = 26;
-    const X = (i) => pl + (i / (n - 1)) * (W - pl - pr), Y = (v) => H - pb - (v / 10) * (H - pt - pb);
-    const grid = [0, 2, 4, 6, 8, 10].map((v) => '<line x1="' + pl + '" y1="' + Y(v).toFixed(1) + '" x2="' + (W - pr) + '" y2="' + Y(v).toFixed(1) + '" class="rc-grid"/>'
-      + '<text x="' + (pl - 6) + '" y="' + (Y(v) + 3.5).toFixed(1) + '" class="rc-yl">' + v + '</text>').join('');
-    const step = Math.max(1, Math.ceil(n / 6));
-    const xl = PERSO.map((s, i) => ((i % step === 0 || i === n - 1) ? '<text x="' + X(i).toFixed(1) + '" y="' + (H - 6) + '" class="rc-xl">' + esc(fmtDate(s.dateISO)) + '</text>' : '')).join('');
-    const paths = PERSO_THEMES.filter((th) => active.indexOf(th) !== -1).map((th) => {
-      const col = PT_THEME_COLORS[PERSO_THEMES.indexOf(th) % PT_THEME_COLORS.length];
-      /* on relie entre eux les points d'une même catégorie : les séances des
-         autres catégories ne coupent pas la courbe */
-      const pts = PERSO.map((s, i) => ({ i: i, v: s.theme === th ? s.note : null })).filter((p) => p.v != null);
-      const d = pts.map((p, j) => (j ? 'L' : 'M') + X(p.i).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' ');
-      const dots = pts.map((p) => '<circle cx="' + X(p.i).toFixed(1) + '" cy="' + Y(p.v).toFixed(1) + '" r="3.6" fill="' + col + '"/>').join('');
-      return '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>' + dots;
-    }).join('');
-    return '<svg viewBox="0 0 ' + W + ' ' + H + '" class="rc-svg tr2-svg" preserveAspectRatio="none" role="img" aria-label="Évolution de mes séances personnalisées">'
-      + grid + xl + paths + '</svg>';
+    const X = (i) => (i / (n - 1)) * 100, Y = (v) => (v / 10) * 100;
+    return multiChart({
+      aria: 'Évolution de mes séances personnalisées',
+      yTicks: [0, 2, 4, 6, 8, 10].map((v) => ({ y: Y(v), label: v })),
+      xLabels: PERSO.map((s, i) => ({ x: X(i), label: fmtDate(s.dateISO) })),
+      series: PERSO_THEMES.filter((th) => active.indexOf(th) !== -1).map((th) => ({
+        color: PT_THEME_COLORS[PERSO_THEMES.indexOf(th) % PT_THEME_COLORS.length],
+        /* on relie entre eux les points d'une même catégorie : les séances
+           des autres catégories ne coupent pas la courbe */
+        pts: PERSO.map((s, i) => ({ i: i, v: s.theme === th ? s.note : null }))
+          .filter((p) => p.v != null).map((p) => [X(p.i), Y(p.v)]),
+      })),
+    });
   }
   function paintPersoHist() {
     const el = $('#perHist'); if (!el) return;
