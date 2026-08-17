@@ -186,24 +186,81 @@
      3. Graphiques SVG (légers, cohérents avec la charte)
      ============================================================ */
   let gradId = 0;
+  /* ----------------------------------------------------------------
+     Courbe d'évolution — responsive à toutes les largeurs (320 → 1440).
+
+     L'ancienne version dessinait TOUT dans un viewBox fixe 520×h mis à
+     l'échelle par `width:100%` : la hauteur, l'épaisseur des traits et la
+     taille des libellés suivaient la largeur du conteneur (texte illisible
+     à 320 px, disproportionné à 1440 px), et la dernière étiquette de l'axe
+     X, centrée sur x = 508 dans un viewBox de 520, débordait du cadre —
+     avec `overflow:visible`, elle poussait la page en scroll horizontal.
+
+     Ici : la géométrie seule reste en SVG (viewBox 0 0 100 100 étiré en
+     largeur, traits et points en `non-scaling-stroke` pour garder leur
+     épaisseur exacte), les libellés sont du texte HTML positionné en
+     pourcentage — donc jamais déformé, jamais rogné. Les étiquettes des
+     extrémités s'ancrent à gauche / à droite au lieu d'être centrées.
+     ---------------------------------------------------------------- */
   function lineChart(values, opts) {
     opts = opts || {};
-    const w = 520, h = opts.h || 150, pL = 30, pR = 12, pT = 12, pB = 22;
-    const iw = w - pL - pR, ih = h - pT - pB;
     if (!values.length) return '';
-    const min = opts.min != null ? opts.min : Math.min.apply(null, values);
-    const max = opts.max != null ? opts.max : Math.max.apply(null, values);
-    const span = (max - min) || 1;
-    const X = (i) => pL + (values.length === 1 ? iw / 2 : (i / (values.length - 1)) * iw);
-    const Y = (v) => pT + ih - ((v - min) / span) * ih;
+    const n = values.length;
+    let min = opts.min != null ? opts.min : Math.min.apply(null, values);
+    let max = opts.max != null ? opts.max : Math.max.apply(null, values);
+    /* série plate (ou valeur unique) : on ouvre une fenêtre autour de la
+       valeur, sinon la courbe se colle au bord et l'axe affiche 3 fois
+       le même nombre */
+    if (!(max > min)) { const c = min || 0; min = c - 1; max = c + 1; }
+    const span = max - min;
+    const X = (i) => (n === 1 ? 50 : (i / (n - 1)) * 100);
+    const Y = (v) => 100 - ((v - min) / span) * 100;
     const pts = values.map((v, i) => [X(i), Y(v)]);
-    const line = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ');
-    const area = 'M' + pts[0][0].toFixed(1) + ' ' + (pT + ih) + ' ' + pts.map((p) => 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ') + ' L' + pts[pts.length - 1][0].toFixed(1) + ' ' + (pT + ih) + ' Z';
+    const f = (p) => p[0].toFixed(2) + ' ' + p[1].toFixed(2);
+    const line = pts.map((p, i) => (i ? 'L' : 'M') + f(p)).join(' ');
+    const area = 'M' + pts[0][0].toFixed(2) + ' 100 ' + pts.map((p) => 'L' + f(p)).join(' ')
+      + ' L' + pts[n - 1][0].toFixed(2) + ' 100 Z';
     const gid = 'ag' + (gradId++);
-    const grid = [0, 0.5, 1].map((t) => { const y = pT + ih - t * ih; return '<line class="grid-ln" x1="' + pL + '" y1="' + y.toFixed(1) + '" x2="' + (w - pR) + '" y2="' + y.toFixed(1) + '"/><text class="axis-lab" x="' + (pL - 5) + '" y="' + (y + 3).toFixed(1) + '" text-anchor="end">' + Math.round(min + t * span) + (opts.unit || '') + '</text>'; }).join('');
-    const dots = pts.map((p, i) => '<circle class="dot' + (i === pts.length - 1 ? ' hi' : '') + '" cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="' + (i === pts.length - 1 ? 4 : 2.6) + '"/>').join('');
-    const xlabs = (opts.labels || []).map((l, i) => '<text class="axis-lab" x="' + X(i).toFixed(1) + '" y="' + (h - 6) + '" text-anchor="middle">' + esc(l) + '</text>').join('');
-    return '<svg class="chart" viewBox="0 0 ' + w + ' ' + h + '"><defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="var(--orange)" stop-opacity="0.28"/><stop offset="1" stop-color="var(--orange)" stop-opacity="0"/></linearGradient></defs>' + grid + '<path d="' + area + '" fill="url(#' + gid + ')"/><path class="line" d="' + line + '"/>' + dots + xlabs + '</svg>';
+    const grid = [0, 50, 100].map((y) => '<line class="grid-ln" x1="0" y1="' + y + '" x2="100" y2="' + y + '" vector-effect="non-scaling-stroke"/>').join('');
+    /* un point = un segment de longueur nulle à bout rond : sous un
+       étirement non uniforme il reste un disque parfait, contrairement
+       à un <circle> qui deviendrait une ellipse */
+    const dots = pts.map((p, i) => '<path class="dot' + (i === n - 1 ? ' hi' : '') + '" d="M' + f(p) + 'L' + f(p) + '" vector-effect="non-scaling-stroke"/>').join('');
+    const unit = opts.unit || '';
+    const yLab = [0, 50, 100].map((y, k) => '<span style="top:' + y + '%">'
+      + Math.round(max - (k * span) / 2) + unit + '</span>').join('');
+    /* Étiquettes de l'axe X : au plus quatre, sinon elles se touchent dès
+       320 px. On garde toujours la première et la dernière — ancrées sur le
+       bord, donc jamais rognées — et on répartit les intermédiaires. */
+    const marks = [];
+    (opts.labels || []).forEach((l, i) => { if (l) marks.push(i); });
+    let keep = marks;
+    if (marks.length > 4) {
+      keep = [marks[0]];
+      for (let k = 1; k <= 2; k++) keep.push(marks[Math.round((k * (marks.length - 1)) / 3)]);
+      keep.push(marks[marks.length - 1]);
+      keep = keep.filter((v, i, a) => a.indexOf(v) === i);
+    }
+    const xLab = keep.map((i) => {
+      const x = X(i);
+      /* une étiquette intermédiaire trop près d'un bord chevaucherait
+         celle de l'extrémité : on la retire plutôt que de la superposer */
+      if (i !== 0 && i !== n - 1 && (x < 12 || x > 88)) return '';
+      const anchor = i === 0 ? 'first' : (i === n - 1 ? 'last' : '');
+      return '<span class="' + anchor + '" style="left:' + x.toFixed(2) + '%">' + esc(opts.labels[i]) + '</span>';
+    }).join('');
+    return '<div class="chart2"' + (opts.h ? ' style="--ch-h:' + opts.h + 'px"' : '') + '>'
+      + '<div class="chart2-y">' + yLab + '</div>'
+      + '<div class="chart2-plot">'
+      + '<svg class="chart2-svg" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-hidden="true">'
+      + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+      + '<stop offset="0" stop-color="var(--orange)" stop-opacity="0.26"/>'
+      + '<stop offset="1" stop-color="var(--orange)" stop-opacity="0"/></linearGradient></defs>'
+      + grid + '<path d="' + area + '" fill="url(#' + gid + ')"/>'
+      + '<path class="line" d="' + line + '" vector-effect="non-scaling-stroke"/>' + dots + '</svg>'
+      + '</div>'
+      + (xLab ? '<div class="chart2-x">' + xLab + '</div>' : '')
+      + '</div>';
   }
   function sparkline(values, accent) {
     if (!values.length) return '';
@@ -329,18 +386,33 @@
       + grid + '<path d="' + area + '" fill="url(#' + gid + ')"/>' + avgLine
       + '<path class="pd-line" d="' + line + '"/>' + dots + lastLab + xl + '</svg>';
   }
+  /* Lecture principale du bloc : la valeur de la statistique choisie sur
+     la période choisie, et son écart à la saison. Les mêmes chiffres qu'avant
+     — ils remontent simplement en tête, en grand, au lieu de se perdre dans
+     le tableau récapitulatif. */
+  function dashReadoutHTML() {
+    const def = dashDef(), games = dashGames();
+    const vals = games.map(def.val).filter((v) => v != null);
+    if (!vals.length) return '';
+    const avg = round1(mean(vals));
+    const d = def.avg != null ? round1(avg - def.avg) : null;
+    return '<div class="pd-read">'
+      + '<div class="pd-read-v">' + fr(avg) + (def.unit ? '<i>' + esc(def.unit.trim()) + '</i>' : '')
+      + (d != null ? deltaTag(d, def.unit) : '') + '</div>'
+      + '<div class="pd-read-l">' + esc(def.label) + ' · moyenne '
+      + (dashRange ? 'sur ' + dashRange + ' matchs' : 'de la saison')
+      + (d != null ? ' · saison ' + fr(def.avg) + (def.unit || '') : '') + '</div></div>';
+  }
   function dashSummaryHTML() {
     const def = dashDef(), games = dashGames();
     const pts = games.map((g) => ({ g: g, v: def.val(g) })).filter((p) => p.v != null);
     if (!pts.length) return '';
     const vals = pts.map((p) => p.v);
-    const avg = round1(mean(vals));
     const best = pts.reduce((b, p) => (p.v > b.v ? p : b), pts[0]);
     const t = trend(vals, def.unit ? 1.5 : 0.3);
+    /* moyenne période / moyenne saison ne sont plus répétées ici :
+       elles sont déjà en tête de bloc (.pd-read). */
     return '<div class="tr2-sum">'
-      + sumRow('Moyenne sur la période', fr(avg) + (def.unit || ''))
-      + (def.avg != null ? sumRow('Moyenne de la saison', fr(def.avg) + (def.unit || '')
-        + ' <i>· écart ' + frS(round1(avg - def.avg)) + '</i>', dirOf(round1(avg - def.avg), def.unit ? 1.5 : 0.3)) : '')
       + sumRow('Meilleur match', fr(best.v) + (def.unit || '') + ' <i>· ' + esc(best.g.opponent) + ', ' + fmtDate(best.g.date) + '</i>')
       + sumRow('Dernier match', fr(pts[pts.length - 1].v) + (def.unit || '')
         + ' <i>· ' + fmtDate(pts[pts.length - 1].g.date) + '</i>')
@@ -348,6 +420,7 @@
       + '</div>';
   }
   function paintDashChart() {
+    const read = $('#pdRead'); if (read) read.innerHTML = dashReadoutHTML();
     const box = $('#pdChart'); if (box) box.innerHTML = dashChartSVG();
     const sum = $('#pdSum'); if (sum) sum.innerHTML = dashSummaryHTML();
     const lab = $('#pdChartLab'); if (lab) lab.textContent = dashDef().label;
@@ -475,15 +548,22 @@
 
   /* ---- 5c. La vue complète ---- */
   const last5Sub = (k) => '5 derniers : ' + fr(profile.avg5[k]);
+  function deltaTag(delta, unit) {
+    if (delta == null) return '';
+    const cls = delta > 0.05 ? 'up' : (delta < -0.05 ? 'down' : 'flat');
+    return '<span class="pd-stat-d ' + cls + '">' + frS(round1(delta)) + (unit || '') + '</span>';
+  }
   function statBlock(val, lab, sub, delta, unit) {
-    let d = '';
-    if (delta != null) {
-      const cls = delta > 0.05 ? 'up' : (delta < -0.05 ? 'down' : 'flat');
-      d = '<span class="pd-stat-d ' + cls + '">' + frS(round1(delta)) + (unit || '') + '</span>';
-    }
     return '<div class="pd-stat"><div class="pd-stat-v">' + fr(val) + (unit ? '<i>' + unit + '</i>' : '') + '</div>'
       + '<div class="pd-stat-l">' + lab + '</div>'
-      + '<div class="pd-stat-s">' + (sub || '') + d + '</div></div>';
+      + '<div class="pd-stat-s">' + (sub || '') + deltaTag(delta, unit) + '</div></div>';
+  }
+  /* la statistique de tête : l'évaluation, la seule synthèse du match.
+     Elle porte l'orange — les autres restent en encre sombre. */
+  function statLead(val, lab, sub, delta) {
+    return '<div class="pd-lead"><div class="pd-lead-v">' + fr(val) + '</div>'
+      + '<div class="pd-lead-l">' + lab + '</div>'
+      + '<div class="pd-lead-s">' + (sub || '') + deltaTag(delta, '') + '</div></div>';
   }
   function renderDashboard() {
     const next = tournoi.prochainMatch;
@@ -519,6 +599,8 @@
       + '<h2 class="pd-h2">Mes statistiques</h2>'
       + '<p class="pd-h2-note">Moyennes par match sur la saison ' + esc(tournoi.saison)
       + ' · l’écart affiché compare mes 5 derniers matchs à ma saison.</p>'
+      + '<div class="pd-statwrap">'
+      + statLead(H.eva, 'Évaluation', last5Sub('eva'), round1(profile.avg5.eva - H.eva))
       + '<div class="pd-stats">'
       + statBlock(H.pts, 'Points', last5Sub('pts'), round1(profile.avg5.pts - H.pts), '')
       + statBlock(H.reb, 'Rebonds', last5Sub('reb'), round1(profile.avg5.reb - H.reb), '')
@@ -526,22 +608,22 @@
       + statBlock(H.int, 'Interceptions', last5Sub('int'), round1(profile.avg5.int - H.int), '')
       + '</div>'
       + '<div class="pd-stats pd-stats-sec">'
-      + statBlock(player.season.tirsPct, 'Réussite au tir', 'sur la saison', null, ' %')
-      + statBlock(H.p3, 'À 3 points', 'sur la saison', null, ' %')
-      + statBlock(H.lf, 'Aux lancers francs', 'sur la saison', null, ' %')
-      + statBlock(H.eva, 'Évaluation', last5Sub('eva'), round1(profile.avg5.eva - H.eva), '')
-      + '</div>'
+      + statBlock(player.season.tirsPct, 'Réussite au tir', '', null, ' %')
+      + statBlock(H.p3, 'À 3 points', '', null, ' %')
+      + statBlock(H.lf, 'Lancers francs', '', null, ' %')
+      + '</div></div>'
 
       // 4. UN SEUL graphique d'évolution, avec sélecteur de statistique
       + '<section class="tr2-panel pd-panel">'
       + '<div class="tr2-panel-head"><h2 class="tr2-h2">Mon évolution</h2>'
-      + '<div class="tr2-panel-sub">Match après match — <b id="pdChartLab">' + esc(dashDef().label) + '</b></div></div>'
+      + '<div class="tr2-panel-sub">Match après match</div></div>'
       + '<div class="pd-picks">'
-      + '<div class="tr2-chips" role="group" aria-label="Statistique affichée">'
-      + DASH_STATS.map((s) => '<button type="button" class="tr2-chip' + (s.key === dashStat ? ' on' : '') + '" data-dstat="' + s.key + '">' + esc(s.label) + '</button>').join('')
+      + '<div id="pdRead"></div>'
+      + '<div class="pd-seg" role="group" aria-label="Statistique affichée">'
+      + DASH_STATS.map((s) => '<button type="button" class="' + (s.key === dashStat ? 'on' : '') + '" data-dstat="' + s.key + '" aria-label="' + esc(s.label) + '">' + esc(s.short) + '</button>').join('')
       + '</div>'
-      + '<div class="tr2-chips pd-ranges" role="group" aria-label="Période">'
-      + DASH_RANGES.map((r) => '<button type="button" class="tr2-key' + (r[1] === dashRange ? ' on' : '') + '" data-drange="' + r[1] + '">' + r[0] + '</button>').join('')
+      + '<div class="pd-seg sub" role="group" aria-label="Période">'
+      + DASH_RANGES.map((r) => '<button type="button" class="' + (r[1] === dashRange ? 'on' : '') + '" data-drange="' + r[1] + '">' + r[0] + '</button>').join('')
       + '</div></div>'
       + '<div class="tr2-chart" id="pdChart"></div>'
       + '<div id="pdSum" style="margin-top:16px"></div>'
@@ -639,7 +721,7 @@
     if (!st) return '<div class="pt-ov-card"><div class="pt-ov-cat">' + label + '</div><p class="pt-empty">' + empty + '</p></div>';
     const d = dirOf(st.recent, T.seuil);
     const col = d === 'up' ? 'var(--win)' : d === 'down' ? 'var(--loss)' : 'var(--orange)';
-    return '<button type="button" class="pt-ov-card" data-ptcat="' + cat + '">'
+    return '<button type="button" class="pt-ov-card' + (trainCat === cat ? ' on' : '') + '" data-ptcat="' + cat + '">'
       + '<div class="pt-ov-top"><div><div class="pt-ov-cat">' + label + '</div><div class="pt-ov-sub">' + sub + '</div></div>' + trendBadge(st.trend, T.unit) + '</div>'
       + '<div class="pt-ov-now"><span class="pt-ov-val">' + fr(st.last) + T.unit + '</span><span class="pt-ov-unit">niveau actuel · dernière séance</span></div>'
       + sparkline(st.spark, col)
@@ -674,6 +756,9 @@
     if (!TRAIN[c]) return;
     trainCat = c;
     $$('#pane-training .tr2-navbtn').forEach((b) => b.classList.toggle('on', b.dataset.ptcat === c));
+    /* la vue globale et le segmented control désignent la même famille :
+       c'est le seul endroit où l'orange apparaît dans ce bloc */
+    $$('#pane-training .pt-ov-card').forEach((b) => b.classList.toggle('on', b.dataset.ptcat === c));
     renderTrainCat();
     if (scroll) { const d = $('#pt-detail'); if (d) d.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
   }
@@ -728,7 +813,7 @@
       + '<section class="tr2-panel tr2-panel-wide"><div class="tr2-panel-head">'
       + '<h2 class="tr2-h2">Évolution de mon adresse</h2>'
       + '<div class="tr2-panel-sub">Réussite globale, séance après séance ' + trendBadge(t, ' %') + '</div></div>'
-      + lineChart(vals, { h: 170, unit: '%', labels: sess.map((s, i) => ((i % 3 === 0 || i === sess.length - 1) ? fmtDate(s.date) : '')) })
+      + lineChart(vals, { unit: '%', labels: sess.map((s, i) => ((i % 3 === 0 || i === sess.length - 1) ? fmtDate(s.date) : '')) })
       + '<p class="pt-note">Moyenne de la saison <b>' + fr(K.pct) + ' %</b> (' + K.made + '/' + K.att + ') · '
       + 'à 2 points <b>' + fr(K.p2) + ' %</b> (' + K.m2 + '/' + K.a2 + ') · à 3 points <b>' + fr(K.p3) + ' %</b> (' + K.m3 + '/' + K.a3 + ').</p></section>'
       // points forts / points à améliorer — classés comme chez le coach, au regard
@@ -866,7 +951,7 @@
       '<section class="tr2-panel tr2-panel-wide"><div class="tr2-panel-head">'
       + '<h2 class="tr2-h2">Évolution de mes notes</h2>'
       + '<div class="tr2-panel-sub">Note du staff sur 10, séance après séance ' + trendBadge(t, '') + '</div></div>'
-      + lineChart(vals, { h: 170, min: 4, max: 10, labels: COLL_ATT.map((s, i) => ((i % Math.ceil(COLL_ATT.length / 7) === 0 || i === COLL_ATT.length - 1) ? fmtDate(s.date) : '')) })
+      + lineChart(vals, { min: 4, max: 10, labels: COLL_ATT.map((s, i) => ((i % Math.ceil(COLL_ATT.length / 7) === 0 || i === COLL_ATT.length - 1) ? fmtDate(s.date) : '')) })
       + '<div class="tr2-sum" style="margin-top:16px">'
       + sumRow('Ma moyenne de la saison', fr(playerColl.noteAvg) + ' <i>/10</i>')
       + sumRow('Mes ' + k + ' dernières séances', frS(recent), dirOf(recent, 0.3))

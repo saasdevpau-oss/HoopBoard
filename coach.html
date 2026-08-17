@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Saison, effectif, Game Center avec terrain 3D, match live et entraînement — démo avec les données réelles du Žalgiris Kaunas en EuroLeague 2025–26.">
 <title>HoopBoard — Espace Coach (démo)</title>
-<link rel="stylesheet" href="/assets/app.css?v=liquid6">
+<link rel="stylesheet" href="/assets/app.css?v=polish1">
 </head>
 <body>
 <style>
@@ -50,14 +50,16 @@
 
 /* --- ligne 1 : dernier match / bilan / prochain match --- */
 .sn-top{display:grid; grid-template-columns:1fr 1.7fr 1fr; gap:24px; align-items:stretch;}
+/* une seule matière : fond clair + filet. Pas d'ombre sous chaque carte —
+   la page respire, les chiffres portent la hiérarchie. */
 .sn-card{
   background:var(--surface-1); border:1px solid var(--hair-soft);
-  border-radius:var(--card-radius); padding:20px 22px;
-  display:flex; flex-direction:column; box-shadow:var(--shadow-xs);
+  border-radius:var(--card-radius); padding:22px 24px;
+  display:flex; flex-direction:column; box-shadow:none;
 }
 .sn-card-lab{
-  font-family:var(--cond); font-size:11px; font-weight:600; color:var(--t4);
-  letter-spacing:0.18em; text-transform:uppercase; margin-bottom:14px;
+  font-family:var(--cond); font-size:11.5px; font-weight:700; color:var(--t4);
+  letter-spacing:0.16em; text-transform:uppercase; margin-bottom:16px;
 }
 .sn-card-foot{margin-top:auto; padding-top:14px;}
 
@@ -82,8 +84,8 @@
 .sn-outcome.win{background:var(--win-soft); color:var(--win);}
 .sn-outcome.loss{background:var(--loss-soft); color:var(--loss);}
 .sn-meta{
-  text-align:center; margin-top:9px;
-  font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--t4); line-height:1.5;
+  text-align:center; margin-top:10px;
+  font-family:var(--sans); font-size:12px; letter-spacing:-0.005em; color:var(--t4); line-height:1.45;
 }
 .sn-btn{
   display:inline-flex; align-items:center; justify-content:center; gap:7px; width:100%;
@@ -104,20 +106,30 @@
 .sn-record-main .sep{color:var(--t4); font-weight:300; margin:0 4px;}
 .sn-record-pct{font-family:var(--cond); font-size:22px; font-weight:700; color:var(--orange);}
 .sn-record-line{
-  text-align:center; margin-top:8px;
-  font-family:var(--mono); font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--t4);
+  text-align:center; margin-top:9px;
+  font-family:var(--sans); font-size:12px; letter-spacing:-0.005em; color:var(--t4); line-height:1.45;
 }
+/* Repères de saison — hiérarchie Apple Health : la VALEUR d'abord, le
+   label ensuite, et rien d'autre. Pas de carte, pas de bordure, pas
+   d'ombre autour de chaque chiffre : ce sont des indicateurs posés dans
+   la carte, pas quatre petites tuiles. */
 .sn-stats{
-  margin-top:auto; padding-top:20px; border-top:1px solid var(--hair-soft);
-  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:18px 16px;
+  margin-top:auto; padding-top:22px; border-top:1px solid var(--hair-soft);
+  display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:22px 16px;
 }
-.sn-stat{min-width:0;}
+.sn-stat{min-width:0; display:flex; flex-direction:column; align-items:flex-start; gap:6px;}
+.sn-stat-val{
+  font-family:var(--cond); font-size:clamp(30px,3vw,36px); font-weight:700;
+  color:var(--t1); line-height:0.95; letter-spacing:-0.005em;
+}
+.sn-stat-val .u{font-size:0.46em; color:var(--t3); font-weight:600; margin-left:2px;}
 .sn-stat-lab{
-  font-family:var(--cond); font-size:10.5px; font-weight:600; color:var(--t4);
-  letter-spacing:0.14em; text-transform:uppercase; margin-bottom:5px; line-height:1.35;
+  font-family:var(--sans); font-size:12px; font-weight:600; color:var(--t3);
+  letter-spacing:-0.005em; text-transform:none; line-height:1.3;
 }
-.sn-stat-val{font-family:var(--cond); font-size:28px; font-weight:700; color:var(--t1); line-height:1;}
-.sn-stat-val .u{font-size:14px; color:var(--t3); font-weight:600;}
+/* rouge / vert seulement là où la donnée est un écart */
+.sn-stat.delta .sn-stat-val.pos{color:var(--win);}
+.sn-stat.delta .sn-stat-val.neg{color:var(--loss);}
 
 /* --- impact players --- */
 .sn-impact{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(20px,4vw,56px);}
@@ -150,7 +162,9 @@
 .sn-court-wrap > *{min-width:0;}
 .sn-stage{
   perspective:1500px; display:flex; align-items:center; justify-content:center;
-  padding:clamp(10px,3vw,34px) 0; min-width:0;
+  /* 8 px de garde latérale : le rotateX projette le bord avant du terrain
+     un peu plus large que l'élément, ce qui débordait de 2 px vers 1024 px */
+  padding:clamp(10px,3vw,34px) 8px; min-width:0;
 }
 .sn-plane{
   width:100%; will-change:transform; transform:rotateX(30deg) scale(0.97);
@@ -1714,9 +1728,13 @@ document.addEventListener('click', e => {
   /* --- Bloc 2 : bilan de saison (stats intégrées, pas de petites cartes) -- */
   function bilanCard(S){
     const r = S.record, p = S.perGame;
-    const stat = (lab, val, unit) =>
-      `<div class="sn-stat"><div class="sn-stat-lab">${lab}</div>
-        <div class="sn-stat-val">${fr(val)}${unit?`<span class="u">${unit}</span>`:''}</div></div>`;
+    /* valeur d'abord, label ensuite : c'est le chiffre qu'on vient lire.
+       `dir` n'est renseigné que pour le différentiel — la seule donnée de
+       ce bloc qui soit un écart, donc la seule à mériter vert / rouge. */
+    const stat = (lab, val, unit, dir) =>
+      `<div class="sn-stat${dir?' delta':''}">
+        <div class="sn-stat-val${dir||''}">${fr(val)}${unit?`<span class="u">${unit}</span>`:''}</div>
+        <div class="sn-stat-lab">${lab}</div></div>`;
     return `<div class="sn-card sn-bilan">
       <div class="sn-card-lab">Bilan de saison</div>
       <div class="sn-record">
@@ -1730,7 +1748,7 @@ document.addEventListener('click', e => {
       <div class="sn-stats">
         ${stat('Points / match', p.pts)}
         ${stat('Encaissés / match', p.ptsContre)}
-        ${stat('Différentiel', signed(p.diff))}
+        ${stat('Différentiel', signed(p.diff), '', p.diff>0?' pos':(p.diff<0?' neg':''))}
         ${stat('Adresse aux tirs', p.fgPct, ' %')}
       </div>
     </div>`;
@@ -2712,7 +2730,8 @@ document.addEventListener('click', e => {
   /* --- Fiche joueur (#/joueurs/:id) : onglets Match / Entraînement --- */
   const statTile=(label,val)=>`<div class="pf-tile"><span class="pf-tv mono">${val==null?'—':val}</span><span class="pf-tl">${esc(label)}</span></div>`;
   const fInitials=n=>{const a=String(n||'').trim().split(/\s+/);return((a[0]?a[0][0]:'')+(a.length>1?a[a.length-1][0]:'')).toUpperCase();};
-  const fMini=(label,val)=>`<div class="pf-mini"><span class="pf-mini-v mono">${val==null?'—':val}</span><span class="pf-mini-l">${esc(label)}</span></div>`;
+  /* `key` : une seule stat porte l'orange dans l'en-tête de la fiche */
+  const fMini=(label,val,key)=>`<div class="pf-mini${key?' key':''}"><span class="pf-mini-v mono">${val==null?'—':val}</span><span class="pf-mini-l">${esc(label)}</span></div>`;
   const fArrow=d=>d>0?'▲':(d<0?'▼':'→');
   const fDelta=d=>`<span class="pf-d ${d>0?'up':(d<0?'down':'')}">${d>0?'+':''}${d}</span>`;
   function fPerfChart(log){
@@ -2747,8 +2766,8 @@ document.addEventListener('click', e => {
         <div class="pf-id"><div class="pf-name">${h.num!=null?`<span class="pf-num mono">#${h.num}</span> `:''}${esc(h.name)}</div>
           <div class="pf-sub">${esc(h.poste||'—')}${h.taille?' · '+esc(h.taille):''} · ${esc(Store.getClub().nom)}</div></div>
         <div class="pf-headstats">
-          ${fMini('Matchs',h.mj)}${fMini('Min',h.min)}${fMini('Points',h.pts)}${fMini('Rebonds',h.reb)}${fMini('Passes',h.pd)}${fMini('Interc.',h.int)}
-          ${fMini('% 2 pts',h.p2+'%')}${fMini('% 3 pts',h.p3+'%')}${fMini('% LF',h.lf+'%')}
+          ${fMini('Points',h.pts,true)}${fMini('Rebonds',h.reb)}${fMini('Passes',h.pd)}${fMini('Interc.',h.int)}
+          ${fMini('Matchs',h.mj)}${fMini('Minutes',h.min)}${fMini('% 2 pts',h.p2+'%')}${fMini('% 3 pts',h.p3+'%')}${fMini('% LF',h.lf+'%')}
         </div>
       </div>`;
   }
@@ -3099,13 +3118,15 @@ document.addEventListener('click', e => {
 
   /* ---- barre de navigation vers les 3 familles ---- */
   function trNav(current){
+    /* libellés courts : le segmented control tient sur une ligne à 320px.
+       Le titre complet de chaque famille reste celui de la page d'arrivée. */
     const items=[
-      ['#/entrainements/collectifs','Entraînements collectifs','collectifs'],
-      ['#/entrainements/tir','Entraînements tir','tir'],
-      ['#/entrainements/personnalisees','Séances personnalisées','perso'],
+      ['#/entrainements/collectifs','Collectifs','collectifs','Entraînements collectifs'],
+      ['#/entrainements/tir','Tir','tir','Entraînements tir'],
+      ['#/entrainements/personnalisees','Personnalisées','perso','Séances personnalisées'],
     ];
     return `<nav class="tr2-nav" aria-label="Familles d'entraînement">${items.map(i=>
-      `<button class="tr2-navbtn${current===i[2]?' on':''}" data-route="${i[0]}">${i[1]}</button>`).join('')}</nav>`;
+      `<button class="tr2-navbtn${current===i[2]?' on':''}" data-route="${i[0]}" aria-label="${i[3]}">${i[1]}</button>`).join('')}</nav>`;
   }
   /* en-tête commun aux sous-vues */
   function trSubHead(titre, meta, extra){
@@ -3406,10 +3427,10 @@ document.addEventListener('click', e => {
     const roster=Store.getPlayers(), conv=(s.convoques||[]).map(cid=>{ const p=roster.find(x=>x.id===cid); return p?(p.num!=null?'#'+p.num+' ':'')+p.name:cid; });
     let html=`<div class="page-head fs-head"><div>
         <button class="fs-back" data-route="#/entrainements">${backSvg}Entraînements</button>
-        <h2 class="page-title">${esc(s.titre||'Séance')}</h2>
+        <h2 class="page-title">${esc(s.titre||'Séance')}${s.type?` <span class="tr-type">${esc(s.type)}</span>`:''}</h2>
         <div class="page-meta">${s.date?fmtDate(s.date):'Date à définir'}${s.heure?' · '+esc(s.heure):''}${s.duree?' · '+esc(s.duree)+' min':''}${s.lieu?' · '+esc(s.lieu):''}</div></div></div>
       <div class="fs-card"><h3 class="fs-h3">Détails</h3><div class="tr-detail">
-        <span><b>Type</b>${esc(s.type||'—')}</span><span><b>Intensité</b>${esc(s.intensite||'—')}</span>
+        <span><b>Intensité</b>${esc(s.intensite||'—')}</span>
         <span><b>Objectif</b>${esc(s.objectif||'—')}</span>${s.notes?`<span><b>Notes</b>${esc(s.notes)}</span>`:''}</div></div>
       <div class="fs-card"><h3 class="fs-h3">Joueurs convoqués (${conv.length})</h3>${conv.length?`<div class="tn-zones">${conv.map(n=>`<span class="an-chip">${esc(n)}</span>`).join('')}</div>`:'<p class="fs-note">Aucun joueur convoqué.</p>'}</div>`;
     if(s.zones&&s.zones.length&&window.HoopCourt) html+=`<div class="fs-card"><h3 class="fs-h3">Zones de tir travaillées</h3><div class="an-court" id="tdCourt"></div></div>`;
@@ -3528,14 +3549,18 @@ document.addEventListener('click', e => {
       <div class="col-card-see"><button class="btn-view" data-route="#/entrainements/${s.id}">Voir</button></div></div>`;
   }
   function shortZone(id){ const l=(window.HoopCourt&&HoopCourt.ZONES[id])?HoopCourt.ZONES[id].label:id; return l.replace(/ [23] pts$/,''); }
+  /* Hiérarchie de la fiche : nom de séance → type / date / durée → contenu.
+     Le type passe en badge orange à côté du titre ; il ne se répète plus
+     dans la liste des détails, qui reste en blanc et gris chaud. */
   function thematicHeader(s){
+    const type=s.type?`<span class="tr-type">${esc(s.type)}</span>`:'';
     return `<div class="page-head fs-head"><div>
         <button class="fs-back" data-route="#/entrainements">${backSvg}Entraînements</button>
-        <h2 class="page-title">${esc(s.titre||'Séance')} ${colBadge(s.status)}</h2>
+        <h2 class="page-title">${esc(s.titre||'Séance')} ${type} ${colBadge(s.status)}</h2>
         <div class="page-meta">${fmtDate(s.date)} · ${esc(s.heure||'')} · ${s.duree||0} min · ${esc(s.lieu||'')}</div>
       </div></div>
       <div class="fs-card"><h3 class="fs-h3">Détails</h3><div class="tr-detail">
-        <span><b>Type</b>${esc(s.type||'—')}</span><span><b>Intensité</b>${esc(s.intensite||'—')}</span>
+        <span><b>Intensité</b>${esc(s.intensite||'—')}</span>
         <span><b>Objectif</b>${esc(s.objectif||'—')}</span>${s.notes?`<span><b>Consignes</b>${esc(s.notes)}</span>`:''}
         <span><b>${s.categorie==='tir'?'Joueurs':'Joueurs notés'}</b>${(s.roster||[]).length}${s.categorie==='tir'?' · '+(s.reps||10)+' tirs par zone':''}</span></div></div>`;
   }
@@ -3553,7 +3578,7 @@ document.addEventListener('click', e => {
       + `<div class="fs-card"><h3 class="fs-h3">Carte de réussite — zones travaillées <span class="an-legend"><i class="lg-cold"></i>faible % <i class="lg-hot"></i>fort %</span></h3>
           <div class="an-grid">
             <div><div id="thCourt" class="an-court"></div><p class="an-sel" id="thSel">Touchez une zone pour voir la réussite de l’équipe.</p></div>
-            <div class="fs-card" style="background:var(--surface-2);margin:0"><h3 class="fs-h3">Meilleurs shooteurs</h3><div class="md-tops">${best}</div></div>
+            <div class="fs-sub"><h3 class="fs-h3">Meilleurs shooteurs</h3><div class="md-tops">${best}</div></div>
           </div></div>`
       + `<div class="fs-card"><h3 class="fs-h3">Réussite par joueur et par zone</h3>
           <div class="fs-scroll"><table class="fs-box"><thead><tr><th class="l">Joueur</th>${zHead}<th class="c">Total</th><th class="c">%</th></tr></thead>

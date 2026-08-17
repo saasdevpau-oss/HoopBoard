@@ -12,7 +12,7 @@
 
 <!-- Le design system de l'application. La landing n'invente rien : mêmes
      tokens, mêmes cartes, mêmes boutons, même fond de verre liquide. -->
-<link rel="stylesheet" href="/assets/app.css?v=liquid6">
+<link rel="stylesheet" href="/assets/app.css?v=polish1">
 
 <style>
 /* ============================================================
@@ -359,16 +359,22 @@ img,svg{max-width:100%;}
   /* Joueur : le téléphone est le héros */
   .lp-split.player{grid-template-columns:minmax(0,0.9fr) minmax(0,1.1fr);}
 }
+/* Puces à icône : plus de pastille colorée. Un glyphe fin, monochrome,
+   posé sur le même axe que le titre — seule la puce de tête porte
+   l'orange, pour désigner la promesse principale de la section. */
 .lp-bullets{display:flex; flex-direction:column; gap:clamp(16px,1.8vw,22px); margin-top:clamp(28px,3.2vw,38px);}
-.lp-bullet{display:flex; gap:14px; align-items:flex-start;}
-.lp-bullet-ic{
-  flex:0 0 auto; width:32px; height:32px; border-radius:var(--lp-r1);
+.lp-bullet{display:grid; grid-template-columns:22px minmax(0,1fr); column-gap:14px; align-items:start;}
+/* le sélecteur est ancré sur l'enfant direct : sinon la règle générique
+   « .lp-bullet span » reprenait la main sur la puce et cassait son axe */
+.lp-bullet>.lp-bullet-ic{
   display:flex; align-items:center; justify-content:center;
-  background:var(--orange-soft); color:var(--orange);
+  width:22px; min-height:23px; margin:0; color:var(--t4);
 }
-.lp-bullet-ic svg{width:16px; height:16px;}
-.lp-bullet b{display:block; font-size:15.5px; font-weight:600; color:var(--t1); letter-spacing:-0.012em;}
-.lp-bullet span{display:block; margin-top:4px; font-size:14px; line-height:1.55; color:var(--t3);}
+.lp-bullet>.lp-bullet-ic svg{width:20px; height:20px; display:block;}
+.lp-bullet:first-child>.lp-bullet-ic{color:var(--orange);}
+.lp-bullet>div{min-width:0;}
+.lp-bullet b{display:flex; align-items:center; min-height:23px; font-size:15.5px; font-weight:600; color:var(--t1); letter-spacing:-0.012em;}
+.lp-bullet>div>span{display:block; margin-top:3px; font-size:14px; line-height:1.55; color:var(--t3);}
 
 /* ------------------------------------------------------------
    6. Le fil « match → données → décisions » : une ligne, pas
@@ -623,33 +629,60 @@ img,svg{max-width:100%;}
 @keyframes lpRipple{0%{transform:scale(.6); opacity:.85;} 100%{transform:scale(2.1); opacity:0;}}
 
 /* --- Fil des étapes du Match Live : une timeline, pas quatre cartes.
-   L'étape active passe en orange, les autres s'effacent. --- */
-.lp-steps{position:relative; display:flex; flex-direction:column; gap:clamp(20px,2.6vw,32px); margin-top:clamp(30px,3.6vw,42px);}
-.lp-steps::before{
-  content:""; position:absolute; left:15px; top:16px; bottom:16px; width:1px; background:var(--lp-line);
+   Géométrie : la pastille fait --lp-dot de côté, le filet de liaison est
+   tracé PAR ÉTAPE (sauf la dernière) entre le bas d'une pastille et le
+   haut de la suivante — il ne dépasse donc jamais sous la 4e étape.
+   Titre et numéro partagent le même axe : le titre est une boîte flex de
+   la hauteur exacte de la pastille, plus aucun calage au pixel près.
+   L'étape active passe en orange, les autres restent très sobres. --- */
+.lp-steps{
+  --lp-dot:32px;
+  --lp-step-gap:clamp(20px,2.6vw,30px);
+  display:flex; flex-direction:column; gap:var(--lp-step-gap);
+  margin-top:clamp(30px,3.6vw,42px);
 }
-.lp-step{display:flex; gap:16px; align-items:flex-start; padding:0; background:none; border:0; box-shadow:none;}
-.lp-step-n{
-  position:relative; z-index:1; flex:0 0 auto; width:31px; height:31px; border-radius:var(--lp-rp);
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--cond); font-size:14.5px; font-weight:700;
-  background:var(--bg); color:var(--t4); box-shadow:0 0 0 1px var(--lp-line);
+.lp-step{
+  position:relative; display:grid; grid-template-columns:var(--lp-dot) minmax(0,1fr);
+  column-gap:16px; align-items:start; padding:0; background:none; border:0; box-shadow:none;
+}
+/* filet de liaison : du bas de cette pastille au haut de la suivante */
+.lp-step:not(:last-child)::before{
+  content:""; position:absolute; left:calc(var(--lp-dot) / 2); top:var(--lp-dot);
+  width:1px; height:calc(100% - var(--lp-dot) + var(--lp-step-gap));
+  margin-left:-0.5px; background:var(--lp-line);
+}
+/* enfant direct : la règle générique « .lp-step span » (la description)
+   l'emportait sinon sur la pastille — elle repassait en display:block avec
+   une marge haute, d'où le chiffre décentré et la pastille décalée de 2 px */
+.lp-step>.lp-step-n{
+  position:relative; z-index:1; width:var(--lp-dot); height:var(--lp-dot); border-radius:50%;
+  display:flex; align-items:center; justify-content:center; margin:0;
+  font-family:var(--cond); font-size:15px; font-weight:700; line-height:1;
+  font-variant-numeric:tabular-nums; letter-spacing:0;
+  background:var(--bg); color:var(--t4); box-shadow:inset 0 0 0 1px var(--lp-line);
   transition:background .4s ease, color .4s ease, box-shadow .4s ease;
 }
-.lp-step.on .lp-step-n{
+.lp-step.on>.lp-step-n{
   background:var(--orange); color:#fff;
-  box-shadow:0 0 0 1px var(--orange), 0 0 0 6px rgba(255,106,0,0.11);
+  box-shadow:inset 0 0 0 1px var(--orange), 0 0 0 5px rgba(255,106,0,0.10);
 }
-.lp-step-n svg{width:15px; height:15px;}
-.lp-step-b{padding-top:3px; min-width:0;}
+.lp-step>.lp-step-n svg{width:15px; height:15px; display:block;}
+.lp-step-b{min-width:0;}
 .lp-step b{
-  display:block; font-family:var(--cond); font-size:19px; font-weight:700;
+  display:flex; align-items:center; min-height:var(--lp-dot);
+  font-family:var(--cond); font-size:19px; font-weight:700; line-height:1.05;
   letter-spacing:.06em; text-transform:uppercase; color:var(--t4);
   transition:color .4s ease;
 }
 .lp-step.on b{color:var(--orange);}
-.lp-step span{display:block; font-size:14px; line-height:1.5; color:var(--t4); margin-top:5px; opacity:.62; transition:opacity .4s ease, color .4s ease;}
-.lp-step.on span{color:var(--t2); opacity:1;}
+.lp-step-b span{display:block; font-size:14px; line-height:1.5; color:var(--t4); margin-top:2px; transition:color .4s ease;}
+.lp-step.on .lp-step-b span{color:var(--t2);}
+@media(max-width:480px){
+  .lp-steps{--lp-dot:30px; --lp-step-gap:20px;}
+  .lp-step{column-gap:14px;}
+  .lp-step b{font-size:17.5px;}
+  .lp-step span{font-size:13.5px;}
+}
 
 /* ------------------------------------------------------------
    8. Rapport IA — quatre colonnes de texte séparées par un filet
@@ -1017,15 +1050,15 @@ img,svg{max-width:100%;}
         </div>
         <div class="lp-bullets rv rv-d1">
           <div class="lp-bullet">
-            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg></span>
+            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3.5"/><path d="M8.5 3v4M15.5 3v4M3.5 10h17"/></svg></span>
             <div><b>Planifiez vos séances</b><span>Date, durée, thème, joueurs concernés. En trois champs.</span></div>
           </div>
           <div class="lp-bullet">
-            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg></span>
+            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/></svg></span>
             <div><b>Suivez la réussite au tir</b><span>Zone par zone, sur le demi-terrain, pour voir où ça rentre.</span></div>
           </div>
           <div class="lp-bullet">
-            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 17l5-6 4 4 5-7 4 5"/></svg></span>
+            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3.5v17h16.5"/><path d="M7.5 15.5 11 11.5l3 2.6 4.5-6.1"/></svg></span>
             <div><b>Notez et mesurez</b><span>Une note par séance, et la courbe de progression apparaît.</span></div>
           </div>
         </div>
@@ -1124,15 +1157,15 @@ img,svg{max-width:100%;}
         </div>
         <div class="lp-bullets rv rv-d1">
           <div class="lp-bullet">
-            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></span>
+            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3.5v17h16.5"/><path d="M8.5 20.5v-7M13 20.5V8.5M17.5 20.5v-4.6"/></svg></span>
             <div><b>Ses statistiques, match après match</b><span>Points, rebonds, passes, temps de jeu — sans rien demander au coach.</span></div>
           </div>
           <div class="lp-bullet">
-            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M3 17l5-6 4 4 5-7 4 5"/></svg></span>
+            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 3.5v17h16.5"/><path d="M7.5 15.5 11 11.5l3 2.6 4.5-6.1"/></svg></span>
             <div><b>Sa progression, en clair</b><span>Une courbe simple : est-ce que je progresse, oui ou non ?</span></div>
           </div>
           <div class="lp-bullet">
-            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 3v18M3 12h18"/></svg></span>
+            <span class="lp-bullet-ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3.4"/></svg></span>
             <div><b>Ses entraînements et ses tirs</b><span>Les séances du coach, ses zones de réussite, ce qu'il doit travailler.</span></div>
           </div>
         </div>

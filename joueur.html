@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="Training Hub, Game Center et HoopFeed de Sylvain Francisco, meneur du Žalgiris Kaunas en EuroLeague 2025–26.">
 <title>HoopBoard — Espace Joueur (démo)</title>
-<link rel="stylesheet" href="/assets/app.css?v=liquid6">
+<link rel="stylesheet" href="/assets/app.css?v=polish1">
 </head>
 <body>
 <style>
@@ -57,7 +57,10 @@
 /* « perf » = espace privé basket/performance (Vue d'ensemble · Entraînements ·
    Game Center) ; « social » = HoopFeed. Un seul est monté à la fois. */
 .pspace{display:none;}
-.pspace.active{display:block;}
+/* la transition d'entrée décale la vue de 14 px : on la clippe ici, sinon
+   la page part en scroll horizontal pendant l'animation. `clip` plutôt que
+   `hidden` : aucun contexte de défilement créé, position:sticky préservé. */
+.pspace.active{display:block; overflow-x:clip;}
 
 /* ---------- Navigation interne du Dashboard (mobile-first) ---------- */
 /* Même rôle que .hf-nav pour HoopFeed : on circule entre les trois pages de
@@ -449,17 +452,46 @@ h2.view-title .serif{color:var(--orange);}
 .range-toggle button.active{background:var(--surface-2); color:var(--orange); box-shadow:inset 0 0 0 1px var(--hair);}
 
 /* ---------- Graphiques SVG ---------- */
-.chart{width:100%; height:auto; display:block; overflow:visible;}
-.chart .grid-ln{stroke:var(--hair-soft); stroke-width:1;}
-.chart .axis-lab{fill:var(--t4); font-size:10px; font-family:var(--mono);}
-.chart .area{fill:url(#areaGrad);}
-.chart .line{fill:none; stroke:var(--orange); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;}
-.chart .dot{fill:var(--surface-2); stroke:var(--orange); stroke-width:2;}
-.chart .dot.hi{fill:var(--orange);}
-.chart .bar{fill:var(--orange); }
-.chart .bar.loss{fill:var(--loss);}
-.chart .bar.win{fill:var(--win);}
-.chart .val-lab{fill:var(--t2); font-size:10px; font-family:var(--mono); text-anchor:middle;}
+/* ---------- Courbe d'évolution responsive ----------
+   Géométrie en SVG étiré (preserveAspectRatio="none"), libellés en HTML :
+   la hauteur est fixée par le CSS, donc les traits, les points et le texte
+   gardent exactement la même taille de 320 px à 1440 px. `overflow:hidden`
+   sur le conteneur : plus rien ne peut sortir du cadre ni pousser la page
+   en scroll horizontal. */
+.chart2{
+  --ch-h:clamp(150px,24vw,200px);
+  display:grid; grid-template-columns:auto minmax(0,1fr); grid-template-rows:auto auto;
+  column-gap:9px; row-gap:7px; width:100%; min-width:0;
+  padding:4px 5px 0; overflow:hidden;
+}
+.chart2-y{
+  grid-column:1; grid-row:1; position:relative;
+  width:auto; min-width:30px; height:var(--ch-h);
+}
+.chart2-y>span{
+  position:absolute; right:0; transform:translateY(-50%); white-space:nowrap;
+  font-family:var(--mono); font-size:11px; line-height:1; color:var(--t4);
+}
+.chart2-plot{grid-column:2; grid-row:1; position:relative; height:var(--ch-h); min-width:0;}
+.chart2-svg{position:absolute; inset:0; width:100%; height:100%; display:block; overflow:visible;}
+.chart2-svg .grid-ln{stroke:var(--hair-soft); stroke-width:1;}
+.chart2-svg .line{fill:none; stroke:var(--orange); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round;}
+.chart2-svg .dot{fill:none; stroke:var(--orange); stroke-width:5.2; stroke-linecap:round;}
+.chart2-svg .dot.hi{stroke-width:8;}
+.chart2-x{
+  grid-column:2; grid-row:2; position:relative; height:14px; min-width:0;
+}
+.chart2-x>span{
+  position:absolute; top:0; transform:translateX(-50%); white-space:nowrap;
+  font-family:var(--mono); font-size:11px; line-height:1.2; color:var(--t4);
+}
+.chart2-x>span.first{transform:none;}
+.chart2-x>span.last{transform:translateX(-100%);}
+@media(max-width:400px){
+  .chart2{column-gap:7px;}
+  .chart2-y>span,.chart2-x>span{font-size:10px;}
+  .chart2-y{min-width:26px;}
+}
 .spark{width:100%; height:34px; display:block;}
 .spark path{fill:none; stroke:var(--orange); stroke-width:2; stroke-linecap:round; stroke-linejoin:round;}
 
@@ -607,25 +639,29 @@ h2.view-title .serif{color:var(--orange);}
    ═══════════════════════════════════════════════════════════════════ */
 .pt-hero{padding-top:clamp(4px,1.5vw,18px);}
 
-/* ---------- Vue globale : une carte par famille d'entraînement ---------- */
-.pt-ov{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px;}
+/* ---------- Vue globale : trois indicateurs, pas trois boutons ----------
+   Ils vivent déjà dans un panneau : plus de carte, plus de bordure, plus
+   d'ombre. Même hauteur, même gouttière, même typo. L'orange ne marque
+   que la famille sélectionnée. */
+.pt-ov{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:clamp(18px,2.6vw,32px);}
 .pt-ov-card{
-  display:flex; flex-direction:column; gap:11px; min-width:0; text-align:left;
-  background:var(--surface-2); border:1px solid var(--hair-soft);
-  border-radius:var(--radius); padding:16px 16px 14px;
-  transition:border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+  display:flex; flex-direction:column; gap:12px; min-width:0; text-align:left;
+  background:none; border:0; border-radius:12px; padding:0; box-shadow:none;
+  color:inherit; cursor:pointer;
+  transition:opacity .16s ease;
 }
-.pt-ov-card:hover{border-color:rgba(255,106,0,0.35); box-shadow:var(--shadow-sm); transform:translateY(-2px);}
+.pt-ov-card:hover{border-color:transparent; box-shadow:none; transform:none; opacity:.82;}
 .pt-ov-top{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; flex-wrap:wrap;}
-.pt-ov-cat{font-family:var(--cond); font-size:18px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--t1); line-height:1.1;}
-.pt-ov-sub{font-size:11.5px; color:var(--t4); margin-top:3px;}
+.pt-ov-cat{font-family:var(--cond); font-size:16px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--t2); line-height:1.15;}
+.pt-ov-card.on .pt-ov-cat{color:var(--orange);}
+.pt-ov-sub{font-size:11.5px; color:var(--t4); margin-top:4px; line-height:1.35;}
 .pt-ov-now{display:flex; align-items:baseline; gap:9px; flex-wrap:wrap;}
-.pt-ov-val{font-family:var(--cond); font-size:40px; font-weight:700; line-height:1; color:var(--orange);}
-.pt-ov-unit{font-size:11.5px; color:var(--t3);}
-.pt-ov-rows{display:flex; flex-direction:column; margin-top:auto;}
-.pt-ov-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding:7px 0; font-size:12.5px; color:var(--t3);}
-.pt-ov-row + .pt-ov-row{border-top:1px solid var(--hair-soft);}
-.pt-ov-row b{color:var(--t1); font-weight:600; font-family:var(--mono); font-size:12.5px;}
+.pt-ov-val{font-family:var(--cond); font-size:clamp(34px,8.5vw,42px); font-weight:700; line-height:.95; letter-spacing:-.005em; color:var(--t1);}
+.pt-ov-card.on .pt-ov-val{color:var(--orange);}
+.pt-ov-unit{font-size:11.5px; color:var(--t4);}
+.pt-ov-rows{display:flex; flex-direction:column; gap:6px; margin-top:auto; padding-top:4px;}
+.pt-ov-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px; padding:0; font-size:12.5px; color:var(--t4);}
+.pt-ov-row b{color:var(--t2); font-weight:600; font-family:var(--mono); font-size:12.5px;}
 .pt-ov-row b.up{color:var(--win);} .pt-ov-row b.down{color:var(--loss);}
 
 /* ---------- Titres et grilles d'analyse ---------- */
@@ -682,7 +718,9 @@ h2.view-title .serif{color:var(--orange);}
 .pt-chip.hot{background:var(--orange-soft); color:var(--orange);}
 .pt-chip.up{background:var(--win-soft); color:var(--win);}
 .pt-chip.down{background:var(--loss-soft); color:var(--loss);}
-.pt-sess-q{margin-top:11px; padding:9px 12px; border-left:2px solid var(--orange); background:var(--orange-soft); border-radius:0 8px 8px 0; font-size:12.5px; font-style:italic; color:var(--t2);}
+/* mot du coach : un filet orange en tête de citation suffit — le bloc
+   reste sur fond neutre, sinon toute la fiche vire à l'orange */
+.pt-sess-q{margin-top:11px; padding:2px 0 2px 13px; border-left:2px solid var(--orange); background:none; border-radius:0; font-size:13px; line-height:1.55; font-style:normal; color:var(--t2);}
 .pt-sess-go{margin-top:11px; font-size:12px; font-weight:600; color:var(--orange);}
 .pt-sess-go::after{content:" →";}
 .pt-more{
@@ -694,10 +732,12 @@ h2.view-title .serif{color:var(--orange);}
 .pt-more:hover{color:var(--orange); border-color:rgba(255,106,0,0.35);}
 
 /* ---------- Détail d'une séance (modal .sheet réutilisée) ---------- */
-.pt-dl{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:1px; background:var(--hair-soft); border:1px solid var(--hair-soft); border-radius:var(--radius); overflow:hidden; margin-bottom:18px;}
-.pt-dl>div{background:var(--surface-1); padding:12px 14px;}
-.pt-dl .k{font-size:10px; text-transform:uppercase; letter-spacing:.05em; color:var(--t4);}
-.pt-dl .v{font-size:15px; font-weight:600; color:var(--t1); margin-top:3px; font-family:var(--mono);}
+/* repères de la séance : des valeurs posées côte à côte, sans grille de
+   petites boîtes ni filets entre chaque — valeur d'abord, libellé dessous */
+.pt-dl{display:grid; grid-template-columns:repeat(auto-fit,minmax(84px,1fr)); gap:18px 14px; background:none; border:0; border-radius:0; padding:16px 0 18px; margin-bottom:16px; border-bottom:1px solid var(--hair-soft);}
+.pt-dl>div{background:none; padding:0; min-width:0; display:flex; flex-direction:column-reverse; gap:4px;}
+.pt-dl .k{font-size:11.5px; font-weight:500; text-transform:none; letter-spacing:-.005em; color:var(--t4); line-height:1.25;}
+.pt-dl .v{font-family:var(--cond); font-size:21px; font-weight:700; color:var(--t1); margin:0; line-height:1;}
 .pt-zt{width:100%; border-collapse:collapse; font-size:12.5px;}
 .pt-zt th{text-align:right; padding:8px 10px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--t4); border-bottom:1px solid var(--hair);}
 .pt-zt th:first-child{text-align:left;}
@@ -705,12 +745,17 @@ h2.view-title .serif{color:var(--orange);}
 .pt-zt td:first-child{text-align:left; font-family:var(--sans); color:var(--t1);}
 
 @media(max-width:900px){
-  .pt-ov{grid-template-columns:minmax(0,1fr);}
+  /* empilés : un filet fin sépare les familles, rien de plus */
+  .pt-ov{grid-template-columns:minmax(0,1fr); gap:0;}
+  .pt-ov-card{padding:16px 0;}
+  .pt-ov-card:first-child{padding-top:0;}
+  .pt-ov-card:last-child{padding-bottom:0;}
+  .pt-ov-card + .pt-ov-card{border-top:1px solid var(--hair-soft);}
+  .pt-ov-rows{padding-top:2px;}
   .pt-two{grid-template-columns:minmax(0,1fr);}
 }
 @media(max-width:560px){
   .pt-sec{font-size:18px; margin:22px 0 10px;}
-  .pt-ov-val{font-size:36px;}
   .pt-sess{padding:14px;}
 }
 
@@ -785,27 +830,74 @@ h2.view-title .serif{color:var(--orange);}
 }
 .pd-h2-note{font-size:12.5px; color:var(--t3); line-height:1.5; margin:0 0 16px;}
 
-/* ---------- Statistiques principales ---------- */
-.pd-stats{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px;}
-.pd-stats-sec{margin-top:10px;}
+/* ---------- Statistiques de saison ----------
+   Une seule surface, trois niveaux de lecture : l'évaluation en très
+   grand (la synthèse), les quatre stats de match en dessous, les
+   pourcentages en dernier, plus discrets. Aucune carte individuelle :
+   ce sont des indicateurs, pas huit boutons identiques. */
+.pd-statwrap{
+  background:var(--glass-bg); -webkit-backdrop-filter:var(--blur); backdrop-filter:var(--blur);
+  border:1px solid var(--glass-brd); border-radius:var(--card-radius);
+  box-shadow:var(--glass-hi); padding:clamp(20px,3.4vw,30px);
+}
+.pd-lead{display:flex; flex-direction:column; gap:7px; padding-bottom:clamp(18px,2.6vw,24px); border-bottom:1px solid var(--hair-soft);}
+.pd-lead-v{
+  font-family:var(--cond); font-weight:700; line-height:.86; letter-spacing:-.018em;
+  font-size:clamp(62px,18vw,92px); color:var(--orange);
+}
+.pd-lead-v i{font-style:normal; font-size:.28em; color:var(--t3); margin-left:5px; letter-spacing:0;}
+.pd-lead-l{font-family:var(--cond); font-size:14px; font-weight:700; letter-spacing:.16em; text-transform:uppercase; color:var(--t2);}
+.pd-lead-s{font-size:12.5px; color:var(--t4); display:flex; align-items:baseline; gap:7px; flex-wrap:wrap;}
+
+.pd-stats{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px 14px; padding-top:clamp(18px,2.6vw,24px);}
+.pd-stats-sec{margin-top:clamp(16px,2.2vw,20px); padding-top:clamp(16px,2.2vw,20px); border-top:1px solid var(--hair-soft); grid-template-columns:repeat(3,minmax(0,1fr));}
 .pd-stat{
-  min-width:0; padding:16px 15px 14px; border-radius:var(--radius);
-  background:var(--card-bg); border:1px solid var(--hair-soft); box-shadow:var(--shadow-xs);
+  min-width:0; padding:0; border-radius:0;
+  background:none; border:0; box-shadow:none;
+  display:flex; flex-direction:column; gap:5px;
 }
 .pd-stat-v{
   font-family:var(--cond); font-weight:700; line-height:.95; letter-spacing:-.005em;
-  font-size:clamp(38px,11vw,54px); color:var(--t1);
+  font-size:clamp(30px,7.6vw,38px); color:var(--t1);
 }
-.pd-stat-v i{font-style:normal; font-size:.4em; color:var(--t3); margin-left:3px; letter-spacing:0;}
-.pd-stats:not(.pd-stats-sec) .pd-stat:first-child .pd-stat-v{color:var(--orange);}
-.pd-stat-l{margin-top:9px; font-size:12.5px; font-weight:600; color:var(--t2);}
-.pd-stat-s{margin-top:4px; min-height:16px; font-size:11.5px; color:var(--t4); display:flex; align-items:baseline; gap:5px; flex-wrap:wrap;}
+.pd-stat-v i{font-style:normal; font-size:.42em; color:var(--t3); margin-left:3px; letter-spacing:0;}
+.pd-stats-sec .pd-stat-v{font-size:clamp(23px,5.6vw,28px); color:var(--t2);}
+.pd-stat-l{margin-top:0; font-size:12.5px; font-weight:600; color:var(--t2);}
+.pd-stats-sec .pd-stat-l{font-weight:500; color:var(--t4);}
+.pd-stat-s{margin-top:0; min-height:0; font-size:11.5px; color:var(--t4); display:flex; align-items:baseline; gap:5px; flex-wrap:wrap;}
+.pd-stat-s:empty{display:none;}
 .pd-stat-d{font-family:var(--mono); font-weight:600;}
 .pd-stat-d.up{color:var(--win);} .pd-stat-d.down{color:var(--loss);} .pd-stat-d.flat{color:var(--t4);}
 
 /* ---------- Graphique d'évolution (un seul, avec sélecteur) ---------- */
 .pd-panel{margin-top:16px;}
-.pd-picks{display:flex; flex-direction:column; gap:9px; margin-bottom:16px; min-width:0;}
+.pd-picks{display:flex; flex-direction:column; gap:14px; margin-bottom:18px; min-width:0;}
+/* lecture en tête : valeur, variation, puis le libellé de ce qu'on lit */
+.pd-read{display:flex; flex-direction:column; gap:5px;}
+.pd-read-v{
+  display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;
+  font-family:var(--cond); font-size:clamp(40px,10vw,52px); font-weight:700;
+  line-height:.92; letter-spacing:-.012em; color:var(--t1);
+}
+.pd-read-v i{font-style:normal; font-size:.4em; color:var(--t3); margin-left:-4px;}
+.pd-read-v .pd-stat-d{font-family:var(--mono); font-size:14px; font-weight:600;}
+.pd-read-l{font-size:12.5px; color:var(--t4); line-height:1.4;}
+/* sélecteur : un segmented control discret, l'actif en orange */
+.pd-seg{
+  display:flex; gap:2px; padding:3px; min-width:0; border-radius:13px;
+  background:var(--field-bg); border:1px solid var(--hair-soft);
+  overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none;
+}
+.pd-seg::-webkit-scrollbar{display:none;}
+.pd-seg>button{
+  flex:1 0 auto; min-width:0; min-height:34px; padding:0 13px;
+  border:0; border-radius:10px; background:transparent; color:var(--t3); cursor:pointer;
+  font-family:var(--mono); font-size:11.5px; font-weight:600; letter-spacing:.04em; white-space:nowrap;
+  transition:color .15s ease, background .15s ease;
+}
+.pd-seg>button:hover{color:var(--t1);}
+.pd-seg>button.on{background:var(--orange); color:var(--text-on-orange);}
+.pd-seg.sub>button{font-family:var(--sans); font-size:12px; font-weight:600; letter-spacing:-.005em;}
 .pd-svg{width:100%; height:auto; display:block;}
 .pd-line{fill:none; stroke:var(--orange); stroke-width:2.6; stroke-linecap:round; stroke-linejoin:round;}
 .pd-dot{fill:var(--card-bg); stroke:var(--orange); stroke-width:2.2;}
@@ -848,15 +940,16 @@ h2.view-title .serif{color:var(--orange);}
 
 /* ---------- Responsive ---------- */
 @media(min-width:640px){
-  .pd-stats{grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px;}
-  .pd-stats-sec{margin-top:14px;}
+  .pd-stats{grid-template-columns:repeat(4,minmax(0,1fr)); gap:20px;}
+  .pd-lead{flex-direction:row; align-items:baseline; flex-wrap:wrap; gap:6px 20px;}
+  .pd-lead-l{margin-bottom:5px;}
+  .pd-lead-s{margin-left:auto; margin-bottom:6px;}
 }
 @media(max-width:640px){
-  /* le sélecteur de statistique défile horizontalement plutôt que
-     d'empiler quatre rangées de puces sur un écran de téléphone */
-  .pd-picks>.tr2-chips:first-child{flex-wrap:nowrap; overflow-x:auto; -webkit-overflow-scrolling:touch; scrollbar-width:none; padding-bottom:2px;}
-  .pd-picks>.tr2-chips:first-child::-webkit-scrollbar{display:none;}
-  .pd-picks>.tr2-chips:first-child>.tr2-chip{flex:0 0 auto;}
+  /* le sélecteur de statistique défile déjà (.pd-seg) : sur téléphone on
+     laisse simplement les segments à leur largeur naturelle. */
+  .pd-seg>button{flex:0 0 auto; padding:0 12px;}
+  .pd-seg.sub>button{flex:1 0 auto;}
 }
 @media(max-width:420px){
   .pd-act{padding:13px 12px; gap:10px;}
@@ -1329,7 +1422,7 @@ h2.view-title .serif{color:var(--orange);}
 <script src="/lib/match-events.js"></script>
 <script src="/assets/store.js"></script>
 <script src="/assets/court.js"></script>
-<script src="/assets/player.js?v=nav2"></script>
+<script src="/assets/player.js?v=polish1"></script>
 
 </body>
 </html>
